@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Lux.Dashboard.Core/Lux.Dashboard.Core.csproj" />
+    <Project Path="src/Lux.Dashboard/Lux.Dashboard.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lux.Dashboard.Tests/Lux.Dashboard.Tests.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/HeadlessDashboardExample/HeadlessDashboardExample.csproj" />
+  </Folder>
+</Solution>
