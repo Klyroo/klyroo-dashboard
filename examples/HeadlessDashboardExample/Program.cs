@@ -1,4 +1,4 @@
-using Blux.UI.Tools;
+using Lux.Dashboard;
 
 var controller = new DashboardController("sales");
 var kpi = controller.RegisterResource(new DashboardResource<double>("mrr", _ => Task.FromResult(48500.0)));

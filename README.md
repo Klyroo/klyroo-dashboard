@@ -41,7 +41,7 @@ builder.Services.AddLuxDashboard();
 ### Headless Core (`Lux.Dashboard.Core`)
 
 ```csharp
-using Blux.UI.Tools;
+using Lux.Dashboard;
 
 var controller = new DashboardController("analytics");
 controller.AddView("overview", "Overview", badge: "3");

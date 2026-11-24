@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Blux.UI.Tools;
+namespace Lux.Dashboard;
 
 /// <summary>Lifecycle state of a dashboard query or derived resource.</summary>
 public enum DashboardResourceState

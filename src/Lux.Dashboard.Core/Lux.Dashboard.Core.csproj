@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Blux.UI.Tools</RootNamespace>
+    <RootNamespace>Lux.Dashboard</RootNamespace>
     <PackageId>Lux.Dashboard.Core</PackageId>
     <Description>LuxStack Dashboard Core: Headless analytical dashboard controller, staged queries, filters, formatters and CSV export. Zero UI dependency, NativeAOT compatible.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

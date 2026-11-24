@@ -27,8 +27,8 @@ builder.Services.AddLuxDashboard();
 In `_Imports.razor`:
 
 ```razor
-@using Blux.UI
-@using Blux.UI.Tools
+@using Lux.UI
+@using Lux.Dashboard
 
 ```
 
@@ -37,7 +37,7 @@ In `_Imports.razor`:
 ### Headless C# (`Lux.Dashboard.Core`)
 
 ```csharp
-using Blux.UI.Tools;
+using Lux.Dashboard;
 
 var controller = new DashboardController("analytics");
 controller.AddView("overview", "Overview", badge: "3");

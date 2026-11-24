@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Blux.UI.Tools;
+namespace Lux.Dashboard;
 
 public static class LuxDashboardServiceCollectionExtensions
 {
     public static IServiceCollection AddLuxDashboard(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.AddBluxUi();
+        services.AddLuxUi();
         return services;
     }
 }

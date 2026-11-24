@@ -3,7 +3,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Blux.UI.Tools.Tests;
+namespace Lux.Dashboard.Tests;
 
 public sealed class DashboardTests : BunitContext
 {
