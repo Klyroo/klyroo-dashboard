@@ -11,7 +11,7 @@ Analytical dashboard orchestrator with 3-wave staged query loading (Essential ->
 
 ---
 
-## Architecture (TanStack Two-Layer Split)
+## Architecture (Two-Layer Headless Split)
 
 - **`Lux.Dashboard.Core`** — 100% headless C#, zero UI dependencies, `<IsAotCompatible>true</IsAotCompatible>`, `<IsTrimmable>true</IsTrimmable>`. Runs in Minimal APIs, background workers, CLI apps, and native C# .NET MAUI ViewModels.
 - **`Lux.Dashboard`** — Multiplatform Blazor Web (Static SSR, Interactive Server, WebAssembly, Auto) & `.NET MAUI Blazor Hybrid` (`browser`, `ios`, `android`, `maccatalyst`, `windows`).
