@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -185,7 +185,11 @@ footer { padding: 36px 0; font-size: 12.5px; color: var(--text-muted); display: 
           <h1>Analytical dashboards<br /><span class="accent">staged for speed.</span></h1>
         </div>
         <div>
-          <p class="lead">Orchestrateur de tableaux de bord analytiques avec chargement étagé en 3 vagues (Essential → Background → Deferred), barre de filtres et vues réactives, plages de comparaison (année bissextile gérée), export CSV UTF-8 BOM et 13 composants analytiques prêts à l&#x27;emploi.</p>
+          <p class="lead">Analytical dashboard orchestrator with 3-wave staged query loading (Essential -&gt; Background -&gt; Deferred), reactive global filter toolbar and views, leap-year-safe comparison date ranges, RFC 4180 UTF-8 BOM CSV export, and 13 ready-to-use KPI &amp; visualization blocks.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+            <a class="btn btn-accent" href="../docs/getting-started.md">Read Documentation →</a>
+            <a class="btn" href="../docs/api-reference.md">API Reference</a>
+          </div>
           <div class="install-stack">
             <button class="cmd mono" type="button" onclick="copyCmd(this,'dotnet add package Lux.Dashboard')">
               <span>$ dotnet add package <strong>Lux.Dashboard</strong> <span class="comment"># Blazor + MAUI Hybrid</span></span>
@@ -196,7 +200,7 @@ footer { padding: 36px 0; font-size: 12.5px; color: var(--text-muted); display: 
               <span class="copy-tag">Copy</span>
             </button>
           </div>
-          <div class="platforms"><span class="plat mono">Headless C# / NativeAOT</span><span class="plat mono">Blazor Web &amp; MAUI Hybrid</span><span class="plat mono">CSV Export RFC-4180</span><span class="plat mono">13 Analytical Blocks</span></div>
+          <div class="platforms"><span class="plat mono">Headless C# / NativeAOT</span><span class="plat mono">Blazor Server / WASM / Auto</span><span class="plat mono">.NET MAUI Blazor Hybrid</span><span class="plat mono">RFC 4180 CSV Export</span></div>
         </div>
       </div>
 
@@ -233,7 +237,7 @@ footer { padding: 36px 0; font-size: 12.5px; color: var(--text-muted); display: 
     <div class="wrap">
       <div class="eyebrow mono">Why Lux.Dashboard</div>
       <h2>Headless C# engine.<br /><span style="color:var(--accent)">Production-ready UI.</span></h2>
-      <div class="grid-4"><article class="card"><span class="tag mono">Staged Waves</span><h3>Orchestration en 3 vagues</h3><p>DashboardController exécute d&#x27;abord Essential (KPI critiques), puis Background (graphes), et garde Deferred en chargement paresseux.</p></article><article class="card"><span class="tag mono">Reactive Filters</span><h3>Filtres globaux, Presets &amp; Vues</h3><p>Filtres synchronisés (DashboardFilterControl) avec bouton Reset automatique et onglets de vues (DashboardViewMeta) avec badges.</p></article><article class="card"><span class="tag mono">13 Widgets</span><h3>13 Blocs Analytiques complets</h3><p>BxDashboardPage, Grid, Card, Stat, Stats, Gauge SVG, Details, Bars, List, Table triable avec export CSV, Alerts, Feed et Chart.</p></article><article class="card"><span class="tag mono">Analytics Core</span><h3>Formateurs &amp; Export CSV BOM</h3><p>DashboardFormat gère Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), plages de comparaison et CSV localisé.</p></article></div>
+      <div class="grid-4"><article class="card"><span class="tag mono">Staged Waves</span><h3>3-Wave Staged Query Orchestration</h3><p>DashboardController runs Essential KPIs first, Background charts second, and keeps Deferred resources idle until explicitly requested.</p></article><article class="card"><span class="tag mono">Reactive Filters</span><h3>Global Filters, Presets &amp; Views</h3><p>Synchronized filters (DashboardFilterControl) with one-click Reset detection and tabbed DashboardViewMeta views with live count badges.</p></article><article class="card"><span class="tag mono">13 Widgets</span><h3>13 Analytical Visualization Blocks</h3><p>BxDashboardPage, Grid, Card, Stat, Stats, SVG Gauge, Details, Bars, List, sortable Table with CSV export, Alerts, Feed, and Chart.</p></article><article class="card"><span class="tag mono">Analytics Core</span><h3>Smart Formatters &amp; CSV Export</h3><p>DashboardFormat formats Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), leap-year date ranges, and locale-aware UTF-8 BOM CSV.</p></article></div>
     </div>
   </section>
 
@@ -256,7 +260,7 @@ var kpis = controller.RegisterResource(new DashboardResource&lt;int&gt;(
 var chart = controller.RegisterResource(new DashboardResource&lt;double[]&gt;(
     &quot;trend&quot;, LoadTrendAsync, DashboardQueryStage.Background));
 
-await controller.RefreshAsync(); // Exécute Essential -&gt; Background</code></pre>
+await controller.RefreshAsync(); // Runs Essential -&gt; Background</code></pre>
         </div>
         <div class="code-panel">
           <div class="code-head mono"><span>Lux.Dashboard · BxDashboardPage &amp; KPI Widgets</span><span class="layer-ui">UI · Blazor &amp; MAUI</span></div>
@@ -276,12 +280,27 @@ await controller.RefreshAsync(); // Exécute Essential -&gt; Background</code></
 
   <section class="band">
     <div class="wrap">
-      <div class="eyebrow mono">Package Exports &amp; Components</div>
+      <div class="eyebrow mono">Exhaustive Documentation</div>
+      <h2>Guides, Architecture &amp; API Reference</h2>
+      <div class="grid-4" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+            <a class="card" href="../docs/getting-started.md"><span class="tag mono">GUIDE</span><h3>Getting Started</h3><p>Package installation, DI setup, namespace imports, and your first example.</p></a>
+            <a class="card" href="../docs/architecture.md"><span class="tag mono">CORE + UI</span><h3>Architecture</h3><p>Strict two-layer headless NativeAOT Core vs Blazor &amp; MAUI Hybrid UI split.</p></a>
+            <a class="card" href="../docs/api-reference.md"><span class="tag mono">EXHAUSTIVE API</span><h3>Complete API Reference</h3><p>Every public class, enum, property, method, and Razor parameter extracted from source.</p></a>
+            <a class="card" href="../docs/maui-and-aot.md"><span class="tag mono">MULTIPLATFORM</span><h3>.NET MAUI &amp; NativeAOT</h3><p>Setup for iOS, Android, macOS Catalyst, Windows, and NativeAOT builds.</p></a>
+            <a class="card" href="../docs/recipes.md"><span class="tag mono">RECIPES</span><h3>Recipes &amp; Testing</h3><p>Production patterns and xUnit / bUnit testing examples.</p></a>
+            <a class="card" href="http://localhost:5180/docs/lux-dashboard"><span class="tag mono">PLAYGROUND</span><h3>Interactive Playground Docs</h3><p>Live documentation page with interactive examples and XML-backed API tables.</p></a>
+            </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="eyebrow mono">Package Exports</div>
       <h2>Included in Lux.Dashboard</h2>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Export</th><th>Layer</th><th>NuGet Package</th><th>Description</th></tr></thead>
-          <tbody><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardController</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Coordinateur 3 vagues (Essential/Background/Deferred), filtres &amp; vues.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardFormat</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Formateurs Compact/Delta/Points/Ratio, plages bissextiles &amp; CSV BOM.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxDashboardPage</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">Shell analytique complet avec barre de filtres, vues et fraîcheur.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxDashboardStats</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">Grille multi-KPI avec badges delta, barres de progression et statuts.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxDashboardGauge</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">Jauge circulaire SVG avec marqueur d&#x27;objectif et formatage central.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxDashboardTable</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">Tableau analytique triable avec barres inline, deltas et export CSV.</td></tr></tbody>
+          <tbody><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardAlerts&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">10 Razor parameters · <code>src/Lux.Dashboard/BxDashboardAlerts.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardBars&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">13 Razor parameters · <code>src/Lux.Dashboard/BxDashboardBars.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardCard&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">19 Razor parameters · <code>src/Lux.Dashboard/BxDashboardCard.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardChart&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">15 Razor parameters · <code>src/Lux.Dashboard/BxDashboardChart.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardDetails&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">8 Razor parameters · <code>src/Lux.Dashboard/BxDashboardDetails.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardFeed&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">11 Razor parameters · <code>src/Lux.Dashboard/BxDashboardFeed.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardGauge&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">14 Razor parameters · <code>src/Lux.Dashboard/BxDashboardGauge.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">&lt;BxDashboardGrid&gt;</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Lux.Dashboard</td><td style="color:var(--text-muted)">5 Razor parameters · <code>src/Lux.Dashboard/BxDashboardGrid.razor</code></td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardResourceState</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Lifecycle state of a dashboard query or derived resource.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardQueryStage</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Execution stage of a dashboard query.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardBlockPhase</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Block rendering phase determined by `BxDashboardCard`.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardSkeletonKind</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Skeleton geometry kind rendered while a `BxDashboardCard` is loading.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardFormatPreset</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Preset number formats supported by `DashboardFormat`.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardComparisonMode</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Comparison period mode for date ranges and KPI comparisons.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardFilterKind</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Filter control kind in a `DashboardController`.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardAlertSeverity</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Alert severity level for `BxDashboardAlerts`.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">IDashboardSource</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">Common interface implemented by dashboard queries and derived resources.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">DashboardResource&lt;TData&gt;</td><td><span class="mono layer-core">Core</span></td><td class="mono">Lux.Dashboard.Core</td><td style="color:var(--text-muted)">A staged, optionally gated asynchronous data resource managed by a `DashboardController`.</td></tr></tbody>
         </table>
       </div>
     </div>
