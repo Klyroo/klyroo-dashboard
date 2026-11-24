@@ -1,5 +1,5 @@
 @namespace Lux.Dashboard
-@inherits BxComponentBase
+@inherits LxComponentBase
 
 <div class="@RootClass" data-slot="dashboard-grid" data-variant="@Variant" @attributes="AdditionalAttributes">
     <CascadingValue Value="this" IsFixed="false">
@@ -20,7 +20,7 @@
         {
             var isPanels = string.Equals(Variant, "panels", StringComparison.OrdinalIgnoreCase);
             var baseCls = isPanels
-                ? "grid grid-cols-12 gap-px overflow-hidden rounded-(--blux-radius-md) border border-(--blux-border) bg-(--blux-border)"
+                ? "grid grid-cols-12 gap-px overflow-hidden rounded-(--lux-radius-md) border border-(--lux-border) bg-(--lux-border)"
                 : "grid grid-cols-12 gap-4";
             return $"{baseCls} empty:hidden {Class}".Trim();
         }

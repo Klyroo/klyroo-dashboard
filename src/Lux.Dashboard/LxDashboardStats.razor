@@ -1,8 +1,8 @@
 @namespace Lux.Dashboard
 @using System.Globalization
-@inherits BxComponentBase
+@inherits LxComponentBase
 
-<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Stats"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-slot="dashboard-stats" data-variant="@Variant">
@@ -10,23 +10,23 @@
         {
             @foreach (var item in Items)
             {
-                <div class="flex flex-col gap-1 @(string.Equals(Variant, "tiles", StringComparison.OrdinalIgnoreCase) ? "rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-muted) p-3" : "")"
+                <div class="flex flex-col gap-1 @(string.Equals(Variant, "tiles", StringComparison.OrdinalIgnoreCase) ? "rounded-(--lux-radius) border border-(--lux-border) bg-(--lux-bg-muted) p-3" : "")"
                      data-slot="dashboard-stats-item" data-key="@item.Key">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-medium text-(--blux-text-muted)">@item.Label</span>
+                        <span class="text-xs font-medium text-(--lux-text-muted)">@item.Label</span>
                         @if (item.Status is not null)
                         {
-                            <BxBadge Label="@item.Status.Label" Color="@(item.Status.Color is not null ? new BxColor(item.Status.Color) : BxColor.Neutral)" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                            <LxBadge Label="@item.Status.Label" Color="@(item.Status.Color is not null ? new LxColor(item.Status.Color) : LxColor.Neutral)" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
                         }
                     </div>
                     <div class="flex items-baseline justify-between gap-2">
-                        <span class="text-xl font-bold tabular-nums text-(--blux-text-highlighted)" data-slot="dashboard-stats-value">
+                        <span class="text-xl font-bold tabular-nums text-(--lux-text-highlighted)" data-slot="dashboard-stats-value">
                             @(item.Value.HasValue ? DashboardFormat.Format(item.Value, item.Format, FormatCulture) : "–")
                         </span>
                         @if (item.Delta is { } d)
                         {
                             var good = item.InvertDelta ? d < 0 : d > 0;
-                            <span class="text-xs font-semibold tabular-nums @(good ? "text-(--blux-success-text)" : "text-(--blux-error-text)")"
+                            <span class="text-xs font-semibold tabular-nums @(good ? "text-(--lux-success-text)" : "text-(--lux-error-text)")"
                                   data-slot="dashboard-stats-delta">
                                 @DashboardFormat.Format(d, DashboardFormatPreset.Delta, FormatCulture)
                             </span>
@@ -35,21 +35,21 @@
                     @if (item.Progress is { } prog)
                     {
                         var pct = Math.Clamp(prog, 0, 100);
-                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-(--blux-bg-muted)"
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-(--lux-bg-muted)"
                              role="progressbar" aria-label="@item.Label"
                              aria-valuenow="@Math.Round(pct)" aria-valuemin="0" aria-valuemax="100">
-                            <div class="h-full bg-(--blux-primary)" style="@($"width:{pct.ToString("0.#", CultureInfo.InvariantCulture)}%")"></div>
+                            <div class="h-full bg-(--lux-primary)" style="@($"width:{pct.ToString("0.#", CultureInfo.InvariantCulture)}%")"></div>
                         </div>
                     }
                     @if (!string.IsNullOrEmpty(item.Caption))
                     {
-                        <span class="text-xs text-(--blux-text-muted)">@item.Caption</span>
+                        <span class="text-xs text-(--lux-text-muted)">@item.Caption</span>
                     }
                 </div>
             }
         }
     </div>
-</BxDashboardCard>
+</LxDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }

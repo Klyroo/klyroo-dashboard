@@ -20,7 +20,7 @@ Analytical dashboard orchestrator with 3-wave staged query loading (Essential ->
 
 - **3-Wave Staged Query Orchestration** (`Staged Waves`) — DashboardController runs Essential KPIs first, Background charts second, and keeps Deferred resources idle until explicitly requested.
 - **Global Filters, Presets & Views** (`Reactive Filters`) — Synchronized filters (DashboardFilterControl) with one-click Reset detection and tabbed DashboardViewMeta views with live count badges.
-- **13 Analytical Visualization Blocks** (`13 Widgets`) — BxDashboardPage, Grid, Card, Stat, Stats, SVG Gauge, Details, Bars, List, sortable Table with CSV export, Alerts, Feed, and Chart.
+- **13 Analytical Visualization Blocks** (`13 Widgets`) — LxDashboardPage, Grid, Card, Stat, Stats, SVG Gauge, Details, Bars, List, sortable Table with CSV export, Alerts, Feed, and Chart.
 - **Smart Formatters & CSV Export** (`Analytics Core`) — DashboardFormat formats Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), leap-year date ranges, and locale-aware UTF-8 BOM CSV.
 
 ## Installation
@@ -59,15 +59,15 @@ await controller.RefreshAsync(); // Runs Essential -> Background
 ### Blazor Web & .NET MAUI Hybrid (`Lux.Dashboard`)
 
 ```razor
-<BxDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
-    <BxDashboardGrid Menu="true" Freshness="true">
-        <BxDashboardStats Title="Key Metrics" Items="@_statItems" />
-        <BxDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
+<LxDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
+    <LxDashboardGrid Menu="true" Freshness="true">
+        <LxDashboardStats Title="Key Metrics" Items="@_statItems" />
+        <LxDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
                           Format="DashboardFormatPreset.Percent" />
-        <BxDashboardBars Title="Channels" Items="@_barItems"
+        <LxDashboardBars Title="Channels" Items="@_barItems"
                          Format="DashboardFormatPreset.Compact" />
-    </BxDashboardGrid>
-</BxDashboardPage>
+    </LxDashboardGrid>
+</LxDashboardPage>
 ```
 
 ## Documentation
@@ -87,12 +87,12 @@ await controller.RefreshAsync(); // Runs Essential -> Background
 | :--- | :--- | :--- | :--- |
 | `DashboardResourceState` | `enum` | `Lux.Dashboard.Core` | Lifecycle state of a dashboard query or derived resource. |
 | `DashboardQueryStage` | `enum` | `Lux.Dashboard.Core` | Execution stage of a dashboard query. |
-| `DashboardBlockPhase` | `enum` | `Lux.Dashboard.Core` | Block rendering phase determined by `BxDashboardCard`. |
-| `DashboardSkeletonKind` | `enum` | `Lux.Dashboard.Core` | Skeleton geometry kind rendered while a `BxDashboardCard` is loading. |
+| `DashboardBlockPhase` | `enum` | `Lux.Dashboard.Core` | Block rendering phase determined by `LxDashboardCard`. |
+| `DashboardSkeletonKind` | `enum` | `Lux.Dashboard.Core` | Skeleton geometry kind rendered while a `LxDashboardCard` is loading. |
 | `DashboardFormatPreset` | `enum` | `Lux.Dashboard.Core` | Preset number formats supported by `DashboardFormat`. |
 | `DashboardComparisonMode` | `enum` | `Lux.Dashboard.Core` | Comparison period mode for date ranges and KPI comparisons. |
 | `DashboardFilterKind` | `enum` | `Lux.Dashboard.Core` | Filter control kind in a `DashboardController`. |
-| `DashboardAlertSeverity` | `enum` | `Lux.Dashboard.Core` | Alert severity level for `BxDashboardAlerts`. |
+| `DashboardAlertSeverity` | `enum` | `Lux.Dashboard.Core` | Alert severity level for `LxDashboardAlerts`. |
 | `IDashboardSource` | `interface` | `Lux.Dashboard.Core` | Common interface implemented by dashboard queries and derived resources. |
 | `DashboardResource<TData>` | `class` | `Lux.Dashboard.Core` | A staged, optionally gated asynchronous data resource managed by a `DashboardController`. |
 | `DashboardOption` | `record` | `Lux.Dashboard.Core` | An option item in a `DashboardFilterControl`. |
@@ -108,19 +108,19 @@ await controller.RefreshAsync(); // Runs Essential -> Background
 
 | Component | Package | Parameters | Source |
 | :--- | :--- | :--- | :--- |
-| `<BxDashboardAlerts>` | `Lux.Dashboard` | 10 parameters | `src/Lux.Dashboard/BxDashboardAlerts.razor` |
-| `<BxDashboardBars>` | `Lux.Dashboard` | 13 parameters | `src/Lux.Dashboard/BxDashboardBars.razor` |
-| `<BxDashboardCard>` | `Lux.Dashboard` | 19 parameters | `src/Lux.Dashboard/BxDashboardCard.razor` |
-| `<BxDashboardChart>` | `Lux.Dashboard` | 15 parameters | `src/Lux.Dashboard/BxDashboardChart.razor` |
-| `<BxDashboardDetails>` | `Lux.Dashboard` | 8 parameters | `src/Lux.Dashboard/BxDashboardDetails.razor` |
-| `<BxDashboardFeed>` | `Lux.Dashboard` | 11 parameters | `src/Lux.Dashboard/BxDashboardFeed.razor` |
-| `<BxDashboardGauge>` | `Lux.Dashboard` | 14 parameters | `src/Lux.Dashboard/BxDashboardGauge.razor` |
-| `<BxDashboardGrid>` | `Lux.Dashboard` | 5 parameters | `src/Lux.Dashboard/BxDashboardGrid.razor` |
-| `<BxDashboardList>` | `Lux.Dashboard` | 10 parameters | `src/Lux.Dashboard/BxDashboardList.razor` |
-| `<BxDashboardPage>` | `Lux.Dashboard` | 9 parameters | `src/Lux.Dashboard/BxDashboardPage.razor` |
-| `<BxDashboardStat>` | `Lux.Dashboard` | 18 parameters | `src/Lux.Dashboard/BxDashboardStat.razor` |
-| `<BxDashboardStats>` | `Lux.Dashboard` | 9 parameters | `src/Lux.Dashboard/BxDashboardStats.razor` |
-| `<BxDashboardTable>` | `Lux.Dashboard` | 12 parameters | `src/Lux.Dashboard/BxDashboardTable.razor` |
+| `<LxDashboardAlerts>` | `Lux.Dashboard` | 10 parameters | `src/Lux.Dashboard/LxDashboardAlerts.razor` |
+| `<LxDashboardBars>` | `Lux.Dashboard` | 13 parameters | `src/Lux.Dashboard/LxDashboardBars.razor` |
+| `<LxDashboardCard>` | `Lux.Dashboard` | 19 parameters | `src/Lux.Dashboard/LxDashboardCard.razor` |
+| `<LxDashboardChart>` | `Lux.Dashboard` | 15 parameters | `src/Lux.Dashboard/LxDashboardChart.razor` |
+| `<LxDashboardDetails>` | `Lux.Dashboard` | 8 parameters | `src/Lux.Dashboard/LxDashboardDetails.razor` |
+| `<LxDashboardFeed>` | `Lux.Dashboard` | 11 parameters | `src/Lux.Dashboard/LxDashboardFeed.razor` |
+| `<LxDashboardGauge>` | `Lux.Dashboard` | 14 parameters | `src/Lux.Dashboard/LxDashboardGauge.razor` |
+| `<LxDashboardGrid>` | `Lux.Dashboard` | 5 parameters | `src/Lux.Dashboard/LxDashboardGrid.razor` |
+| `<LxDashboardList>` | `Lux.Dashboard` | 10 parameters | `src/Lux.Dashboard/LxDashboardList.razor` |
+| `<LxDashboardPage>` | `Lux.Dashboard` | 9 parameters | `src/Lux.Dashboard/LxDashboardPage.razor` |
+| `<LxDashboardStat>` | `Lux.Dashboard` | 18 parameters | `src/Lux.Dashboard/LxDashboardStat.razor` |
+| `<LxDashboardStats>` | `Lux.Dashboard` | 9 parameters | `src/Lux.Dashboard/LxDashboardStats.razor` |
+| `<LxDashboardTable>` | `Lux.Dashboard` | 12 parameters | `src/Lux.Dashboard/LxDashboardTable.razor` |
 
 ## Building & Testing
 

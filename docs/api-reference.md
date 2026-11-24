@@ -4,8 +4,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 
 ## Razor Components
 
-### `<BxDashboardAlerts>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardAlerts.razor`
+### `<LxDashboardAlerts>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardAlerts.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -20,8 +20,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardBars>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardBars.razor`
+### `<LxDashboardBars>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardBars.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -39,8 +39,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardCard>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardCard.razor`
+### `<LxDashboardCard>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardCard.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -64,8 +64,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Footer` | `RenderFragment?` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<BxDashboardChart>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardChart.razor`
+### `<LxDashboardChart>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardChart.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -85,8 +85,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardDetails>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardDetails.razor`
+### `<LxDashboardDetails>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardDetails.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -99,8 +99,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardFeed>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardFeed.razor`
+### `<LxDashboardFeed>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardFeed.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -116,8 +116,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardGauge>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardGauge.razor`
+### `<LxDashboardGauge>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardGauge.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -136,8 +136,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardGrid>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardGrid.razor`
+### `<LxDashboardGrid>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardGrid.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -147,8 +147,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Freshness` | `bool` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<BxDashboardList>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardList.razor`
+### `<LxDashboardList>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardList.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -163,8 +163,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardPage>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardPage.razor`
+### `<LxDashboardPage>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardPage.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -178,8 +178,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Actions` | `RenderFragment?` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<BxDashboardStat>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardStat.razor`
+### `<LxDashboardStat>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardStat.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -202,8 +202,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardStats>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardStats.razor`
+### `<LxDashboardStats>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardStats.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -217,8 +217,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<BxDashboardTable>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/BxDashboardTable.razor`
+### `<LxDashboardTable>`
+*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardTable.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -264,7 +264,7 @@ Execution stage of a dashboard query.
 ### `enum DashboardBlockPhase`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Block rendering phase determined by `BxDashboardCard`.
+Block rendering phase determined by `LxDashboardCard`.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -277,7 +277,7 @@ Block rendering phase determined by `BxDashboardCard`.
 ### `enum DashboardSkeletonKind`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Skeleton geometry kind rendered while a `BxDashboardCard` is loading.
+Skeleton geometry kind rendered while a `LxDashboardCard` is loading.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -344,7 +344,7 @@ Filter control kind in a `DashboardController`.
 ### `enum DashboardAlertSeverity`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Alert severity level for `BxDashboardAlerts`.
+Alert severity level for `LxDashboardAlerts`.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -486,52 +486,52 @@ Locale-aware number, delta, relative-time, comparison-range, and CSV formatting 
 ### `record DashboardStatus`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Status pill shown on a `BxDashboardStat` or `DashboardStatsItem`.
+Status pill shown on a `LxDashboardStat` or `DashboardStatsItem`.
 
 ### `record DashboardStatsItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One metric entry inside `BxDashboardStats`.
+One metric entry inside `LxDashboardStats`.
 
 ### `record DashboardDetailsItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One definition row inside `BxDashboardDetails`.
+One definition row inside `LxDashboardDetails`.
 
 ### `record DashboardBarItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One horizontal bar entry in `BxDashboardBars`.
+One horizontal bar entry in `LxDashboardBars`.
 
 ### `record DashboardListItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One ranked row in `BxDashboardList`.
+One ranked row in `LxDashboardList`.
 
 ### `record DashboardTableColumn`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Column definition for `BxDashboardTable`.
+Column definition for `LxDashboardTable`.
 
 ### `record DashboardTableSort`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-Active sort state of `BxDashboardTable`.
+Active sort state of `LxDashboardTable`.
 
 ### `record DashboardAlertItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One alert row in `BxDashboardAlerts`.
+One alert row in `LxDashboardAlerts`.
 
 ### `record DashboardFeedItem`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One timeline activity event in `BxDashboardFeed`.
+One timeline activity event in `LxDashboardFeed`.
 
 ### `record DashboardChartSeries`
 *Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
 
-One series definition for `BxDashboardChart`.
+One series definition for `LxDashboardChart`.
 
 ### `class LuxDashboardServiceCollectionExtensions`
 *Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LuxDashboardServiceCollectionExtensions.cs`

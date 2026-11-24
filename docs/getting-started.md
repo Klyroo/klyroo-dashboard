@@ -55,15 +55,15 @@ await controller.RefreshAsync(); // Runs Essential -> Background
 ### Blazor / MAUI Hybrid (`Lux.Dashboard`)
 
 ```razor
-<BxDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
-    <BxDashboardGrid Menu="true" Freshness="true">
-        <BxDashboardStats Title="Key Metrics" Items="@_statItems" />
-        <BxDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
+<LxDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
+    <LxDashboardGrid Menu="true" Freshness="true">
+        <LxDashboardStats Title="Key Metrics" Items="@_statItems" />
+        <LxDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
                           Format="DashboardFormatPreset.Percent" />
-        <BxDashboardBars Title="Channels" Items="@_barItems"
+        <LxDashboardBars Title="Channels" Items="@_barItems"
                          Format="DashboardFormatPreset.Compact" />
-    </BxDashboardGrid>
-</BxDashboardPage>
+    </LxDashboardGrid>
+</LxDashboardPage>
 ```
 
 ## Next Steps

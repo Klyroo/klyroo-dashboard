@@ -1,5 +1,5 @@
 @namespace Lux.Dashboard
-@inherits BxComponentBase
+@inherits LxComponentBase
 
 @if (Phase != DashboardBlockPhase.Idle || Source?.State != DashboardResourceState.Disabled)
 {
@@ -12,7 +12,7 @@
         @* Thin fetching progress bar *@
         @if (Source?.Fetching == true)
         {
-            <div class="h-0.5 w-full animate-pulse bg-(--blux-primary)" data-slot="dashboard-card-progress" data-progress="true"></div>
+            <div class="h-0.5 w-full animate-pulse bg-(--lux-primary)" data-slot="dashboard-card-progress" data-progress="true"></div>
         }
 
         @* Header *@
@@ -22,11 +22,11 @@
                 <div class="flex min-w-0 flex-col gap-0.5">
                     @if (!string.IsNullOrEmpty(Title))
                     {
-                        <h3 class="m-0 truncate text-sm font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-card-title">@Title</h3>
+                        <h3 class="m-0 truncate text-sm font-semibold text-(--lux-text-highlighted)" data-slot="dashboard-card-title">@Title</h3>
                     }
                     @if (!string.IsNullOrEmpty(Subtitle))
                     {
-                        <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="dashboard-card-subtitle">@Subtitle</p>
+                        <p class="m-0 text-xs text-(--lux-text-muted)" data-slot="dashboard-card-subtitle">@Subtitle</p>
                     }
                 </div>
 
@@ -40,7 +40,7 @@
                         @if (ViewAsTable && Tabulate is not null)
                         {
                             <button type="button"
-                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    class="inline-flex h-7 items-center rounded-(--lux-radius) px-2 text-xs font-medium text-(--lux-text-muted) hover:bg-(--lux-bg-muted) hover:text-(--lux-text)"
                                     aria-pressed="@(_showingTable ? "true" : "false")"
                                     data-slot="dashboard-card-table-toggle"
                                     @onclick="@(() => _showingTable = !_showingTable)">
@@ -50,7 +50,7 @@
                         @if (Tabulate is not null)
                         {
                             <button type="button"
-                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    class="inline-flex h-7 items-center rounded-(--lux-radius) px-2 text-xs font-medium text-(--lux-text-muted) hover:bg-(--lux-bg-muted) hover:text-(--lux-text)"
                                     data-slot="dashboard-card-csv"
                                     @onclick="OnExportCsvAsync">
                                 Download CSV
@@ -59,7 +59,7 @@
                         @if (Expandable)
                         {
                             <button type="button"
-                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    class="inline-flex h-7 items-center rounded-(--lux-radius) px-2 text-xs font-medium text-(--lux-text-muted) hover:bg-(--lux-bg-muted) hover:text-(--lux-text)"
                                     aria-expanded="@(_expanded ? "true" : "false")"
                                     data-slot="dashboard-card-expand"
                                     @onclick="@(() => _expanded = !_expanded)">
@@ -80,11 +80,11 @@
                 <div class="flex flex-wrap items-center gap-1.5 px-4 pt-2" data-slot="dashboard-card-chips">
                     @foreach (var f in activeFilters)
                     {
-                        <span class="inline-flex items-center gap-1 rounded-full bg-(--blux-bg-muted) px-2.5 py-0.5 text-xs font-medium text-(--blux-text)"
+                        <span class="inline-flex items-center gap-1 rounded-full bg-(--lux-bg-muted) px-2.5 py-0.5 text-xs font-medium text-(--lux-text)"
                               data-slot="dashboard-card-chip">
                             <span>@f.Label: @f.Display</span>
                             <button type="button"
-                                    class="inline-flex size-4 items-center justify-center rounded-full text-(--blux-text-muted) hover:text-(--blux-text)"
+                                    class="inline-flex size-4 items-center justify-center rounded-full text-(--lux-text-muted) hover:text-(--lux-text)"
                                     aria-label="@($"Remove {f.Label}")"
                                     @onclick="f.Reset">✕</button>
                         </span>
@@ -102,36 +102,36 @@
                     <div class="flex flex-col gap-2.5" data-slot="dashboard-skeleton" data-kind="@Skeleton.ToString().ToLowerInvariant()">
                         @if (Skeleton == DashboardSkeletonKind.Stat)
                         {
-                            <BxSkeleton Class="h-8 w-28" />
-                            <BxSkeleton Class="h-4 w-20" />
+                            <LxSkeleton Class="h-8 w-28" />
+                            <LxSkeleton Class="h-4 w-20" />
                         }
                         else if (Skeleton == DashboardSkeletonKind.Bars || Skeleton == DashboardSkeletonKind.Lines)
                         {
                             <div class="flex h-32 items-end gap-2">
-                                <BxSkeleton Class="h-1/2 flex-1" />
-                                <BxSkeleton Class="h-3/4 flex-1" />
-                                <BxSkeleton Class="h-2/3 flex-1" />
-                                <BxSkeleton Class="h-full flex-1" />
+                                <LxSkeleton Class="h-1/2 flex-1" />
+                                <LxSkeleton Class="h-3/4 flex-1" />
+                                <LxSkeleton Class="h-2/3 flex-1" />
+                                <LxSkeleton Class="h-full flex-1" />
                             </div>
                         }
                         else
                         {
-                            <BxSkeleton Class="h-4 w-3/4" />
-                            <BxSkeleton Class="h-4 w-full" />
-                            <BxSkeleton Class="h-4 w-2/3" />
+                            <LxSkeleton Class="h-4 w-3/4" />
+                            <LxSkeleton Class="h-4 w-full" />
+                            <LxSkeleton Class="h-4 w-2/3" />
                         }
                     </div>
                     break;
 
                 case DashboardBlockPhase.Error:
-                    <div class="flex flex-col items-start gap-2 rounded-(--blux-radius) border border-(--blux-error)/30 bg-(--blux-error)/10 p-3 text-xs"
+                    <div class="flex flex-col items-start gap-2 rounded-(--lux-radius) border border-(--lux-error)/30 bg-(--lux-error)/10 p-3 text-xs"
                          role="alert" data-slot="dashboard-error">
-                        <p class="m-0 font-semibold text-(--blux-error-text)">This data could not be loaded</p>
-                        <p class="m-0 text-(--blux-text-muted)">@(Source?.Error ?? "The rest of the dashboard is unaffected. Try again in a moment.")</p>
+                        <p class="m-0 font-semibold text-(--lux-error-text)">This data could not be loaded</p>
+                        <p class="m-0 text-(--lux-text-muted)">@(Source?.Error ?? "The rest of the dashboard is unaffected. Try again in a moment.")</p>
                         @if (Source is not null)
                         {
                             <button type="button"
-                                    class="rounded-(--blux-radius) bg-(--blux-bg) px-2.5 py-1 font-semibold text-(--blux-text-highlighted) shadow-2xs hover:bg-(--blux-bg-muted)"
+                                    class="rounded-(--lux-radius) bg-(--lux-bg) px-2.5 py-1 font-semibold text-(--lux-text-highlighted) shadow-2xs hover:bg-(--lux-bg-muted)"
                                     data-slot="dashboard-retry"
                                     @onclick="Source.RefreshAsync">
                                 Retry
@@ -141,8 +141,8 @@
                     break;
 
                 case DashboardBlockPhase.Empty:
-                    <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--blux-text-muted)" data-slot="dashboard-empty">
-                        <p class="m-0 font-semibold text-(--blux-text-highlighted)">@(EmptyTitle ?? "No data for this period")</p>
+                    <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--lux-text-muted)" data-slot="dashboard-empty">
+                        <p class="m-0 font-semibold text-(--lux-text-highlighted)">@(EmptyTitle ?? "No data for this period")</p>
                         @if (!string.IsNullOrEmpty(EmptyDescription))
                         {
                             <p class="m-0">@EmptyDescription</p>
@@ -156,7 +156,7 @@
                         var table = Tabulate();
                         <div class="overflow-x-auto" data-slot="dashboard-data-table">
                             <table class="min-w-full text-xs">
-                                <thead class="border-b border-(--blux-border) font-semibold text-(--blux-text-muted)">
+                                <thead class="border-b border-(--lux-border) font-semibold text-(--lux-text-muted)">
                                     <tr>
                                         @foreach (var col in table.Columns)
                                         {
@@ -164,7 +164,7 @@
                                         }
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-(--blux-border)">
+                                <tbody class="divide-y divide-(--lux-border)">
                                     @foreach (var row in table.Rows)
                                     {
                                         <tr>
@@ -188,7 +188,7 @@
 
             @if (Footer is not null || (EffectiveFreshness && Phase == DashboardBlockPhase.Content && Source?.UpdatedAt is not null))
             {
-                <footer class="flex items-center justify-between gap-2 border-t border-(--blux-border) pt-2 text-xs text-(--blux-text-muted)" data-slot="dashboard-card-footer">
+                <footer class="flex items-center justify-between gap-2 border-t border-(--lux-border) pt-2 text-xs text-(--lux-text-muted)" data-slot="dashboard-card-footer">
                     @if (Footer is not null)
                     {
                         @Footer
@@ -209,7 +209,7 @@
     private bool _showingTable;
     private bool _expanded;
 
-    [CascadingParameter] private BxDashboardGrid? ParentGrid { get; set; }
+    [CascadingParameter] private LxDashboardGrid? ParentGrid { get; set; }
 
     [Parameter] public IDashboardSource? Source { get; set; }
     [Parameter] public string? Title { get; set; }
@@ -257,8 +257,8 @@
         {
             var isPanel = string.Equals(ParentGrid?.Variant, "panels", StringComparison.OrdinalIgnoreCase);
             var surface = !Card ? ""
-                : isPanel ? "bg-(--blux-bg)"
-                : "rounded-(--blux-radius-md) border border-(--blux-border) bg-(--blux-bg) shadow-2xs";
+                : isPanel ? "bg-(--lux-bg)"
+                : "rounded-(--lux-radius-md) border border-(--lux-border) bg-(--lux-bg) shadow-2xs";
             var expandCls = _expanded ? "fixed inset-4 z-50 overflow-auto shadow-2xl" : "relative flex min-w-0 flex-col overflow-hidden";
             return $"{expandCls} {surface} {Class}".Trim();
         }

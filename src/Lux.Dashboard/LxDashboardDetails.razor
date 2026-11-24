@@ -1,22 +1,22 @@
 @namespace Lux.Dashboard
-@inherits BxComponentBase
+@inherits LxComponentBase
 
-<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(VisibleItems.Count == 0)" Skeleton="DashboardSkeletonKind.Details"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <dl class="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2" data-slot="dashboard-details">
         @foreach (var item in VisibleItems)
         {
             <div class="flex flex-col gap-0.5 @(item.FullSpan ? "sm:col-span-2" : "")" data-slot="dashboard-details-item" data-key="@item.Key">
-                <dt class="text-xs font-medium text-(--blux-text-muted)">@item.Label</dt>
-                <dd class="m-0 flex items-center gap-1.5 text-sm @(item.Mono ? "font-mono" : "font-medium") text-(--blux-text-highlighted)">
+                <dt class="text-xs font-medium text-(--lux-text-muted)">@item.Label</dt>
+                <dd class="m-0 flex items-center gap-1.5 text-sm @(item.Mono ? "font-mono" : "font-medium") text-(--lux-text-highlighted)">
                     @if (string.IsNullOrWhiteSpace(item.Value))
                     {
-                        <span class="text-(--blux-text-dimmed)">@DashboardFormat.MissingValue</span>
+                        <span class="text-(--lux-text-dimmed)">@DashboardFormat.MissingValue</span>
                     }
                     else if (!string.IsNullOrEmpty(item.Href))
                     {
-                        <a href="@item.Href" class="text-(--blux-primary-text) hover:underline">@item.Value</a>
+                        <a href="@item.Href" class="text-(--lux-primary-text) hover:underline">@item.Value</a>
                     }
                     else
                     {
@@ -25,12 +25,12 @@
                 </dd>
                 @if (!string.IsNullOrEmpty(item.Hint))
                 {
-                    <span class="text-xs text-(--blux-text-muted)">@item.Hint</span>
+                    <span class="text-xs text-(--lux-text-muted)">@item.Hint</span>
                 }
             </div>
         }
     </dl>
-</BxDashboardCard>
+</LxDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }

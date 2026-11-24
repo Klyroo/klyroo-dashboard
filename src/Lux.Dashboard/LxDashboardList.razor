@@ -1,10 +1,10 @@
 @namespace Lux.Dashboard
-@inherits BxComponentBase
+@inherits LxComponentBase
 
-<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Rows"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
-    <div class="divide-y divide-(--blux-border)" data-slot="dashboard-list">
+    <div class="divide-y divide-(--lux-border)" data-slot="dashboard-list">
         @if (Items is { Count: > 0 })
         {
             var visible = Limit is > 0 ? Items.Take(Limit.Value).ToList() : Items;
@@ -15,21 +15,21 @@
                     <div class="flex min-w-0 items-center gap-2.5">
                         @if (!string.IsNullOrEmpty(item.LeadingText))
                         {
-                            <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)"
+                            <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-(--lux-bg-muted) text-xs font-semibold text-(--lux-text-highlighted)"
                                   data-slot="dashboard-list-leading">@item.LeadingText</span>
                         }
                         <div class="flex min-w-0 flex-col">
                             @if (!string.IsNullOrEmpty(item.Href))
                             {
-                                <a href="@item.Href" class="truncate text-xs font-semibold text-(--blux-text-highlighted) hover:underline">@item.Label</a>
+                                <a href="@item.Href" class="truncate text-xs font-semibold text-(--lux-text-highlighted) hover:underline">@item.Label</a>
                             }
                             else
                             {
-                                <span class="truncate text-xs font-semibold text-(--blux-text-highlighted)">@item.Label</span>
+                                <span class="truncate text-xs font-semibold text-(--lux-text-highlighted)">@item.Label</span>
                             }
                             @if (!string.IsNullOrEmpty(item.Description))
                             {
-                                <span class="truncate text-[11px] text-(--blux-text-muted)">@item.Description</span>
+                                <span class="truncate text-[11px] text-(--lux-text-muted)">@item.Description</span>
                             }
                         </div>
                     </div>
@@ -37,17 +37,17 @@
                     <div class="flex shrink-0 items-center gap-2 text-xs tabular-nums">
                         @if (item.Percent is { } pct)
                         {
-                            <span class="text-(--blux-text-muted)" data-slot="dashboard-list-percent">@DashboardFormat.Format(pct, DashboardFormatPreset.Percent, FormatCulture)</span>
+                            <span class="text-(--lux-text-muted)" data-slot="dashboard-list-percent">@DashboardFormat.Format(pct, DashboardFormatPreset.Percent, FormatCulture)</span>
                         }
                         @if (item.Delta is { } delta)
                         {
-                            <span class="font-semibold @(delta >= 0 ? "text-(--blux-success-text)" : "text-(--blux-error-text)")" data-slot="dashboard-list-delta">
+                            <span class="font-semibold @(delta >= 0 ? "text-(--lux-success-text)" : "text-(--lux-error-text)")" data-slot="dashboard-list-delta">
                                 @DashboardFormat.Format(delta, DashboardFormatPreset.Delta, FormatCulture)
                             </span>
                         }
                         @if (item.Value.HasValue)
                         {
-                            <span class="font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-list-value">
+                            <span class="font-semibold text-(--lux-text-highlighted)" data-slot="dashboard-list-value">
                                 @DashboardFormat.Format(item.Value, Format, FormatCulture)
                             </span>
                         }
@@ -56,7 +56,7 @@
             }
         }
     </div>
-</BxDashboardCard>
+</LxDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }

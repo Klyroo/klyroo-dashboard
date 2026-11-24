@@ -1,8 +1,8 @@
 @namespace Lux.Dashboard
 @using System.Globalization
-@inherits BxComponentBase
+@inherits LxComponentBase
 
-<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Categories is not { Count: > 0 } || Series is not { Count: > 0 })"
                  Skeleton="@(Type == "donut" ? DashboardSkeletonKind.Donut : Type == "line" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
@@ -17,8 +17,8 @@
                     @foreach (var s in Series)
                     {
                         <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item">
-                            <span class="inline-block size-2.5 rounded-full @(s.IsComparison ? "border border-dashed border-(--blux-text-muted)" : "bg-(--blux-primary)")"></span>
-                            <span class="text-(--blux-text-muted)">@s.Label</span>
+                            <span class="inline-block size-2.5 rounded-full @(s.IsComparison ? "border border-dashed border-(--lux-text-muted)" : "bg-(--lux-primary)")"></span>
+                            <span class="text-(--lux-text-muted)">@s.Label</span>
                         </span>
                     }
                 </div>
@@ -35,27 +35,27 @@
                          data-slot="dashboard-chart-column">
                         @if (ShowLabels)
                         {
-                            <span class="text-[10px] font-semibold tabular-nums text-(--blux-text-muted)">
+                            <span class="text-[10px] font-semibold tabular-nums text-(--lux-text-muted)">
                                 @DashboardFormat.Format(val, Format, FormatCulture)
                             </span>
                         }
-                        <div class="w-full rounded-t-sm bg-(--blux-primary)" style="@($"height:{pct}%")" data-slot="dashboard-chart-bar"></div>
-                        <span class="max-w-full truncate text-[11px] text-(--blux-text-muted)" data-slot="dashboard-chart-label">@cat</span>
+                        <div class="w-full rounded-t-sm bg-(--lux-primary)" style="@($"height:{pct}%")" data-slot="dashboard-chart-bar"></div>
+                        <span class="max-w-full truncate text-[11px] text-(--lux-text-muted)" data-slot="dashboard-chart-label">@cat</span>
                     </div>
                 }
             </div>
 
             @if (!string.IsNullOrEmpty(Totals))
             {
-                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-(--blux-border) pt-2 text-xs" data-slot="dashboard-chart-totals">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-(--lux-border) pt-2 text-xs" data-slot="dashboard-chart-totals">
                     @foreach (var s in Series.Where(s => !s.IsComparison))
                     {
                         var totalVal = string.Equals(Totals, "average", StringComparison.OrdinalIgnoreCase) && s.Values.Count > 0
                             ? s.Values.Average()
                             : s.Values.Sum();
                         <div class="flex items-baseline gap-1.5" data-slot="dashboard-chart-total">
-                            <span class="text-(--blux-text-muted)">@s.Label:</span>
-                            <span class="font-bold tabular-nums text-(--blux-text-highlighted)">
+                            <span class="text-(--lux-text-muted)">@s.Label:</span>
+                            <span class="font-bold tabular-nums text-(--lux-text-highlighted)">
                                 @DashboardFormat.Format(totalVal, Format, FormatCulture)
                             </span>
                         </div>
@@ -64,7 +64,7 @@
             }
         }
     </div>
-</BxDashboardCard>
+</LxDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }

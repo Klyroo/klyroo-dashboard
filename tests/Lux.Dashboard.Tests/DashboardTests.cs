@@ -78,13 +78,13 @@ public sealed class DashboardTests : BunitContext
         Assert.Equal(42, essential.Data);
         Assert.Equal(DashboardResourceState.Idle, deferred.State);
 
-        var cut = Render<BxDashboardPage>(p => p
+        var cut = Render<LxDashboardPage>(p => p
             .Add(x => x.Dashboard, controller)
             .Add(x => x.Title, "Revenue Analytics")
-            .AddChildContent<BxDashboardGrid>(g => g
+            .AddChildContent<LxDashboardGrid>(g => g
                 .Add(x => x.Menu, true)
                 .Add(x => x.Freshness, true)
-                .AddChildContent<BxDashboardStat>(s => s
+                .AddChildContent<LxDashboardStat>(s => s
                     .Add(x => x.Source, essential)
                     .Add(x => x.Label, "Units")
                     .Add(x => x.Value, 120)
@@ -108,9 +108,9 @@ public sealed class DashboardTests : BunitContext
     }
 
     [Fact]
-    public void BxDashboardBlocks_render_Table_sorting_Bars_Funnel_Alerts_Feed_Gauge_and_Details()
+    public void LxDashboardBlocks_render_Table_sorting_Bars_Funnel_Alerts_Feed_Gauge_and_Details()
     {
-        var cut = Render<BxDashboardTable>(p => p
+        var cut = Render<LxDashboardTable>(p => p
             .Add(x => x.Title, "Top Regions")
             .Add(x => x.Menu, true)
             .Add(x => x.Columns, [
@@ -138,7 +138,7 @@ public sealed class DashboardTests : BunitContext
         Assert.Equal("none", cut.FindAll("[data-slot=dashboard-table-header]")[1].GetAttribute("aria-sort"));
 
         // Funnel bars with step conversion rate and table toggle
-        var funnel = Render<BxDashboardBars>(p => p
+        var funnel = Render<LxDashboardBars>(p => p
             .Add(x => x.Title, "Signup Funnel")
             .Add(x => x.Variant, "funnel")
             .Add(x => x.Menu, true)
@@ -153,7 +153,7 @@ public sealed class DashboardTests : BunitContext
         Assert.NotNull(funnel.Find("[data-slot=dashboard-data-table]"));
 
         // Alerts ordered by severity (Error before Info)
-        var alerts = Render<BxDashboardAlerts>(p => p
+        var alerts = Render<LxDashboardAlerts>(p => p
             .Add(x => x.Title, "System Alerts")
             .Add(x => x.Items, [
                 new DashboardAlertItem(DashboardAlertSeverity.Info, "Backup completed"),
@@ -162,7 +162,7 @@ public sealed class DashboardTests : BunitContext
         Assert.Equal("error", alerts.FindAll("[data-slot=dashboard-alert-row]")[0].GetAttribute("data-severity"));
 
         // Gauge & Feed
-        var gauge = Render<BxDashboardGauge>(p => p
+        var gauge = Render<LxDashboardGauge>(p => p
             .Add(x => x.Title, "Uptime")
             .Add(x => x.Value, 99.5)
             .Add(x => x.Target, 99.9));
@@ -170,7 +170,7 @@ public sealed class DashboardTests : BunitContext
         Assert.Contains("99.5", gauge.Find("[data-slot=gauge-value]").TextContent);
 
         var now = new DateTimeOffset(2026, 11, 24, 12, 0, 0, TimeSpan.Zero);
-        var feed = Render<BxDashboardFeed>(p => p
+        var feed = Render<LxDashboardFeed>(p => p
             .Add(x => x.Title, "Activity")
             .Add(x => x.Now, now)
             .Add(x => x.Items, [

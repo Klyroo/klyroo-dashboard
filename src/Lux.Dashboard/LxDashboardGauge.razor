@@ -1,8 +1,8 @@
 @namespace Lux.Dashboard
 @using System.Globalization
-@inherits BxComponentBase
+@inherits LxComponentBase
 
-<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  Skeleton="DashboardSkeletonKind.Gauge" Menu="@Menu" Freshness="@Freshness" Class="@Class">
     <div class="flex flex-col items-center justify-center gap-2 py-2"
          role="meter"
@@ -15,29 +15,29 @@
          data-variant="@Variant">
         <div class="relative flex items-center justify-center" style="width:140px;height:140px">
             <svg viewBox="0 0 100 100" class="size-full -rotate-90 overflow-visible" aria-hidden="true">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8" class="text-(--blux-bg-muted)" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8" class="text-(--lux-bg-muted)" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"
                         stroke-linecap="round"
                         stroke-dasharray="263.89"
                         stroke-dashoffset="@DashOffset.ToString("0.##", CultureInfo.InvariantCulture)"
-                        class="text-(--blux-primary) transition-all" />
+                        class="text-(--lux-primary) transition-all" />
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span class="text-xl font-bold tabular-nums text-(--blux-text-highlighted)" data-slot="gauge-value">@FormattedValue</span>
+                <span class="text-xl font-bold tabular-nums text-(--lux-text-highlighted)" data-slot="gauge-value">@FormattedValue</span>
                 @if (!string.IsNullOrEmpty(Caption))
                 {
-                    <span class="text-xs text-(--blux-text-muted)" data-slot="gauge-caption">@Caption</span>
+                    <span class="text-xs text-(--lux-text-muted)" data-slot="gauge-caption">@Caption</span>
                 }
             </div>
         </div>
         @if (Target.HasValue)
         {
-            <span class="text-xs text-(--blux-text-muted)" data-slot="gauge-target">
+            <span class="text-xs text-(--lux-text-muted)" data-slot="gauge-target">
                 Target: @DashboardFormat.Format(Target, Format, FormatCulture)
             </span>
         }
     </div>
-</BxDashboardCard>
+</LxDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }
