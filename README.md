@@ -1,5 +1,7 @@
 # Lux.Dashboard (LuxStack)
 
+[![CI](https://github.com/luxstack/lux-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/luxstack/lux-dashboard/actions/workflows/ci.yml) [![NuGet](https://img.shields.io/badge/NuGet-0.1.0--preview.1-004880.svg)](https://www.nuget.org/packages/Lux.Dashboard) [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/) [![NativeAOT](https://img.shields.io/badge/NativeAOT-Compatible-10b981.svg)](https://luxstack.dev/why) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 > **Staged 3-wave analytical queries, global filters, comparison ranges & 13 KPI blocks**
 
 Analytical dashboard orchestrator with 3-wave staged query loading (Essential -> Background -> Deferred), reactive global filter toolbar and views, leap-year-safe comparison date ranges, RFC 4180 UTF-8 BOM CSV export, and 13 ready-to-use KPI & visualization blocks.
