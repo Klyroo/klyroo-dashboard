@@ -1,155 +1,162 @@
 # Klyroo.Dashboard
 
-*Part of [Klyroo](https://klyroo.dev): Build better. Compose freely.*
+Analytical dashboards for .NET developers: a headless controller for filters, views and staged queries, and Blazor blocks that render them.
 
-[![CI](https://github.com/klyroo/klyroo-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/klyroo/klyroo-dashboard/actions/workflows/ci.yml) [![NuGet](https://img.shields.io/badge/NuGet-0.1.0--preview.1-004880.svg)](https://www.nuget.org/packages/Klyroo.Dashboard) [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/) [![NativeAOT](https://img.shields.io/badge/NativeAOT-Compatible-10b981.svg)](https://klyroo.dev/why) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![CI](https://github.com/klyroo/klyroo-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/klyroo/klyroo-dashboard/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/Klyroo.Dashboard.svg)](https://www.nuget.org/packages/Klyroo.Dashboard)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Staged 3-wave analytical queries, global filters, comparison ranges & 13 KPI blocks**
+A dashboard usually fires a dozen queries and one slow or failing query should not blank the page. Klyroo.Dashboard
+tracks each query as a resource with its own state, loads the important ones first, and gives every block its own
+loading, error and empty states. The state lives in `Klyroo.Dashboard.Core`, which has no UI dependency, so you can
+test it without a renderer. The Blazor components run in a Blazor Web App and in .NET MAUI Blazor Hybrid.
 
-Analytical dashboard orchestrator with 3-wave staged query loading (Essential -> Background -> Deferred), reactive global filter toolbar and views, leap-year-safe comparison date ranges, RFC 4180 UTF-8 BOM CSV export, and 13 ready-to-use KPI & visualization blocks.
+## Features
 
-[![MAUI Hybrid](https://img.shields.io/badge/.NET%20MAUI-Blazor%20Hybrid-8b5cf6.svg)](./docs/maui-and-aot.md)
+- **Staged loading**: a resource is Essential (loaded first, in parallel), Background (loaded once the essential ones settle) or Deferred (loaded only when something activates it).
+- **Per-block states**: every block shows a skeleton while loading, the error message with a retry button when its query fails, and an empty state, so one failing query leaves the rest of the page intact.
+- **Filters and views**: `DashboardFilterControl` supports single and multiple selection with a maximum, presets, default values and reset detection, and views appear as tabs with optional badges.
+- **Ten blocks on a 12-column grid**: stat, stats, gauge, bars (with a funnel variant), chart, list, table, details, feed and alerts, wrapped by a page, a grid and a card.
+- **Comparisons**: a stat computes its delta from a previous value, and `DashboardFormat.ResolveComparisonRange` gives the previous period or the same dates one year earlier.
+- **Number formatting**: nine presets (compact, percent, ratio, delta, points and more), relative times and currency, with an explicit culture.
+- **CSV export**: `DashboardFormat.ExportCsv` writes a UTF-8 byte order mark and picks the delimiter from the culture.
+- **Headless core**: `Klyroo.Dashboard.Core` marks itself trimmable and AOT compatible.
 
----
+## Packages
 
-## Architecture (Two-Layer Headless Split)
-
-- **`Klyroo.Dashboard.Core`** — 100% headless C#, zero UI dependencies, `<IsAotCompatible>true</IsAotCompatible>`, `<IsTrimmable>true</IsTrimmable>`. Runs in Minimal APIs, background workers, CLI apps, and native C# .NET MAUI ViewModels.
-- **`Klyroo.Dashboard`** — Multiplatform Blazor Web (Static SSR, Interactive Server, WebAssembly, Auto) & `.NET MAUI Blazor Hybrid` (`browser`, `ios`, `android`, `maccatalyst`, `windows`).
-
-## Highlights
-
-- **3-Wave Staged Query Orchestration** (`Staged Waves`) — DashboardController runs Essential KPIs first, Background charts second, and keeps Deferred resources idle until explicitly requested.
-- **Global Filters, Presets & Views** (`Reactive Filters`) — Synchronized filters (DashboardFilterControl) with one-click Reset detection and tabbed DashboardViewMeta views with live count badges.
-- **13 Analytical Visualization Blocks** (`13 Widgets`) — KlyDashboardPage, Grid, Card, Stat, Stats, SVG Gauge, Details, Bars, List, sortable Table with CSV export, Alerts, Feed, and Chart.
-- **Smart Formatters & CSV Export** (`Analytics Core`) — DashboardFormat formats Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), leap-year date ranges, and locale-aware UTF-8 BOM CSV.
-
-## Prerequisites
-
-- .NET 10 SDK or later.
-- A Blazor Web App (Static SSR, Interactive Server, WebAssembly or Auto) or a .NET MAUI Blazor Hybrid app for the UI
-  package; the `.Core` package runs anywhere .NET 10 runs, NativeAOT included.
-- For .NET MAUI: the `maui` workload (`dotnet workload install maui`).
+| Package | Description |
+| :--- | :--- |
+| [`Klyroo.Dashboard.Core`](https://www.nuget.org/packages/Klyroo.Dashboard.Core) | Controller, resources, filters, views and formatting. No UI dependency. |
+| [`Klyroo.Dashboard`](https://www.nuget.org/packages/Klyroo.Dashboard) | Blazor components for Blazor Web Apps and .NET MAUI Blazor Hybrid. Depends on `Klyroo.Dashboard.Core` and `Klyroo.UI`. |
 
 ## Installation
 
-```bash
-dotnet add package Klyroo.Dashboard.Core   # Headless C# / NativeAOT / MAUI C#
-dotnet add package Klyroo.Dashboard        # Blazor Web & .NET MAUI Blazor Hybrid
-```
+    dotnet add package Klyroo.Dashboard --prerelease
 
-Register services in `Program.cs` (Blazor Web App) or `MauiProgram.cs` (.NET MAUI Blazor Hybrid):
+For headless use only, install `Klyroo.Dashboard.Core` instead.
+
+Register the services in `Program.cs` of a Blazor Web App (and of the `.Client` project when you use WebAssembly or Auto), or in `MauiProgram.cs`:
 
 ```csharp
 builder.Services.AddKlyrooDashboard();
 ```
 
-## Quick Start
+Add the namespaces to `_Imports.razor`:
 
-### Headless Core (`Klyroo.Dashboard.Core`)
+```razor
+@using Klyroo.UI
+@using Klyroo.Dashboard
+```
+
+Load the Klyroo.UI styles and the dashboard stylesheet in the `<head>` of `App.razor`. The dashboard stylesheet only contains the utilities the dashboard markup uses and reads the tokens that Klyroo.UI defines, so it comes after them:
+
+```razor
+<link rel="stylesheet" href="@Assets["_content/Klyroo.UI/klyroo.preflight.css"]" />
+<link rel="stylesheet" href="@Assets["_content/Klyroo.UI/klyroo.css"]" />
+<link rel="stylesheet" href="@Assets["_content/Klyroo.Dashboard/klyroo-dashboard.css"]" />
+```
+
+## Quick start
+
+Headless first. Two resources, one per stage, loaded by a single call:
 
 ```csharp
 using Klyroo.Dashboard;
 
-var controller = new DashboardController("analytics");
-controller.AddView("overview", "Overview", badge: "3");
-controller.AddFilter(new DashboardFilterControl("year", "Year",
-    items: [new("2025", "2025"), new("2026", "2026")], defaultValues: ["2026"]));
+var controller = new DashboardController("sales");
 
-var kpis = controller.RegisterResource(new DashboardResource<int>(
-    "summary", LoadSummaryAsync, DashboardQueryStage.Essential));
-var chart = controller.RegisterResource(new DashboardResource<double[]>(
-    "trend", LoadTrendAsync, DashboardQueryStage.Background));
+var revenue = controller.RegisterResource(new DashboardResource<double>(
+    "revenue", async _ => { await Task.Delay(50); return 48_500; }));
 
-await controller.RefreshAsync(); // Runs Essential -> Background
+var regions = controller.RegisterResource(new DashboardResource<string[]>(
+    "regions", _ => Task.FromResult(new[] { "EMEA", "AMER" }), DashboardQueryStage.Background));
+
+await controller.RefreshAsync();
+
+Console.WriteLine(DashboardFormat.Format(revenue.Data, DashboardFormatPreset.Compact)); // 48.5K
+Console.WriteLine(string.Join(", ", regions.Data!));                                      // EMEA, AMER
 ```
 
-### Blazor Web & .NET MAUI Hybrid (`Klyroo.Dashboard`)
+Then the same idea in Blazor. `SalesService`, `Summary` and `RegionSales` stand for your own data access and records:
 
 ```razor
-<KlyDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
-    <KlyDashboardGrid Menu="true" Freshness="true">
-        <KlyDashboardStats Title="Key Metrics" Items="@_statItems" />
-        <KlyDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
-                          Format="DashboardFormatPreset.Percent" />
-        <KlyDashboardBars Title="Channels" Items="@_barItems"
-                         Format="DashboardFormatPreset.Compact" />
+@inject SalesService Sales
+
+<KlyDashboardPage Dashboard="_dashboard" Title="Sales" Description="Revenue and orders by region">
+    <KlyDashboardGrid Freshness="true">
+        <KlyDashboardStat Source="_summary" Label="Revenue" Span="4"
+                          Value="_summary.Data?.Revenue" Compare="_summary.Data?.PreviousRevenue"
+                          Format="DashboardFormatPreset.Compact" />
+        <KlyDashboardStat Source="_summary" Label="Orders" Span="4"
+                          Value="_summary.Data?.Orders" Format="DashboardFormatPreset.Integer" />
+        <KlyDashboardGauge Source="_summary" Title="Quota" Span="4" Value="84" Target="90"
+                           Format="DashboardFormatPreset.Percent" />
+        <KlyDashboardBars Source="_regions" Title="Revenue by region" Span="12"
+                          Items="_regions.Data?.Select(r => new DashboardBarItem(r.Region, r.Revenue)).ToList()"
+                          Format="DashboardFormatPreset.Compact" />
     </KlyDashboardGrid>
 </KlyDashboardPage>
+
+@code {
+    private readonly DashboardController _dashboard = new("sales");
+    private DashboardResource<Summary> _summary = default!;
+    private DashboardResource<IReadOnlyList<RegionSales>> _regions = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _summary = _dashboard.RegisterResource(
+            new DashboardResource<Summary>("summary", ct => Sales.GetSummaryAsync(null, ct)));
+        _regions = _dashboard.RegisterResource(
+            new DashboardResource<IReadOnlyList<RegionSales>>(
+                "regions", ct => Sales.GetRegionsAsync(null, ct), DashboardQueryStage.Background));
+
+        await _dashboard.RefreshAsync();
+    }
+}
 ```
+
+A block does not read the data of its `Source`: the source only drives the loading, error and empty states, and you pass the values through the block parameters.
 
 ## Documentation
 
-| Guide | Description |
+| | |
 | :--- | :--- |
-| [Online documentation](https://docs.klyroo.dev/dashboard) | Guides, live examples and API reference |
-| [Getting Started](./docs/getting-started.md) | Installation, DI registration, stylesheets, and first working example |
-| [Architecture](./docs/architecture.md) | Headless `.Core` vs UI split, NativeAOT guarantees, and platform matrix |
-| [API Reference](./docs/api-reference.md) | Exhaustive reference of every public class, enum, property, method, and Razor parameter |
-| [MAUI & NativeAOT](./docs/maui-and-aot.md) | `.NET MAUI Blazor Hybrid` (`iOS`, `Android`, `macOS`, `Windows`) and NativeAOT deployment |
-| [Recipes & Testing](./docs/recipes.md) | End-to-end production patterns and `xUnit` / `bUnit` testing recipes |
-| [AI Agent Skill](./skills/klyroo-dashboard/SKILL.md) | Machine-readable guidance for coding agents |
+| [Getting started](docs/getting-started.md) | Step-by-step first integration |
+| [Guides](docs/guides.md) | Task-oriented recipes |
+| [Concepts](docs/concepts.md) | How the library works |
+| [Platforms](docs/platforms.md) | Render modes, .NET MAUI, NativeAOT |
+| [API reference](docs/api-reference.md) | Every public type and member |
+| [FAQ](docs/faq.md) | Troubleshooting and limitations |
 
-## Key Public Types
+## Requirements
 
-| Type | Kind | Package | Summary |
-| :--- | :--- | :--- | :--- |
-| `DashboardResourceState` | `enum` | `Klyroo.Dashboard.Core` | Lifecycle state of a dashboard query or derived resource. |
-| `DashboardQueryStage` | `enum` | `Klyroo.Dashboard.Core` | Execution stage of a dashboard query. |
-| `DashboardBlockPhase` | `enum` | `Klyroo.Dashboard.Core` | Block rendering phase determined by `KlyDashboardCard`. |
-| `DashboardSkeletonKind` | `enum` | `Klyroo.Dashboard.Core` | Skeleton geometry kind rendered while a `KlyDashboardCard` is loading. |
-| `DashboardFormatPreset` | `enum` | `Klyroo.Dashboard.Core` | Preset number formats supported by `DashboardFormat`. |
-| `DashboardComparisonMode` | `enum` | `Klyroo.Dashboard.Core` | Comparison period mode for date ranges and KPI comparisons. |
-| `DashboardFilterKind` | `enum` | `Klyroo.Dashboard.Core` | Filter control kind in a `DashboardController`. |
-| `DashboardAlertSeverity` | `enum` | `Klyroo.Dashboard.Core` | Alert severity level for `KlyDashboardAlerts`. |
-| `IDashboardSource` | `interface` | `Klyroo.Dashboard.Core` | Common interface implemented by dashboard queries and derived resources. |
-| `DashboardResource<TData>` | `class` | `Klyroo.Dashboard.Core` | A staged, optionally gated asynchronous data resource managed by a `DashboardController`. |
-| `DashboardOption` | `record` | `Klyroo.Dashboard.Core` | An option item in a `DashboardFilterControl`. |
-| `DashboardFilterPreset` | `record` | `Klyroo.Dashboard.Core` | A preset value in a `DashboardFilterControl`. |
-| `DashboardFilterControl` | `class` | `Klyroo.Dashboard.Core` | Interactive filter control state managed by `DashboardController`. |
-| `DashboardViewMeta` | `class` | `Klyroo.Dashboard.Core` | Metadata for a named dashboard view tab. |
-| `DashboardController` | `class` | `Klyroo.Dashboard.Core` | Central controller for an analytical dashboard: coordinates filters, views, staged resources (`DashboardQueryStage.Essential`, `DashboardQueryStage.Background`, `DashboardQueryStage.Deferred`), refresh and auto-refresh state. |
-| `DashboardDataColumn` | `record` | `Klyroo.Dashboard.Core` | Tabular view and CSV export representation of a dashboard block. |
-| `DashboardDataTable` | `record` | `Klyroo.Dashboard.Core` | Tabular representation of a dashboard block used by "View as table" and "Download CSV". |
-| `DashboardFormat` | `class` | `Klyroo.Dashboard.Core` | Locale-aware number, delta, relative-time, comparison-range, and CSV formatting utilities for the Dashboard domain. |
+- .NET 10 SDK.
+- `Klyroo.Dashboard.Core` runs in any .NET 10 app (minimal APIs, workers, console apps, MAUI view models) and declares `IsTrimmable` and `IsAotCompatible`.
+- `Klyroo.Dashboard` needs a Blazor Web App or a .NET MAUI Blazor Hybrid app. It declares `IsTrimmable` but not `IsAotCompatible`, and declares the supported platforms `browser`, `ios`, `android`, `maccatalyst` and `windows`.
+- Static SSR renders the blocks, but tabs, filter pills, the refresh button and the table sort need an interactive render mode (Interactive Server, WebAssembly or Auto).
+- The block texts (Refresh, View as table, Retry and so on) are in English.
 
-## Razor Components
+## Klyroo ecosystem
 
-| Component | Package | Parameters | Source |
-| :--- | :--- | :--- | :--- |
-| `<KlyDashboardAlerts>` | `Klyroo.Dashboard` | 10 parameters | `src/Klyroo.Dashboard/KlyDashboardAlerts.razor` |
-| `<KlyDashboardBars>` | `Klyroo.Dashboard` | 13 parameters | `src/Klyroo.Dashboard/KlyDashboardBars.razor` |
-| `<KlyDashboardCard>` | `Klyroo.Dashboard` | 19 parameters | `src/Klyroo.Dashboard/KlyDashboardCard.razor` |
-| `<KlyDashboardChart>` | `Klyroo.Dashboard` | 15 parameters | `src/Klyroo.Dashboard/KlyDashboardChart.razor` |
-| `<KlyDashboardDetails>` | `Klyroo.Dashboard` | 8 parameters | `src/Klyroo.Dashboard/KlyDashboardDetails.razor` |
-| `<KlyDashboardFeed>` | `Klyroo.Dashboard` | 11 parameters | `src/Klyroo.Dashboard/KlyDashboardFeed.razor` |
-| `<KlyDashboardGauge>` | `Klyroo.Dashboard` | 14 parameters | `src/Klyroo.Dashboard/KlyDashboardGauge.razor` |
-| `<KlyDashboardGrid>` | `Klyroo.Dashboard` | 5 parameters | `src/Klyroo.Dashboard/KlyDashboardGrid.razor` |
-| `<KlyDashboardList>` | `Klyroo.Dashboard` | 10 parameters | `src/Klyroo.Dashboard/KlyDashboardList.razor` |
-| `<KlyDashboardPage>` | `Klyroo.Dashboard` | 9 parameters | `src/Klyroo.Dashboard/KlyDashboardPage.razor` |
-| `<KlyDashboardStat>` | `Klyroo.Dashboard` | 18 parameters | `src/Klyroo.Dashboard/KlyDashboardStat.razor` |
-| `<KlyDashboardStats>` | `Klyroo.Dashboard` | 9 parameters | `src/Klyroo.Dashboard/KlyDashboardStats.razor` |
-| `<KlyDashboardTable>` | `Klyroo.Dashboard` | 12 parameters | `src/Klyroo.Dashboard/KlyDashboardTable.razor` |
+Klyroo is a family of independent .NET libraries that compose. Each one has its own repository, versions and releases.
 
-## Building & Testing
-
-```bash
-dotnet build
-dotnet test
-dotnet pack -c Release
-```
+| Library | Description |
+| :--- | :--- |
+| [Klyroo.UI](https://github.com/klyroo/klyroo-ui) | Accessible Blazor and .NET MAUI Hybrid components styled with Tailwind CSS v4 |
+| [Klyroo.Query](https://github.com/klyroo/klyroo-query) | Typed query model, URL codecs and IQueryable / EF Core execution |
+| [Klyroo.Table](https://github.com/klyroo/klyroo-table) | Data lists and trees built on Klyroo.Query |
+| [Klyroo.Form](https://github.com/klyroo/klyroo-form) | Schema-driven forms, validation and wizards |
+| **[Klyroo.Dashboard](https://github.com/klyroo/klyroo-dashboard)** | Analytical dashboards with filters, comparisons and KPI blocks |
+| [Klyroo.Display](https://github.com/klyroo/klyroo-display) | Read-only display blocks, media players and file preview |
+| [Klyroo.Spreadsheet](https://github.com/klyroo/klyroo-spreadsheet) | CSV and TSV import with column mapping and validation |
+| [Klyroo.Agent](https://github.com/klyroo/klyroo-agent) | Bridge that lets AI agents read and act on a Blazor UI |
+| [Klyroo.Stack](https://github.com/klyroo/klyroo-stack) | Meta-package, MCP server and `dotnet new` templates |
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow (Conventional
-Commits, tests, documentation), follow the [Code of Conduct](./CODE_OF_CONDUCT.md), and report vulnerabilities
-privately as described in [SECURITY.md](./SECURITY.md).
-
-## Migrating from Lux
-
-This library was previously named `lux-dashboard`. [MIGRATION.md](./MIGRATION.md) lists every renamed package, namespace,
-component, CSS token and build setting.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and follow the
+[code of conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT — see [LICENSE](./LICENSE). Part of the **[Klyroo](../klyroo-stack/README.md)** ecosystem.
+[MIT](LICENSE)

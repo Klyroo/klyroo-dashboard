@@ -40,21 +40,36 @@
 </KlyDashboardCard>
 
 @code {
+    /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
+    /// <summary>The heading of the block.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
+    /// <summary>The current value.</summary>
     [Parameter] public double? Value { get; set; }
+    /// <summary>The value at which the gauge is empty. Defaults to 0.</summary>
     [Parameter] public double Min { get; set; }
+    /// <summary>The value at which the gauge is full. Defaults to 100.</summary>
     [Parameter] public double Max { get; set; } = 100;
+    /// <summary>A target shown as text under the gauge. It does not move a marker on the ring.</summary>
     [Parameter] public double? Target { get; set; }
+    /// <summary>How the value and the target are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    /// <summary>A line of text under the value, inside the ring.</summary>
     [Parameter] public string? Caption { get; set; }
+    /// <summary>Reserved. The gauge is always drawn as a ring; the value is only exposed as <c>data-variant</c>.</summary>
     [Parameter] public string Variant { get; set; } = "arc";
+    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 4.</summary>
     [Parameter] public int Span { get; set; } = 4;
+    /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
+    /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
+    /// <summary>The filled fraction of the ring, from 0 to 1: <c>(Value - Min) / (Max - Min)</c>, clamped. 0 when <see cref="Value"/> is <see langword="null"/> or <see cref="Max"/> is not above <see cref="Min"/>.</summary>
     public double Share
     {
         get

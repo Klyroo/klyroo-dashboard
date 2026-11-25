@@ -211,29 +211,49 @@
 
     [CascadingParameter] private KlyDashboardGrid? ParentGrid { get; set; }
 
+    /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
+    /// <summary>The heading of the block.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
+    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 12.</summary>
     [Parameter] public int Span { get; set; } = 12;
+    /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
+    /// <summary>Shows the empty state instead of the content once the source is ready.</summary>
     [Parameter] public bool IsEmpty { get; set; }
+    /// <summary>The title of the empty state. Defaults to <c>No data for this period</c>.</summary>
     [Parameter] public string? EmptyTitle { get; set; }
+    /// <summary>A line of text under the title of the empty state.</summary>
     [Parameter] public string? EmptyDescription { get; set; }
+    /// <summary>The shape of the loading skeleton. Only <c>Stat</c>, <c>Bars</c> and <c>Lines</c> have their own shape, the other kinds render three lines.</summary>
     [Parameter] public DashboardSkeletonKind Skeleton { get; set; } = DashboardSkeletonKind.Rows;
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
+    /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
+    /// <summary>Shows the View as table button in the menu. It needs <see cref="Tabulate"/>. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ViewAsTable { get; set; } = true;
+    /// <summary>Shows the Expand button in the menu, which enlarges the card over the page. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Expandable { get; set; } = true;
+    /// <summary>Returns the content of the block as a table. It enables the View as table and Download CSV buttons.</summary>
     [Parameter] public Func<DashboardDataTable>? Tabulate { get; set; }
+    /// <summary>Filters whose non-default selection is shown as removable chips under the header.</summary>
     [Parameter] public IReadOnlyList<DashboardFilterControl>? Filters { get; set; }
+    /// <summary>Receives the CSV text when the user clicks Download CSV. The card does not start a download: save or offer the text in your handler. Name the file with <see cref="DashboardFormat.ResolveFileName"/>.</summary>
     [Parameter] public EventCallback<string> OnCsvExported { get; set; }
+    /// <summary>Content placed in the header, before the menu buttons.</summary>
     [Parameter] public RenderFragment? HeaderRight { get; set; }
+    /// <summary>Content placed in the footer, before the freshness text.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>The content of the block, rendered once the source is ready and not empty.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private bool EffectiveMenu => Menu ?? ParentGrid?.Menu ?? false;
     private bool EffectiveFreshness => Freshness ?? ParentGrid?.Freshness ?? false;
 
+    /// <summary>The phase the card is in, derived from the state of <see cref="Source"/>: <c>Idle</c> and <c>Loading</c> show the skeleton, <c>Error</c> the message, otherwise <c>Empty</c> or <c>Content</c>. Without a source it is <c>Content</c>, or <c>Empty</c> when <see cref="IsEmpty"/> is set.</summary>
     public DashboardBlockPhase Phase
     {
         get

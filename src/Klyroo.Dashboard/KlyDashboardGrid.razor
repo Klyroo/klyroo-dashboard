@@ -8,10 +8,15 @@
 </div>
 
 @code {
+    /// <summary>Reserved. The grid is always 12 columns wide and this value is not read.</summary>
     [Parameter] public int Columns { get; set; } = 12;
+    /// <summary><c>cards</c> (the default) draws separate cards with a gap. <c>panels</c> joins the cards into one bordered panel with thin dividers.</summary>
     [Parameter] public string Variant { get; set; } = "cards";
+    /// <summary>The default of <c>Menu</c> for the blocks inside the grid. Defaults to <see langword="false"/>.</summary>
     [Parameter] public bool Menu { get; set; }
+    /// <summary>The default of <c>Freshness</c> for the blocks inside the grid. Defaults to <see langword="false"/>.</summary>
     [Parameter] public bool Freshness { get; set; }
+    /// <summary>The blocks of the grid. Each one sets its width with <c>Span</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private string RootClass

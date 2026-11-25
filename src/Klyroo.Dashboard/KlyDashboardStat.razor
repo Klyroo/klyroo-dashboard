@@ -69,23 +69,41 @@
 </KlyDashboardCard>
 
 @code {
+    /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
+    /// <summary>The name of the metric, shown as the card title. Required.</summary>
     [Parameter] public required string Label { get; set; }
+    /// <summary>The value, formatted with <see cref="Format"/>.</summary>
     [Parameter] public double? Value { get; set; }
+    /// <summary>Text shown instead of the formatted <see cref="Value"/>, for values that are not numbers.</summary>
     [Parameter] public string? TextValue { get; set; }
+    /// <summary>How <see cref="Value"/>, <see cref="Compare"/> and <see cref="Goal"/> are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    /// <summary>The change to display, in percent. It takes precedence over <see cref="Compare"/>.</summary>
     [Parameter] public double? Delta { get; set; }
+    /// <summary>How the delta is formatted. Defaults to <c>Delta</c>, or to <c>Points</c> or <c>Signed</c> when <see cref="CompareMode"/> is <c>difference</c>.</summary>
     [Parameter] public DashboardFormatPreset? DeltaFormat { get; set; }
+    /// <summary>When set, a negative delta is shown as good news (for churn, cost or latency).</summary>
     [Parameter] public bool InvertDelta { get; set; }
+    /// <summary>The previous value. When <see cref="Delta"/> is not set, the delta is computed from it, and the default caption names it.</summary>
     [Parameter] public double? Compare { get; set; }
+    /// <summary><c>change</c> (the default) computes the percent change from <see cref="Compare"/> and shows nothing when <see cref="Compare"/> is zero. <c>difference</c> uses the raw difference, multiplied by 100 for the <c>Ratio</c> format.</summary>
     [Parameter] public string CompareMode { get; set; } = "change";
+    /// <summary>A line of text under the value. Replaces the default <c>vs ... previous period</c> caption.</summary>
     [Parameter] public string? Caption { get; set; }
+    /// <summary>Points of a sparkline. It needs at least two values.</summary>
     [Parameter] public IReadOnlyList<double>? Trend { get; set; }
+    /// <summary>A target that adds a progress bar and a percentage. It must be greater than 0.</summary>
     [Parameter] public double? Goal { get; set; }
+    /// <summary>A status pill in the header.</summary>
     [Parameter] public DashboardStatus? Status { get; set; }
+    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 4.</summary>
     [Parameter] public int Span { get; set; } = 4;
+    /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
+    /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
     private double? EffectiveDelta

@@ -67,20 +67,35 @@
 </KlyDashboardCard>
 
 @code {
+    /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
+    /// <summary>The heading of the block.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
+    /// <summary>The chart type: <c>bar</c> (the default), <c>line</c> or <c>donut</c>. Every type is currently drawn as vertical bars; the value only picks the loading skeleton.</summary>
     [Parameter] public string Type { get; set; } = "bar";
+    /// <summary>The labels of the horizontal axis, one per bar.</summary>
     [Parameter] public IReadOnlyList<string>? Categories { get; set; }
+    /// <summary>The data series. Only the first series is drawn; the others appear in the legend, in the totals and in the table view.</summary>
     [Parameter] public IReadOnlyList<DashboardChartSeries>? Series { get; set; }
+    /// <summary>How the values of labels, tooltips, totals and the table view are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    /// <summary>The height of the plot area in pixels. Defaults to 220.</summary>
     [Parameter] public int Height { get; set; } = 220;
+    /// <summary>Shows the series legend. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowLegend { get; set; } = true;
+    /// <summary>Shows the formatted value above each bar.</summary>
     [Parameter] public bool ShowLabels { get; set; }
+    /// <summary><c>average</c> shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty.</summary>
     [Parameter] public string? Totals { get; set; }
+    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 8.</summary>
     [Parameter] public int Span { get; set; } = 8;
+    /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
+    /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
     private DashboardDataTable BuildDataTable()

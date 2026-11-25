@@ -174,14 +174,23 @@
 </div>
 
 @code {
+    /// <summary>The controller shown by the page: it supplies the refresh button, the view tabs and the filter pills, and the page re-renders when the controller changes. Without it only the title and the body are rendered.</summary>
     [Parameter] public DashboardController? Dashboard { get; set; }
+    /// <summary>The page heading.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Text under the heading. When empty, the page shows an <c>Updated</c> line from <c>Dashboard.UpdatedAt</c> once data has loaded.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>Shows the refresh button, which calls <see cref="DashboardController.RefreshAsync"/>. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowRefresh { get; set; } = true;
+    /// <summary>Shows the view tabs when the controller has at least two enabled views. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowTabs { get; set; } = true;
+    /// <summary>Shows a pill for each enabled filter that is not headless. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowFilters { get; set; } = true;
+    /// <summary>Keeps the toolbar of tabs and filters at the top of the page while the body scrolls. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Sticky { get; set; } = true;
+    /// <summary>Content placed before the refresh button, for example your own buttons.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>The body of the page, usually a <c>KlyDashboardGrid</c>. The page only draws the tabs: render the content of the current view yourself from <c>DashboardController.CurrentView</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private DashboardController? _subscribed;
@@ -222,6 +231,7 @@
         }
     }
 
+    /// <summary>Unsubscribes the page from the controller.</summary>
     public void Dispose()
     {
         if (_subscribed is not null)

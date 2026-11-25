@@ -67,17 +67,29 @@
 </KlyDashboardCard>
 
 @code {
+    /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
+    /// <summary>The heading of the block.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
+    /// <summary>The column definitions, in display order.</summary>
     [Parameter] public IReadOnlyList<DashboardTableColumn>? Columns { get; set; }
+    /// <summary>The rows: one dictionary per row, holding the raw value of each column by key. Missing and <see langword="null"/> cells show the missing-value placeholder.</summary>
     [Parameter] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Rows { get; set; }
+    /// <summary>The active sort. The table updates it itself when a header is clicked, and <see cref="SortChanged"/> reports the change. Numeric columns sort descending first, then ascending, then unsorted. Empty cells always come last.</summary>
     [Parameter] public DashboardTableSort? Sort { get; set; }
+    /// <summary>Raised when the sort changes, with <see langword="null"/> when the sort is cleared.</summary>
     [Parameter] public EventCallback<DashboardTableSort?> SortChanged { get; set; }
+    /// <summary>The maximum number of rows shown, applied after sorting.</summary>
     [Parameter] public int? Limit { get; set; }
+    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 12.</summary>
     [Parameter] public int Span { get; set; } = 12;
+    /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
+    /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
     private IReadOnlyList<IReadOnlyDictionary<string, object?>> SortedRows
