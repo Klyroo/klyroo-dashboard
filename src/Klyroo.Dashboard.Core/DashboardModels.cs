@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Lux.Dashboard;
+namespace Klyroo.Dashboard;
 
 /// <summary>Lifecycle state of a dashboard query or derived resource.</summary>
 public enum DashboardResourceState
@@ -21,7 +21,7 @@ public enum DashboardQueryStage
     Deferred,
 }
 
-/// <summary>Block rendering phase determined by <c>LxDashboardCard</c>.</summary>
+/// <summary>Block rendering phase determined by <c>KlyDashboardCard</c>.</summary>
 public enum DashboardBlockPhase
 {
     Idle,
@@ -31,7 +31,7 @@ public enum DashboardBlockPhase
     Content,
 }
 
-/// <summary>Skeleton geometry kind rendered while a <c>LxDashboardCard</c> is loading.</summary>
+/// <summary>Skeleton geometry kind rendered while a <c>KlyDashboardCard</c> is loading.</summary>
 public enum DashboardSkeletonKind
 {
     Rows,
@@ -86,7 +86,7 @@ public enum DashboardFilterKind
     Custom,
 }
 
-/// <summary>Alert severity level for <c>LxDashboardAlerts</c>.</summary>
+/// <summary>Alert severity level for <c>KlyDashboardAlerts</c>.</summary>
 public enum DashboardAlertSeverity
 {
     Error,
@@ -674,10 +674,10 @@ public static class DashboardFormat
         $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
 }
 
-/// <summary>Status pill shown on a <c>LxDashboardStat</c> or <c>DashboardStatsItem</c>.</summary>
+/// <summary>Status pill shown on a <c>KlyDashboardStat</c> or <c>DashboardStatsItem</c>.</summary>
 public sealed record DashboardStatus(string Label, string? Color = null);
 
-/// <summary>One metric entry inside <c>LxDashboardStats</c>.</summary>
+/// <summary>One metric entry inside <c>KlyDashboardStats</c>.</summary>
 public sealed record DashboardStatsItem(
     string Key,
     string Label,
@@ -689,7 +689,7 @@ public sealed record DashboardStatsItem(
     double? Progress = null,
     DashboardStatus? Status = null);
 
-/// <summary>One definition row inside <c>LxDashboardDetails</c>.</summary>
+/// <summary>One definition row inside <c>KlyDashboardDetails</c>.</summary>
 public sealed record DashboardDetailsItem(
     string Key,
     string Label,
@@ -701,7 +701,7 @@ public sealed record DashboardDetailsItem(
     bool FullSpan = false,
     bool Hidden = false);
 
-/// <summary>One horizontal bar entry in <c>LxDashboardBars</c>.</summary>
+/// <summary>One horizontal bar entry in <c>KlyDashboardBars</c>.</summary>
 public sealed record DashboardBarItem(
     string Label,
     double Value,
@@ -709,7 +709,7 @@ public sealed record DashboardBarItem(
     string? Meta = null,
     bool Selected = false);
 
-/// <summary>One ranked row in <c>LxDashboardList</c>.</summary>
+/// <summary>One ranked row in <c>KlyDashboardList</c>.</summary>
 public sealed record DashboardListItem(
     string Label,
     string? Description = null,
@@ -720,7 +720,7 @@ public sealed record DashboardListItem(
     string? Href = null,
     bool Selected = false);
 
-/// <summary>Column definition for <c>LxDashboardTable</c>.</summary>
+/// <summary>Column definition for <c>KlyDashboardTable</c>.</summary>
 public sealed record DashboardTableColumn(
     string Key,
     string Label,
@@ -729,10 +729,10 @@ public sealed record DashboardTableColumn(
     bool InvertDelta = false,
     bool Sortable = true);
 
-/// <summary>Active sort state of <c>LxDashboardTable</c>.</summary>
+/// <summary>Active sort state of <c>KlyDashboardTable</c>.</summary>
 public sealed record DashboardTableSort(string Key, bool Descending);
 
-/// <summary>One alert row in <c>LxDashboardAlerts</c>.</summary>
+/// <summary>One alert row in <c>KlyDashboardAlerts</c>.</summary>
 public sealed record DashboardAlertItem(
     DashboardAlertSeverity Severity,
     string Label,
@@ -741,14 +741,14 @@ public sealed record DashboardAlertItem(
     string? ActionLabel = null,
     string? ActionHref = null);
 
-/// <summary>One timeline activity event in <c>LxDashboardFeed</c>.</summary>
+/// <summary>One timeline activity event in <c>KlyDashboardFeed</c>.</summary>
 public sealed record DashboardFeedItem(
     string Label,
     DateTimeOffset Time,
     string? Description = null,
     string? AvatarText = null);
 
-/// <summary>One series definition for <c>LxDashboardChart</c>.</summary>
+/// <summary>One series definition for <c>KlyDashboardChart</c>.</summary>
 public sealed record DashboardChartSeries(
     string Key,
     string Label,

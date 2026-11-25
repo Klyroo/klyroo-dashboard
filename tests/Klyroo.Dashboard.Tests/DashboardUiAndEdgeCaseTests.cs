@@ -1,16 +1,16 @@
 using System.Globalization;
 using Bunit;
-using Lux.Dashboard;
+using Klyroo.Dashboard;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Lux.Dashboard.Tests;
+namespace Klyroo.Dashboard.Tests;
 
 public sealed class DashboardUiAndEdgeCaseTests : BunitContext
 {
     public DashboardUiAndEdgeCaseTests()
     {
-        Services.AddLuxDashboard();
+        Services.AddKlyrooDashboard();
     }
 
     [Theory]
@@ -122,13 +122,13 @@ public sealed class DashboardUiAndEdgeCaseTests : BunitContext
     }
 
     [Fact]
-    public void LxDashboardPage_switches_views_via_tab_clicks()
+    public void KlyDashboardPage_switches_views_via_tab_clicks()
     {
         var ctrl = new DashboardController("tabs");
         ctrl.AddView("overview", "Overview");
         ctrl.AddView("retention", "Retention", badge: "New");
 
-        var cut = Render<LxDashboardPage>(p => p
+        var cut = Render<KlyDashboardPage>(p => p
             .Add(x => x.Dashboard, ctrl)
             .Add(x => x.Title, "Growth"));
 
@@ -141,9 +141,9 @@ public sealed class DashboardUiAndEdgeCaseTests : BunitContext
     }
 
     [Fact]
-    public void LxDashboardList_LxDashboardDetails_and_LxDashboardStat_negative_delta_render_properly()
+    public void KlyDashboardList_LxDashboardDetails_and_LxDashboardStat_negative_delta_render_properly()
     {
-        var list = Render<LxDashboardList>(p => p
+        var list = Render<KlyDashboardList>(p => p
             .Add(x => x.Title, "Top Accounts")
             .Add(x => x.Limit, 2)
             .Add(x => x.Format, DashboardFormatPreset.Compact)
@@ -156,7 +156,7 @@ public sealed class DashboardUiAndEdgeCaseTests : BunitContext
         Assert.Contains("Beta", list.Markup);
         Assert.DoesNotContain("Gamma", list.Markup);
 
-        var details = Render<LxDashboardDetails>(p => p
+        var details = Render<KlyDashboardDetails>(p => p
             .Add(x => x.Title, "Cluster Metadata")
             .Add(x => x.Items, [
                 new DashboardDetailsItem("region", "Region", "eu-west-1"),
@@ -165,7 +165,7 @@ public sealed class DashboardUiAndEdgeCaseTests : BunitContext
         Assert.Contains("eu-west-1", details.Markup);
         Assert.Contains("0.1.0-preview.1", details.Markup);
 
-        var stat = Render<LxDashboardStat>(p => p
+        var stat = Render<KlyDashboardStat>(p => p
             .Add(x => x.Label, "Churn")
             .Add(x => x.Value, 80)
             .Add(x => x.Compare, 100));

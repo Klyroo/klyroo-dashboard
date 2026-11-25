@@ -1,4 +1,4 @@
-# Recipes & Testing — Lux.Dashboard
+# Recipes & Testing — Klyroo.Dashboard
 
 ## Recipe 1: Leap-Year Comparison Ranges & UTF-8 BOM CSV Export
 
@@ -9,7 +9,7 @@ var csv = DashboardFormat.ExportCsv(table, CultureInfo.InvariantCulture);
 
 ## Recipe 2: Headless Unit Testing (`xUnit`)
 
-Test all business logic in `Lux.Dashboard.Core` without spinning up a browser or Blazor renderer:
+Test all business logic in `Klyroo.Dashboard.Core` without spinning up a browser or Blazor renderer:
 
 ```csharp
 using Xunit;
@@ -19,7 +19,7 @@ public sealed class DashboardUnitTests
     [Fact]
     public void Headless_core_runs_without_ui_host()
     {
-        // Arrange & Act using Lux.Dashboard.Core directly
+        // Arrange & Act using Klyroo.Dashboard.Core directly
         // Assert deterministic outputs with zero JSInterop setup
     }
 }
@@ -36,9 +36,9 @@ public sealed class DashboardComponentTests : BunitContext
 {
     public DashboardComponentTests()
     {
-        Services.AddLuxDashboard();
+        Services.AddKlyrooDashboard();
     }
 }
 ```
 
-> **Tip**: Always register LuxStack services on `Services` **before** calling `SetRendererInfo(...)` in bUnit tests.
+> **Tip**: Always register Klyroo services on `Services` **before** calling `SetRendererInfo(...)` in bUnit tests.

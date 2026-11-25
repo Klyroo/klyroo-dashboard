@@ -1,22 +1,22 @@
-@namespace Lux.Dashboard
-@inherits LxComponentBase
+@namespace Klyroo.Dashboard
+@inherits KlyComponentBase
 @implements IDisposable
 
 <div class="@RootClass" data-slot="dashboard-page" @attributes="AdditionalAttributes">
     @* Page header *@
-    <header class="flex flex-wrap items-start justify-between gap-4 border-b border-(--lux-border) bg-(--lux-bg) px-4 py-4 lg:px-7" data-slot="dashboard-header">
+    <header class="flex flex-wrap items-start justify-between gap-4 border-b border-(--klyroo-border) bg-(--klyroo-bg) px-4 py-4 lg:px-7" data-slot="dashboard-header">
         <div class="flex min-w-0 flex-col gap-1">
             @if (!string.IsNullOrEmpty(Title))
             {
-                <h1 class="m-0 truncate text-xl font-bold text-(--lux-text-highlighted)" data-slot="dashboard-title">@Title</h1>
+                <h1 class="m-0 truncate text-xl font-bold text-(--klyroo-text-highlighted)" data-slot="dashboard-title">@Title</h1>
             }
             @if (!string.IsNullOrEmpty(Description))
             {
-                <p class="m-0 text-xs text-(--lux-text-muted)" data-slot="dashboard-description">@Description</p>
+                <p class="m-0 text-xs text-(--klyroo-text-muted)" data-slot="dashboard-description">@Description</p>
             }
             else if (Dashboard?.UpdatedAt is { } updatedAt)
             {
-                <p class="m-0 text-xs text-(--lux-text-muted)" data-slot="dashboard-freshness">
+                <p class="m-0 text-xs text-(--klyroo-text-muted)" data-slot="dashboard-freshness">
                     Updated @DashboardFormat.FormatRelativeTime(updatedAt)
                 </p>
             }
@@ -30,7 +30,7 @@
             @if (ShowRefresh && Dashboard is not null)
             {
                 <button type="button"
-                        class="inline-flex h-8 items-center gap-1.5 rounded-(--lux-radius) border border-(--lux-border) bg-(--lux-bg) px-3 text-xs font-medium text-(--lux-text) hover:bg-(--lux-bg-muted) disabled:opacity-50"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg) px-3 text-xs font-medium text-(--klyroo-text) hover:bg-(--klyroo-bg-muted) disabled:opacity-50"
                         disabled="@Dashboard.Refreshing"
                         aria-label="Refresh"
                         data-slot="dashboard-refresh"
@@ -44,16 +44,16 @@
     @* Sticky Views + Filter bar *@
     @if (Dashboard is not null && ((ShowTabs && Dashboard.Views.Count >= 2) || (ShowFilters && VisibleControls.Count > 0)))
     {
-        <div class="@(Sticky ? "sticky top-0 z-20" : "") flex flex-col gap-2 border-b border-(--lux-border) bg-(--lux-bg)/95 px-4 py-2.5 backdrop-blur lg:px-7"
+        <div class="@(Sticky ? "sticky top-0 z-20" : "") flex flex-col gap-2 border-b border-(--klyroo-border) bg-(--klyroo-bg)/95 px-4 py-2.5 backdrop-blur lg:px-7"
              data-slot="dashboard-toolbar">
             @if (ShowTabs && Dashboard.Views.Count >= 2)
             {
-                <nav class="flex items-center gap-2 overflow-x-auto border-b border-(--lux-border) pb-2" aria-label="Views" data-slot="dashboard-view-tabs">
+                <nav class="flex items-center gap-2 overflow-x-auto border-b border-(--klyroo-border) pb-2" aria-label="Views" data-slot="dashboard-view-tabs">
                     @foreach (var view in Dashboard.Views)
                     {
                         var isActive = string.Equals(Dashboard.CurrentView, view.Key, StringComparison.Ordinal);
                         <button type="button"
-                                class="inline-flex items-center gap-1.5 rounded-(--lux-radius) px-3 py-1.5 text-xs font-semibold transition-colors @(isActive ? "bg-(--lux-bg-muted) text-(--lux-text-highlighted)" : "text-(--lux-text-muted) hover:text-(--lux-text)")"
+                                class="inline-flex items-center gap-1.5 rounded-(--klyroo-radius) px-3 py-1.5 text-xs font-semibold transition-colors @(isActive ? "bg-(--klyroo-bg-muted) text-(--klyroo-text-highlighted)" : "text-(--klyroo-text-muted) hover:text-(--klyroo-text)")"
                                 aria-current="@(isActive ? "page" : null)"
                                 data-slot="dashboard-view-tab"
                                 data-view="@view.Key"
@@ -61,7 +61,7 @@
                             <span>@view.Label</span>
                             @if (!string.IsNullOrEmpty(view.Badge) && view.Badge != "0")
                             {
-                                <span class="rounded-full bg-(--lux-primary)/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-(--lux-primary-text)"
+                                <span class="rounded-full bg-(--klyroo-primary)/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-(--klyroo-primary-text)"
                                       data-slot="dashboard-view-badge">@view.Badge</span>
                             }
                         </button>
@@ -76,17 +76,17 @@
                     {
                         <div class="relative inline-flex items-center" data-slot="dashboard-filter" data-key="@filter.Key" data-active="@(filter.Changed ? "true" : null)">
                             <button type="button"
-                                    class="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium @(filter.Changed ? "border-(--lux-primary-text) bg-(--lux-primary)/10 text-(--lux-text-highlighted)" : "border-(--lux-border) bg-(--lux-bg) text-(--lux-text) hover:bg-(--lux-bg-muted)")"
+                                    class="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium @(filter.Changed ? "border-(--klyroo-primary-text) bg-(--klyroo-primary)/10 text-(--klyroo-text-highlighted)" : "border-(--klyroo-border) bg-(--klyroo-bg) text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)")"
                                     aria-expanded="@(filter.Open ? "true" : "false")"
                                     data-slot="dashboard-filter-pill"
                                     @onclick="@(() => ToggleFilterMenu(filter))">
-                                <span class="text-(--lux-text-muted)">@filter.Label:</span>
+                                <span class="text-(--klyroo-text-muted)">@filter.Label:</span>
                                 <span class="font-semibold" data-slot="dashboard-filter-display">@filter.Display</span>
                             </button>
                             @if (filter.Changed)
                             {
                                 <button type="button"
-                                        class="ms-1 inline-flex size-6 items-center justify-center rounded-full text-xs text-(--lux-text-muted) hover:bg-(--lux-bg-muted) hover:text-(--lux-text)"
+                                        class="ms-1 inline-flex size-6 items-center justify-center rounded-full text-xs text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text)"
                                         aria-label="@($"Clear {filter.Label}")"
                                         data-slot="dashboard-filter-clear"
                                         @onclick="filter.Reset">
@@ -96,7 +96,7 @@
 
                             @if (filter.Open && (filter.Items.Count > 0 || filter.Presets.Count > 0))
                             {
-                                <div class="absolute start-0 top-full z-30 mt-1.5 flex w-60 flex-col gap-1.5 rounded-(--lux-radius-md) border border-(--lux-border) bg-(--lux-bg-elevated) p-2 shadow-lg"
+                                <div class="absolute start-0 top-full z-30 mt-1.5 flex w-60 flex-col gap-1.5 rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg-elevated) p-2 shadow-lg"
                                      data-slot="dashboard-filter-menu">
                                     @if (filter.Searchable)
                                     {
@@ -104,17 +104,17 @@
                                                value="@filter.Search"
                                                placeholder="Search…"
                                                aria-label="@($"Search {filter.Label}")"
-                                               class="h-7 w-full rounded-(--lux-radius) border border-(--lux-border) bg-(--lux-bg) px-2 text-xs text-(--lux-text)"
+                                               class="h-7 w-full rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg) px-2 text-xs text-(--klyroo-text)"
                                                data-slot="dashboard-filter-search"
                                                @oninput="@(e => filter.Search = e.Value?.ToString() ?? "")" />
                                     }
                                     @if (filter.Presets.Count > 0)
                                     {
-                                        <div class="flex flex-wrap gap-1 border-b border-(--lux-border) pb-1.5" data-slot="dashboard-filter-presets">
+                                        <div class="flex flex-wrap gap-1 border-b border-(--klyroo-border) pb-1.5" data-slot="dashboard-filter-presets">
                                             @foreach (var preset in filter.Presets)
                                             {
                                                 <button type="button"
-                                                        class="rounded-(--lux-radius) bg-(--lux-bg-muted) px-2 py-0.5 text-[11px] font-medium text-(--lux-text) hover:text-(--lux-text-highlighted)"
+                                                        class="rounded-(--klyroo-radius) bg-(--klyroo-bg-muted) px-2 py-0.5 text-[11px] font-medium text-(--klyroo-text) hover:text-(--klyroo-text-highlighted)"
                                                         data-slot="dashboard-filter-preset"
                                                         @onclick="@(() => filter.ApplyPreset(preset))">
                                                     @preset.Label
@@ -134,7 +134,7 @@
                                                     role="option"
                                                     disabled="@(opt.Disabled || maxReached)"
                                                     aria-selected="@(selected ? "true" : "false")"
-                                                    class="flex w-full items-center justify-between gap-2 rounded-(--lux-radius) px-2 py-1.5 text-start text-xs @(selected ? "bg-(--lux-bg-muted) font-semibold text-(--lux-text-highlighted)" : "text-(--lux-text) hover:bg-(--lux-bg-muted)") disabled:opacity-40"
+                                                    class="flex w-full items-center justify-between gap-2 rounded-(--klyroo-radius) px-2 py-1.5 text-start text-xs @(selected ? "bg-(--klyroo-bg-muted) font-semibold text-(--klyroo-text-highlighted)" : "text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)") disabled:opacity-40"
                                                     data-slot="dashboard-filter-option"
                                                     data-value="@opt.Value"
                                                     @onclick="@(() => filter.Toggle(opt.Value))">
@@ -154,7 +154,7 @@
                     @if (Dashboard.Filtered)
                     {
                         <button type="button"
-                                class="inline-flex h-8 items-center rounded-(--lux-radius) px-2.5 text-xs font-medium text-(--lux-primary-text) hover:underline"
+                                class="inline-flex h-8 items-center rounded-(--klyroo-radius) px-2.5 text-xs font-medium text-(--klyroo-primary-text) hover:underline"
                                 data-slot="dashboard-filters-reset"
                                 @onclick="Dashboard.ResetFilters">
                             Reset
@@ -190,7 +190,7 @@
         Dashboard?.Controls.Where(c => c.Enabled && !c.Headless).ToList() ?? [];
 
     private string RootClass =>
-        $"flex min-h-0 w-full flex-col bg-(--lux-bg-muted) text-(--lux-text) {Class}".Trim();
+        $"flex min-h-0 w-full flex-col bg-(--klyroo-bg-muted) text-(--klyroo-text) {Class}".Trim();
 
     protected override void OnParametersSet()
     {

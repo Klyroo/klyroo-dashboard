@@ -1,1 +1,1 @@
-# LuxStack Analytics Dashboard Template
+# Klyroo Analytics Dashboard Template

@@ -1,8 +1,8 @@
-@namespace Lux.Dashboard
+@namespace Klyroo.Dashboard
 @using System.Globalization
-@inherits LxComponentBase
+@inherits KlyComponentBase
 
-<LxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+<KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Items is not { Count: > 0 })"
                  Skeleton="@(IsFunnel ? DashboardSkeletonKind.Funnel : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
@@ -26,25 +26,25 @@
                 <div class="flex flex-col gap-1" data-slot="dashboard-bar-row" data-selected="@(item.Selected ? "true" : null)">
                     <div class="flex items-baseline justify-between gap-2 text-xs">
                         <div class="flex min-w-0 items-center gap-1.5">
-                            <span class="truncate font-medium text-(--lux-text-highlighted)">@item.Label</span>
+                            <span class="truncate font-medium text-(--klyroo-text-highlighted)">@item.Label</span>
                             @if (!string.IsNullOrEmpty(item.Tag))
                             {
-                                <span class="rounded-(--lux-radius) bg-(--lux-bg-muted) px-1.5 py-0.5 font-mono text-[10px] text-(--lux-text-muted)"
+                                <span class="rounded-(--klyroo-radius) bg-(--klyroo-bg-muted) px-1.5 py-0.5 font-mono text-[10px] text-(--klyroo-text-muted)"
                                       data-slot="dashboard-bar-tag">@item.Tag</span>
                             }
                         </div>
                         <div class="flex shrink-0 items-baseline gap-2 tabular-nums">
                             @if (funnelNote is not null)
                             {
-                                <span class="text-[11px] text-(--lux-text-muted)" data-slot="dashboard-funnel-note">@funnelNote</span>
+                                <span class="text-[11px] text-(--klyroo-text-muted)" data-slot="dashboard-funnel-note">@funnelNote</span>
                             }
-                            <span class="font-semibold text-(--lux-text-highlighted)" data-slot="dashboard-bar-value">
+                            <span class="font-semibold text-(--klyroo-text-highlighted)" data-slot="dashboard-bar-value">
                                 @(item.Meta ?? DashboardFormat.Format(item.Value, Format, FormatCulture))
                             </span>
                         </div>
                     </div>
-                    <div class="h-2 w-full overflow-hidden rounded-full bg-(--lux-bg-muted)">
-                        <div class="h-full rounded-full @(Emphasis == "first" && idx > 0 ? "bg-(--lux-text-muted)/50" : "bg-(--lux-primary)")"
+                    <div class="h-2 w-full overflow-hidden rounded-full bg-(--klyroo-bg-muted)">
+                        <div class="h-full rounded-full @(Emphasis == "first" && idx > 0 ? "bg-(--klyroo-text-muted)/50" : "bg-(--klyroo-primary)")"
                              style="@($"width:{widthPct}%")"
                              data-slot="dashboard-bar-fill"></div>
                     </div>
@@ -52,7 +52,7 @@
             }
         }
     </div>
-</LxDashboardCard>
+</KlyDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }

@@ -1,4 +1,4 @@
-# Getting Started with Lux.Dashboard
+# Getting Started with Klyroo.Dashboard
 
 Analytical dashboard orchestrator with 3-wave staged query loading (Essential -> Background -> Deferred), reactive global filter toolbar and views, leap-year-safe comparison date ranges, RFC 4180 UTF-8 BOM CSV export, and 13 ready-to-use KPI & visualization blocks.
 
@@ -6,20 +6,20 @@ Analytical dashboard orchestrator with 3-wave staged query loading (Essential ->
 
 | Use Case | Package to Install |
 | :--- | :--- |
-| Headless C#, Minimal APIs, Workers, CLI, or native C# .NET MAUI ViewModels | `Lux.Dashboard.Core` |
-| Blazor Web App (Server, WebAssembly, Auto, Static SSR) or `.NET MAUI Blazor Hybrid` | `Lux.Dashboard` |
+| Headless C#, Minimal APIs, Workers, CLI, or native C# .NET MAUI ViewModels | `Klyroo.Dashboard.Core` |
+| Blazor Web App (Server, WebAssembly, Auto, Static SSR) or `.NET MAUI Blazor Hybrid` | `Klyroo.Dashboard` |
 
 ```bash
-dotnet add package Lux.Dashboard.Core
-dotnet add package Lux.Dashboard
+dotnet add package Klyroo.Dashboard.Core
+dotnet add package Klyroo.Dashboard
 ```
 
 ## 2. Register Services
 
-Call `builder.Services.AddLuxDashboard();` in `Program.cs` (both Server and Client projects when using Blazor Interactive Auto) or `MauiProgram.cs` (after `AddMauiBlazorWebView()`):
+Call `builder.Services.AddKlyrooDashboard();` in `Program.cs` (both Server and Client projects when using Blazor Interactive Auto) or `MauiProgram.cs` (after `AddMauiBlazorWebView()`):
 
 ```csharp
-builder.Services.AddLuxDashboard();
+builder.Services.AddKlyrooDashboard();
 ```
 
 ## 3. Add Namespace Imports
@@ -27,17 +27,17 @@ builder.Services.AddLuxDashboard();
 In `_Imports.razor`:
 
 ```razor
-@using Lux.UI
-@using Lux.Dashboard
+@using Klyroo.UI
+@using Klyroo.Dashboard
 
 ```
 
 ## 4. First Example
 
-### Headless C# (`Lux.Dashboard.Core`)
+### Headless C# (`Klyroo.Dashboard.Core`)
 
 ```csharp
-using Lux.Dashboard;
+using Klyroo.Dashboard;
 
 var controller = new DashboardController("analytics");
 controller.AddView("overview", "Overview", badge: "3");
@@ -52,18 +52,18 @@ var chart = controller.RegisterResource(new DashboardResource<double[]>(
 await controller.RefreshAsync(); // Runs Essential -> Background
 ```
 
-### Blazor / MAUI Hybrid (`Lux.Dashboard`)
+### Blazor / MAUI Hybrid (`Klyroo.Dashboard`)
 
 ```razor
-<LxDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
-    <LxDashboardGrid Menu="true" Freshness="true">
-        <LxDashboardStats Title="Key Metrics" Items="@_statItems" />
-        <LxDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
+<KlyDashboardPage Dashboard="@_dashboard" Title="Revenue Analytics">
+    <KlyDashboardGrid Menu="true" Freshness="true">
+        <KlyDashboardStats Title="Key Metrics" Items="@_statItems" />
+        <KlyDashboardGauge Title="ARR Goal" Value="84" Max="100" Target="90"
                           Format="DashboardFormatPreset.Percent" />
-        <LxDashboardBars Title="Channels" Items="@_barItems"
+        <KlyDashboardBars Title="Channels" Items="@_barItems"
                          Format="DashboardFormatPreset.Compact" />
-    </LxDashboardGrid>
-</LxDashboardPage>
+    </KlyDashboardGrid>
+</KlyDashboardPage>
 ```
 
 ## Next Steps

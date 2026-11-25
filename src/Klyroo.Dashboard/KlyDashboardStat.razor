@@ -1,19 +1,19 @@
-@namespace Lux.Dashboard
+@namespace Klyroo.Dashboard
 @using System.Globalization
-@inherits LxComponentBase
+@inherits KlyComponentBase
 
-<LxDashboardCard Source="@Source" Title="@Label" Span="@Span" Card="@Card" Skeleton="DashboardSkeletonKind.Stat"
+<KlyDashboardCard Source="@Source" Title="@Label" Span="@Span" Card="@Card" Skeleton="DashboardSkeletonKind.Stat"
                  Menu="@Menu" Freshness="@Freshness" Expandable="false" ViewAsTable="false" Class="@Class">
     <HeaderRight>
         @if (Status is not null)
         {
-            <LxBadge Label="@Status.Label" Color="@(Status.Color is not null ? new LxColor(Status.Color) : LxColor.Neutral)" Variant="LxVariant.Subtle" Size="LxSize.Sm" data-slot="stat-status" />
+            <KlyBadge Label="@Status.Label" Color="@(Status.Color is not null ? new KlyColor(Status.Color) : KlyColor.Neutral)" Variant="KlyVariant.Subtle" Size="KlySize.Sm" data-slot="stat-status" />
         }
     </HeaderRight>
     <ChildContent>
         <div class="flex flex-col gap-2" data-slot="dashboard-stat">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <span class="text-2xl font-bold tabular-nums text-(--lux-text-highlighted)" data-slot="dashboard-stat-value">
+                <span class="text-2xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="dashboard-stat-value">
                     @(TextValue ?? DashboardFormat.Format(Value, Format, FormatCulture))
                 </span>
 
@@ -22,10 +22,10 @@
                     var isPositive = delta > 0;
                     var isGood = InvertDelta ? delta < 0 : delta > 0;
                     var toneClass = Math.Abs(delta) < 0.0001
-                        ? "bg-(--lux-bg-muted) text-(--lux-text-muted)"
+                        ? "bg-(--klyroo-bg-muted) text-(--klyroo-text-muted)"
                         : isGood
-                            ? "bg-(--lux-success)/15 text-(--lux-success-text)"
-                            : "bg-(--lux-error)/15 text-(--lux-error-text)";
+                            ? "bg-(--klyroo-success)/15 text-(--klyroo-success-text)"
+                            : "bg-(--klyroo-error)/15 text-(--klyroo-error-text)";
                     <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums @toneClass"
                           data-slot="dashboard-stat-delta" data-good="@(isGood ? "true" : "false")">
                         <span aria-hidden="true">@(isPositive ? "↑" : delta < 0 ? "↓" : "–")</span>
@@ -43,18 +43,18 @@
             {
                 var pct = Math.Clamp(currentVal / Goal.Value * 100.0, 0, 100);
                 <div class="flex flex-col gap-1 pt-1" data-slot="dashboard-stat-goal">
-                    <div class="flex items-center justify-between text-xs text-(--lux-text-muted)">
+                    <div class="flex items-center justify-between text-xs text-(--klyroo-text-muted)">
                         <span>Goal @DashboardFormat.Format(Goal, Format, FormatCulture)</span>
                         <span class="font-semibold tabular-nums">@($"{Math.Round(pct)}%")</span>
                     </div>
-                    <div class="h-1.5 w-full overflow-hidden rounded-full bg-(--lux-bg-muted)"
+                    <div class="h-1.5 w-full overflow-hidden rounded-full bg-(--klyroo-bg-muted)"
                          role="progressbar"
                          aria-label="@($"Goal {DashboardFormat.Format(Goal, Format, FormatCulture)}")"
                          aria-valuenow="@Math.Round(pct)"
                          aria-valuemin="0"
                          aria-valuemax="100"
                          data-slot="dashboard-stat-goal-bar">
-                        <div class="h-full @(pct >= 100 ? "bg-(--lux-success)" : "bg-(--lux-primary)")"
+                        <div class="h-full @(pct >= 100 ? "bg-(--klyroo-success)" : "bg-(--klyroo-primary)")"
                              style="@($"width:{pct.ToString("0.#", CultureInfo.InvariantCulture)}%")"></div>
                     </div>
                 </div>
@@ -62,11 +62,11 @@
 
             @if (!string.IsNullOrEmpty(EffectiveCaption))
             {
-                <span class="text-xs text-(--lux-text-muted)" data-slot="dashboard-stat-caption">@EffectiveCaption</span>
+                <span class="text-xs text-(--klyroo-text-muted)" data-slot="dashboard-stat-caption">@EffectiveCaption</span>
             }
         </div>
     </ChildContent>
-</LxDashboardCard>
+</KlyDashboardCard>
 
 @code {
     [Parameter] public IDashboardSource? Source { get; set; }
@@ -132,7 +132,7 @@
             coords.Add($"{x},{y}");
         }
         var line = string.Join(' ', coords);
-        return @<svg viewBox="0 0 100 30" class="h-8 w-full overflow-visible text-(--lux-primary-text)" data-slot="dashboard-stat-sparkline" aria-hidden="true">
+        return @<svg viewBox="0 0 100 30" class="h-8 w-full overflow-visible text-(--klyroo-primary-text)" data-slot="dashboard-stat-sparkline" aria-hidden="true">
             <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="@line" />
         </svg>;
     }

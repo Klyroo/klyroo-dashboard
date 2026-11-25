@@ -1,4 +1,4 @@
-using Lux.Dashboard;
+using Klyroo.Dashboard;
 
 var controller = new DashboardController("sales");
 var kpi = controller.RegisterResource(new DashboardResource<double>("mrr", _ => Task.FromResult(48500.0)));

@@ -1,8 +1,8 @@
 using System.Globalization;
-using Lux.Dashboard;
+using Klyroo.Dashboard;
 using Xunit;
 
-namespace Lux.Dashboard.Tests;
+namespace Klyroo.Dashboard.Tests;
 
 public sealed class ComprehensiveDashboardTests
 {

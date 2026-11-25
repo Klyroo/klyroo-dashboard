@@ -1,11 +1,11 @@
-# API Reference — Lux.Dashboard
+# API Reference — Klyroo.Dashboard
 
-Complete public API reference extracted directly from the source code of `Lux.Dashboard.Core` and `Lux.Dashboard`.
+Complete public API reference extracted directly from the source code of `Klyroo.Dashboard.Core` and `Klyroo.Dashboard`.
 
 ## Razor Components
 
-### `<LxDashboardAlerts>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardAlerts.razor`
+### `<KlyDashboardAlerts>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardAlerts.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -20,8 +20,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardBars>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardBars.razor`
+### `<KlyDashboardBars>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardBars.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -39,8 +39,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardCard>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardCard.razor`
+### `<KlyDashboardCard>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardCard.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -64,8 +64,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Footer` | `RenderFragment?` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<LxDashboardChart>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardChart.razor`
+### `<KlyDashboardChart>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardChart.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -85,8 +85,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardDetails>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardDetails.razor`
+### `<KlyDashboardDetails>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardDetails.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -99,8 +99,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardFeed>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardFeed.razor`
+### `<KlyDashboardFeed>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardFeed.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -116,8 +116,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardGauge>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardGauge.razor`
+### `<KlyDashboardGauge>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardGauge.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -136,8 +136,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardGrid>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardGrid.razor`
+### `<KlyDashboardGrid>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardGrid.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -147,8 +147,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Freshness` | `bool` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<LxDashboardList>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardList.razor`
+### `<KlyDashboardList>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardList.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -163,8 +163,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardPage>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardPage.razor`
+### `<KlyDashboardPage>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardPage.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -178,8 +178,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Actions` | `RenderFragment?` | — |
 | `ChildContent` | `RenderFragment?` | — |
 
-### `<LxDashboardStat>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardStat.razor`
+### `<KlyDashboardStat>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardStat.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -202,8 +202,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardStats>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardStats.razor`
+### `<KlyDashboardStats>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardStats.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -217,8 +217,8 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 | `Menu` | `bool?` | — |
 | `Freshness` | `bool?` | — |
 
-### `<LxDashboardTable>`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LxDashboardTable.razor`
+### `<KlyDashboardTable>`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyDashboardTable.razor`
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -238,7 +238,7 @@ Complete public API reference extracted directly from the source code of `Lux.Da
 ## C# Types, Controllers, Models & Enums
 
 ### `enum DashboardResourceState`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Lifecycle state of a dashboard query or derived resource.
 
@@ -251,7 +251,7 @@ Lifecycle state of a dashboard query or derived resource.
 | `Disabled` | `enum member` | — |
 
 ### `enum DashboardQueryStage`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Execution stage of a dashboard query.
 
@@ -262,9 +262,9 @@ Execution stage of a dashboard query.
 | `Deferred` | `enum member` | — |
 
 ### `enum DashboardBlockPhase`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Block rendering phase determined by `LxDashboardCard`.
+Block rendering phase determined by `KlyDashboardCard`.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -275,9 +275,9 @@ Block rendering phase determined by `LxDashboardCard`.
 | `Content` | `enum member` | — |
 
 ### `enum DashboardSkeletonKind`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Skeleton geometry kind rendered while a `LxDashboardCard` is loading.
+Skeleton geometry kind rendered while a `KlyDashboardCard` is loading.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -296,7 +296,7 @@ Skeleton geometry kind rendered while a `LxDashboardCard` is loading.
 | `Donut` | `enum member` | — |
 
 ### `enum DashboardFormatPreset`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Preset number formats supported by `DashboardFormat`.
 
@@ -313,7 +313,7 @@ Preset number formats supported by `DashboardFormat`.
 | `Signed` | `enum member` | — |
 
 ### `enum DashboardComparisonMode`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Comparison period mode for date ranges and KPI comparisons.
 
@@ -324,7 +324,7 @@ Comparison period mode for date ranges and KPI comparisons.
 | `Year` | `enum member` | — |
 
 ### `enum DashboardFilterKind`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Filter control kind in a `DashboardController`.
 
@@ -342,9 +342,9 @@ Filter control kind in a `DashboardController`.
 | `Custom` | `enum member` | — |
 
 ### `enum DashboardAlertSeverity`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Alert severity level for `LxDashboardAlerts`.
+Alert severity level for `KlyDashboardAlerts`.
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
@@ -354,12 +354,12 @@ Alert severity level for `LxDashboardAlerts`.
 | `Success` | `enum member` | — |
 
 ### `interface IDashboardSource`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Common interface implemented by dashboard queries and derived resources.
 
 ### `class DashboardResource<TData>`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 A staged, optionally gated asynchronous data resource managed by a `DashboardController`.
 
@@ -381,17 +381,17 @@ A staged, optionally gated asynchronous data resource managed by a `DashboardCon
 | `RefreshAsync()` | `Task` | — |
 
 ### `record DashboardOption`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 An option item in a `DashboardFilterControl`.
 
 ### `record DashboardFilterPreset`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 A preset value in a `DashboardFilterControl`.
 
 ### `class DashboardFilterControl`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Interactive filter control state managed by `DashboardController`.
 
@@ -421,7 +421,7 @@ Interactive filter control state managed by `DashboardController`.
 | `Reset()` | `void` | — |
 
 ### `class DashboardViewMeta`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Metadata for a named dashboard view tab.
 
@@ -434,7 +434,7 @@ Metadata for a named dashboard view tab.
 | `Opened` | `bool` | — |
 
 ### `class DashboardController`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Central controller for an analytical dashboard: coordinates filters, views, staged resources (`DashboardQueryStage.Essential`, `DashboardQueryStage.Background`, `DashboardQueryStage.Deferred`), refresh and auto-refresh state.
 
@@ -458,17 +458,17 @@ Central controller for an analytical dashboard: coordinates filters, views, stag
 | `CombineStates(IEnumerable<DashboardResourceState> states)` | `DashboardResourceState` | Combines multiple resource states according to the dashboard state precedence rules. |
 
 ### `record DashboardDataColumn`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Tabular view and CSV export representation of a dashboard block.
 
 ### `record DashboardDataTable`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Tabular representation of a dashboard block used by "View as table" and "Download CSV".
 
 ### `class DashboardFormat`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
 Locale-aware number, delta, relative-time, comparison-range, and CSV formatting utilities for the Dashboard domain.
 
@@ -484,58 +484,58 @@ Locale-aware number, delta, relative-time, comparison-range, and CSV formatting 
 | `ExportCsv(DashboardDataTable table, CultureInfo? culture = null)` | `string` | Serializes a `DashboardDataTable` to CSV with a UTF-8 BOM and locale-appropriate delimiter. |
 
 ### `record DashboardStatus`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Status pill shown on a `LxDashboardStat` or `DashboardStatsItem`.
+Status pill shown on a `KlyDashboardStat` or `DashboardStatsItem`.
 
 ### `record DashboardStatsItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One metric entry inside `LxDashboardStats`.
+One metric entry inside `KlyDashboardStats`.
 
 ### `record DashboardDetailsItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One definition row inside `LxDashboardDetails`.
+One definition row inside `KlyDashboardDetails`.
 
 ### `record DashboardBarItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One horizontal bar entry in `LxDashboardBars`.
+One horizontal bar entry in `KlyDashboardBars`.
 
 ### `record DashboardListItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One ranked row in `LxDashboardList`.
+One ranked row in `KlyDashboardList`.
 
 ### `record DashboardTableColumn`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Column definition for `LxDashboardTable`.
+Column definition for `KlyDashboardTable`.
 
 ### `record DashboardTableSort`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-Active sort state of `LxDashboardTable`.
+Active sort state of `KlyDashboardTable`.
 
 ### `record DashboardAlertItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One alert row in `LxDashboardAlerts`.
+One alert row in `KlyDashboardAlerts`.
 
 ### `record DashboardFeedItem`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One timeline activity event in `LxDashboardFeed`.
+One timeline activity event in `KlyDashboardFeed`.
 
 ### `record DashboardChartSeries`
-*Package*: `Lux.Dashboard.Core` · *Source*: `src/Lux.Dashboard.Core/DashboardModels.cs`
+*Package*: `Klyroo.Dashboard.Core` · *Source*: `src/Klyroo.Dashboard.Core/DashboardModels.cs`
 
-One series definition for `LxDashboardChart`.
+One series definition for `KlyDashboardChart`.
 
-### `class LuxDashboardServiceCollectionExtensions`
-*Package*: `Lux.Dashboard` · *Source*: `src/Lux.Dashboard/LuxDashboardServiceCollectionExtensions.cs`
+### `class KlyrooDashboardServiceCollectionExtensions`
+*Package*: `Klyroo.Dashboard` · *Source*: `src/Klyroo.Dashboard/KlyrooDashboardServiceCollectionExtensions.cs`
 
 | Member | Type | Description |
 | :--- | :--- | :--- |
-| `AddLuxDashboard(this IServiceCollection services)` | `IServiceCollection` | — |
+| `AddKlyrooDashboard(this IServiceCollection services)` | `IServiceCollection` | — |
