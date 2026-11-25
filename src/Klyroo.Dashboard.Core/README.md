@@ -7,7 +7,9 @@ package for the Blazor components.
 
 ## Install
 
-    dotnet add package Klyroo.Dashboard.Core --prerelease
+```bash
+dotnet add package Klyroo.Dashboard.Core --prerelease
+```
 
 ## Use
 

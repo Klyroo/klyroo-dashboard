@@ -31,13 +31,17 @@ test it without a renderer. The Blazor components run in a Blazor Web App and in
 
 ## Installation
 
-    dotnet add package Klyroo.Dashboard --prerelease
+```bash
+dotnet add package Klyroo.Dashboard --prerelease
+```
 
 For headless use only, install `Klyroo.Dashboard.Core` instead.
 
 Register the services in `Program.cs` of a Blazor Web App (and of the `.Client` project when you use WebAssembly or Auto), or in `MauiProgram.cs`:
 
 ```csharp
+using Klyroo.Dashboard;
+
 builder.Services.AddKlyrooDashboard();
 ```
 

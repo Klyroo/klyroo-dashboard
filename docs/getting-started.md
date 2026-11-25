@@ -55,6 +55,8 @@ Two things to notice. The loader reads the filter through a closure, so the cont
 In `Program.cs` of the Blazor Web App, and in the `.Client` project when you use WebAssembly or Auto:
 
 ```csharp
+using Klyroo.Dashboard;
+
 builder.Services.AddKlyrooDashboard();
 ```
 

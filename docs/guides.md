@@ -412,6 +412,8 @@ public sealed class SalesDashboardTests
 For components, register the services on the bUnit context first, then render. The components mark their parts with `data-slot` attributes, which the library's own tests select on:
 
 ```csharp
+using Klyroo.Dashboard;
+
 public sealed class SalesDashboardComponentTests : BunitContext
 {
     public SalesDashboardComponentTests() => Services.AddKlyrooDashboard();
