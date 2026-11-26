@@ -20,6 +20,7 @@ test it without a renderer. The Blazor components run in a Blazor Web App and in
 - **Comparisons**: a stat computes its delta from a previous value, and `DashboardFormat.ResolveComparisonRange` gives the previous period or the same dates one year earlier.
 - **Number formatting**: nine presets (compact, percent, ratio, delta, points and more), relative times and currency, with an explicit culture.
 - **CSV export**: every block with a menu downloads what it shows, with raw numbers; `DashboardFormat.ExportCsv` writes a UTF-8 byte order mark, picks the delimiter from the culture and neutralizes spreadsheet formulas.
+- **Prerender without a second load**: resources created with a `JsonTypeInfo` hand the data the prerender loaded to the interactive render through `DashboardPersistence`, without reflection.
 - **Headless core**: `Klyroo.Dashboard.Core` marks itself trimmable and AOT compatible.
 
 ## Packages

@@ -27,7 +27,7 @@ In Static SSR, await your resources in `OnInitializedAsync` before the render co
 
 **Registration.** Call `AddKlyrooDashboard()` in the server project, and also in the `.Client` project when the page can run in WebAssembly (Interactive WebAssembly or Auto). A page that runs in both places needs the services in both.
 
-**Prerendering runs your loaders twice.** An interactive page is rendered on the server first and then again when the circuit or the WebAssembly runtime starts. Resources do not use persistent component state, so each loader runs once per pass. Turn prerendering off for the page if the queries are expensive or not idempotent, for example `@rendermode="new InteractiveServerRenderMode(prerender: false)"`, or persist the loaded data in the page yourself and feed the resources with `SetData` (see the [FAQ](faq.md#troubleshooting)). Dispose the controller in the page's `Dispose` so a prerendered pass leaves no `AutoRefresh` timer behind.
+**Prerendering runs your loaders twice.** An interactive page is rendered on the server first and then again when the circuit or the WebAssembly runtime starts. Each loader runs once per pass, unless the resource has a `json` type info and the page attaches its controller to `DashboardPersistence` and loads with `LoadAsync`: the prerender then hands the loaded data to the interactive render, which keeps it (see [Hand the prerendered data to the interactive render](guides.md#hand-the-prerendered-data-to-the-interactive-render)). The loader still runs where the prerender happens, on the server, so in WebAssembly or Auto it must work on both sides. Turn prerendering off for the page if the queries are expensive and too large to hand over, for example `@rendermode="new InteractiveServerRenderMode(prerender: false)"`. Dispose the controller in the page's `Dispose` so a prerendered pass leaves no `AutoRefresh` timer behind.
 
 **WebAssembly.** The loaders run in the browser, so they must call an API your client can reach. The parallel stages are concurrent tasks on the single browser thread, not extra threads.
 
@@ -62,7 +62,7 @@ If a MAUI app uses XAML or C# markup instead of a `BlazorWebView`, reference onl
 dotnet publish -c Release -p:PublishAot=true
 ```
 
-`Klyroo.Dashboard` is marked `IsTrimmable` but not `IsAotCompatible`, and the components inherit from Klyroo.UI. Treat NativeAOT as supported for `Klyroo.Dashboard.Core` only. For Blazor WebAssembly, the trimmer is part of the normal publish; this package opts in to it, but this documentation does not make a claim about AOT-compiled WebAssembly builds of the components.
+`DashboardPersistence` writes the data with the `JsonTypeInfo` you give the resource, so that part needs no reflection; two internal calls suppress the trimming warning `IL2026` for the string-only `PersistentComponentState` calls, with a justification in the code. `Klyroo.Dashboard` is marked `IsTrimmable` but not `IsAotCompatible`, and the components inherit from Klyroo.UI. Treat NativeAOT as supported for `Klyroo.Dashboard.Core` only. For Blazor WebAssembly, the trimmer is part of the normal publish; this package opts in to it, but this documentation does not make a claim about AOT-compiled WebAssembly builds of the components.
 
 ## Known limitations
 

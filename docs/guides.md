@@ -11,6 +11,7 @@ Task-oriented recipes. They assume the setup from [Getting started](getting-star
 - [Show a sortable table](#show-a-sortable-table)
 - [Export a block to CSV](#export-a-block-to-csv)
 - [Refresh on a timer](#refresh-on-a-timer)
+- [Hand the prerendered data to the interactive render](#hand-the-prerendered-data-to-the-interactive-render)
 - [Test a dashboard](#test-a-dashboard)
 
 ## Load data in two stages
@@ -350,6 +351,68 @@ Goal: keep a wall display up to date.
 `AutoRefresh` is a number of seconds: a positive value starts a timer that calls `RefreshAsync`, and `0` stops it. A tick waits for its refresh to finish, so the timer never stacks refreshes, and it resumes on the synchronization context that set the value, so in Blazor the refresh runs on the renderer like a click would. Disposing the controller stops the timer and cancels the loads in progress, which is why the page implements `IDisposable`: without it the timer keeps the controller alive after the user leaves, and a prerendered page would leave one timer behind on the server.
 
 A refresh of data that is already loaded keeps the old data on screen, shows a thin progress bar on the card while it runs, and `Freshness="true"` adds an `Updated ... ago` footer. A resource that failed on the previous tick goes through `Loading` again. In tests, pass a fake `TimeProvider` to the `DashboardController` constructor to drive the timer.
+
+## Hand the prerendered data to the interactive render
+
+Goal: a prerendered interactive page that loads its data once, not once for the prerender and again when it becomes interactive.
+
+Give each resource to hand over a `JsonTypeInfo` from a source-generated `JsonSerializerContext`, attach the controller to `DashboardPersistence` after registering the resources and setting the filters, then load with `LoadAsync` instead of `RefreshAsync`:
+
+```csharp
+using System.Text.Json.Serialization;
+
+[JsonSerializable(typeof(Summary))]
+public sealed partial class SalesJson : JsonSerializerContext;
+```
+
+```razor
+@page "/orders"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject SalesService Sales
+@inject DashboardPersistence Persistence
+
+<KlyDashboardPage Dashboard="_dashboard" Title="Orders">
+    <KlyDashboardGrid>
+        <KlyDashboardStat Source="_summary" Label="Orders" Span="4" Value="_summary.Data?.Orders" />
+    </KlyDashboardGrid>
+</KlyDashboardPage>
+
+@code {
+    private readonly DashboardController _dashboard = new("orders");
+    private DashboardResource<Summary> _summary = default!;
+    private IDisposable? _persistence;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _summary = _dashboard.RegisterResource(new DashboardResource<Summary>(
+            "summary", ct => Sales.GetSummaryAsync(null, ct), json: SalesJson.Default.Summary));
+        _persistence = Persistence.Attach(_dashboard, AssignedRenderMode);
+        await _dashboard.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        _persistence?.Dispose();
+        _dashboard.Dispose();
+    }
+}
+```
+
+In the prerender, `LoadAsync` loads the summary and `DashboardPersistence` writes it into the persistent component state of the page when the prerender ends. In the interactive render, `Attach` gives it back to the resource, which is ready at once with the time it was loaded (`Restored` is true), and `LoadAsync` keeps it instead of loading again. `RefreshAsync`, the refresh button, a filter change and `AutoRefresh` always load.
+
+A few rules:
+
+- Register the resources and set the filters before `Attach`. A resource registered later is handed over but not restored, and the data is refused when the filter values differ from those of the prerender (a filter read from browser storage only in the interactive render, say): that resource loads again.
+- Pass the render mode the page runs in next. `AssignedRenderMode` is it when the page declares `@rendermode`; when the whole app is interactive (`<Routes @rendermode="InteractiveServer" />`) the page has none of its own, so pass the app's, for example `RenderMode.InteractiveServer`. With `null` nothing is handed over.
+- Only a resource that is ready when the prerender ends is handed over. A background resource still loading then, or one in error, loads again in the interactive render, and so does a resource whose `requires` gate is closed there.
+- The data is small on purpose: 8 KB per resource and 12 KB for the page by default, counted as sent. An Interactive Server circuit receives everything persisted in one SignalR message, refused past 32 KB by default, and Blazor escapes the text and base64-encodes it twice on the way, so the JSON of the data itself is about half of these sizes. Change the limits with `AddKlyrooDashboard(o => { o.PersistMaxBytes = ...; o.PersistPageMaxBytes = ...; })`, keeping room for other libraries (Klyroo.Table persists its lists too). A resource over its limit loads again once, and a warning in the log names it.
+- Data older than `PersistMaxAge` (5 minutes by default, from when it was loaded) is not restored. A prerender hands its data over within seconds, but .NET can also save the state of an Interactive Server circuit when it pauses and give it back when it resumes, possibly much later.
+- A resource whose custom JSON converter throws is simply not handed over: the error is logged and the other resources, and the other libraries of the page, keep their state.
+- Each dashboard of a page needs its own controller key. Two controllers with one key attached at once throw.
+- A .NET MAUI Blazor Hybrid app has no prerender: `Attach` does nothing there, and `LoadAsync` is `RefreshAsync`.
+
+`IDashboardPersistentSource` (`ExportJson`, `RestoreJson`) is the contract behind it, in `Klyroo.Dashboard.Core`, so any other host can hand data between two runs the same way.
 
 ## Test a dashboard
 

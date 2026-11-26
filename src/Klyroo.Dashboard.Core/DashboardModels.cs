@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Klyroo.Dashboard;
 
@@ -173,13 +175,44 @@ public interface IDashboardSource
 }
 
 /// <summary>
+/// A source whose loaded data can be written as JSON text and read back, so that a render hands it to the next one instead of
+/// loading it again: the prerender of a Blazor page to its interactive render, for example. The text is written with a
+/// <see cref="JsonTypeInfo{T}"/> the app gives, never by reflection, so it works with trimming and NativeAOT.
+/// </summary>
+public interface IDashboardPersistentSource : IDashboardSource
+{
+    /// <summary>The loaded data as JSON text, or <see langword="null"/> when there is nothing to hand over: no <see cref="JsonTypeInfo{T}"/>, no successful load yet, or a load still running.</summary>
+    string? ExportJson();
+
+    /// <summary>
+    /// Takes data written by <see cref="ExportJson"/> as if it had been loaded at <paramref name="updatedAt"/>, and sets <see cref="Restored"/>.
+    /// Returns <see langword="false"/> and changes nothing when the source cannot take it: no <see cref="JsonTypeInfo{T}"/>, a load already
+    /// started, a disabled or disposed source, a closed <c>requires</c> gate, or text that does not read as the data type.
+    /// </summary>
+    bool RestoreJson(string json, DateTimeOffset? updatedAt);
+
+    /// <summary>
+    /// <see langword="true"/> while the data is the one <see cref="RestoreJson"/> took back: <see cref="DashboardController.LoadAsync"/> keeps it
+    /// instead of loading again. Any load, <c>SetData</c>, <c>SetError</c> or closed gate clears it.
+    /// </summary>
+    bool Restored { get; }
+}
+
+// The first load of a page (DashboardController.LoadAsync): a resource whose data was restored keeps it, once its gates pass.
+internal interface IDashboardFirstLoad
+{
+    Task LoadKeepingRestoredAsync();
+}
+
+/// <summary>
 /// A staged, optionally gated asynchronous data resource managed by a <c>DashboardController</c>.
 /// </summary>
-public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
+public sealed class DashboardResource<TData> : IDashboardPersistentSource, IDashboardFirstLoad, IDisposable
 {
     private readonly Func<CancellationToken, Task<TData>>? _loader;
     private readonly Func<bool>? _enabled;
     private readonly Func<bool>? _requires;
+    private readonly JsonTypeInfo<TData>? _json;
     private CancellationTokenSource? _load;
     private bool _disposed;
 
@@ -190,16 +223,23 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
     /// <param name="defaultValue">The data used before the first load, when the resource is disabled, and when <paramref name="requires"/> is not met.</param>
     /// <param name="enabled">Returns <see langword="false"/> to disable the resource. Evaluated here and on every activation and refresh.</param>
     /// <param name="requires">Returns <see langword="false"/> when a precondition is missing (for example a selected customer). Evaluated on every refresh: the loader is skipped and the data resets to <paramref name="defaultValue"/>.</param>
+    /// <param name="json">
+    /// Writes and reads the data as JSON, usually a property of a source-generated <c>JsonSerializerContext</c> (<c>AppJson.Default.Summary</c>).
+    /// With it, the data a prerender loaded can be handed to the interactive render instead of being loaded twice (see <see cref="IDashboardPersistentSource"/>);
+    /// without it, every render loads the data itself.
+    /// </param>
     public DashboardResource(
         string key,
         Func<CancellationToken, Task<TData>>? loader = null,
         DashboardQueryStage stage = DashboardQueryStage.Essential,
         TData? defaultValue = default,
         Func<bool>? enabled = null,
-        Func<bool>? requires = null)
+        Func<bool>? requires = null,
+        JsonTypeInfo<TData>? json = null)
     {
         Key = key;
         _loader = loader;
+        _json = json;
         Stage = stage;
         DefaultValue = defaultValue;
         Data = defaultValue;
@@ -234,11 +274,14 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
     public DateTimeOffset? UpdatedAt { get; private set; }
     /// <summary><see langword="true"/> once the resource has been activated, loaded or fed with <see cref="SetData"/>.</summary>
     public bool Active { get; private set; }
+    /// <inheritdoc />
+    public bool Restored { get; private set; }
 
     /// <summary>Sets the resource data directly and transitions to <c>DashboardResourceState.Ready</c>. A load in progress is cancelled and its result ignored.</summary>
     public void SetData(TData? data)
     {
         CancelLoad();
+        Restored = false;
         Data = data;
         Error = null;
         State = DashboardResourceState.Ready;
@@ -253,6 +296,7 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
     public void SetError(string message)
     {
         CancelLoad();
+        Restored = false;
         Error = message;
         State = DashboardResourceState.Error;
         Refreshing = false;
@@ -278,7 +322,11 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
 
     /// <summary>Runs the loader. A disabled resource goes to <see cref="DashboardResourceState.Disabled"/>. An unmet <c>requires</c> gate resets the data to the default value without calling the loader. Otherwise the state is <see cref="DashboardResourceState.Loading"/> on the first load, or stays <see cref="DashboardResourceState.Ready"/> with <see cref="Refreshing"/> set on later ones. An exception from the loader is caught and stored in <see cref="Error"/>.</summary>
     /// <remarks>A call cancels the load still running from an earlier call: the latest call wins, and the result of a superseded load is ignored even when its loader does not observe the token. After <see cref="Dispose"/> the call does nothing.</remarks>
-    public async Task RefreshAsync()
+    public Task RefreshAsync() => RefreshCoreAsync(keepRestored: false);
+
+    Task IDashboardFirstLoad.LoadKeepingRestoredAsync() => RefreshCoreAsync(keepRestored: true);
+
+    private async Task RefreshCoreAsync(bool keepRestored)
     {
         if (_disposed) return;
         if (_enabled is not null && !_enabled())
@@ -290,6 +338,7 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
         if (_requires is not null && !_requires())
         {
             CancelLoad();
+            Restored = false;
             State = DefaultValue is not null ? DashboardResourceState.Ready : DashboardResourceState.Idle;
             Data = DefaultValue;
             Refreshing = false;
@@ -297,6 +346,13 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
             Changed?.Invoke();
             return;
         }
+
+        if (keepRestored && Restored)
+        {
+            // The first load of the page: the data came from the previous render a moment ago.
+            return;
+        }
+        Restored = false;
 
         if (_loader is null)
         {
@@ -360,6 +416,41 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
         }
     }
 
+    /// <inheritdoc />
+    public string? ExportJson()
+    {
+        if (_json is null || _disposed || State != DashboardResourceState.Ready || Fetching) return null;
+        return JsonSerializer.Serialize(Data!, _json);
+    }
+
+    /// <inheritdoc />
+    public bool RestoreJson(string json, DateTimeOffset? updatedAt)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        if (_json is null || _disposed || _load is not null || State is DashboardResourceState.Disabled or DashboardResourceState.Loading) return false;
+        if ((_enabled is not null && !_enabled()) || (_requires is not null && !_requires())) return false;
+        TData? data;
+        try
+        {
+            data = JsonSerializer.Deserialize(json, _json);
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            // Written by another version of the type, or refused by a custom converter (which can throw anything): the resource loads as if nothing had been handed over.
+            return false;
+        }
+        Data = data;
+        Error = null;
+        State = DashboardResourceState.Ready;
+        Refreshing = false;
+        Fetching = false;
+        UpdatedAt = updatedAt ?? DateTimeOffset.UtcNow;
+        Active = true;
+        Restored = true;
+        Changed?.Invoke();
+        return true;
+    }
+
     /// <summary>Cancels the load in progress and makes later calls to <see cref="RefreshAsync"/> and <see cref="ActivateAsync"/> do nothing. The state and the data are left as they are. <c>DashboardController.Dispose</c> disposes the resources registered with it.</summary>
     public void Dispose()
     {
@@ -373,6 +464,7 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
     {
         var wasBusy = _load is not null;
         CancelLoad();
+        Restored = false;
         var changed = State != DashboardResourceState.Disabled || wasBusy;
         State = DashboardResourceState.Disabled;
         Data = DefaultValue;
@@ -884,17 +976,44 @@ public sealed class DashboardController : IDisposable
 
     /// <summary>Loads all <see cref="DashboardQueryStage.Essential"/> resources in parallel, waits for them, then loads the <see cref="DashboardQueryStage.Background"/> resources and the already active <see cref="DashboardQueryStage.Deferred"/> ones in parallel. A resource still loading from an earlier call is cancelled and loaded again. After <see cref="Dispose"/> it does nothing.</summary>
     /// <returns>A task that completes when both stages have settled. Loader failures do not throw: they end up in <see cref="IDashboardSource.Error"/>.</returns>
-    public async Task RefreshAsync()
+    public Task RefreshAsync() => LoadStagesAsync(keepRestored: false);
+
+    /// <summary>
+    /// The first load of a page: like <see cref="RefreshAsync"/>, except that a resource whose data was handed over by an earlier render
+    /// (<see cref="IDashboardPersistentSource.Restored"/>) keeps it instead of loading again. Call it once where the page loads its data,
+    /// and <see cref="RefreshAsync"/> for every later reload. Without restored data, it is the same as <see cref="RefreshAsync"/>.
+    /// </summary>
+    /// <returns>A task that completes when both stages have settled.</returns>
+    public Task LoadAsync() => LoadStagesAsync(keepRestored: true);
+
+    private async Task LoadStagesAsync(bool keepRestored)
     {
         if (_disposed) return;
+        Task Load(IDashboardSource r) => keepRestored && r is IDashboardFirstLoad first ? first.LoadKeepingRestoredAsync() : r.RefreshAsync();
         var essentials = _resources.Where(r => r.Stage == DashboardQueryStage.Essential).ToList();
-        await Task.WhenAll(essentials.Select(r => r.RefreshAsync()));
-
+        await Task.WhenAll(essentials.Select(Load));
         var backgrounds = _resources.Where(r => r.Stage == DashboardQueryStage.Background).ToList();
         var activeDeferred = _resources.Where(r => r.Stage == DashboardQueryStage.Deferred && r.Active).ToList();
-        await Task.WhenAll(backgrounds.Concat(activeDeferred).Select(r => r.RefreshAsync()));
+        await Task.WhenAll(backgrounds.Concat(activeDeferred).Select(Load));
         if (_disposed) return;
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// A text that changes when a filter value changes: the keys and values of the filters. <c>DashboardPersistence</c> stores it with the
+    /// handed-over data and refuses the data when the next render starts from other filter values.
+    /// </summary>
+    public string FilterFingerprint()
+    {
+        var text = new StringBuilder();
+        foreach (var control in _controls)
+        {
+            text.Append(control.Key.Length).Append(':').Append(control.Key).Append('=');
+            // Each value is written with its length, so no value can be mistaken for two.
+            foreach (var value in control.Values) text.Append(value.Length).Append(':').Append(value);
+            text.Append(';');
+        }
+        return text.ToString();
     }
 
     /// <summary>Stops the <see cref="AutoRefresh"/> timer and disposes the registered resources that are disposable, which cancels their loads. Later calls to <see cref="RefreshAsync"/> do nothing.</summary>

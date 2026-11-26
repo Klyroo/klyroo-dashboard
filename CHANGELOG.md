@@ -21,6 +21,7 @@ All notable changes to this project are documented in this file. The format is b
 - `DashboardFilterControl.SetValues` replaces the selection, and `DashboardFormat.FormatInvariant` writes a number as the exported tables carry it.
 - `KlyDashboardAlerts.OnAction` handles the click on an alert action that has no `ActionHref`.
 - `DashboardSkeletonKind.Paired` and `Stack` have their own skeleton shapes.
+- Prerendered data is handed to the interactive render: a `DashboardResource` created with a `json` type info implements the new `IDashboardPersistentSource` (`ExportJson`, `RestoreJson`, `Restored`), the new scoped `DashboardPersistence.Attach(controller, renderMode)` writes the ready resources into the persistent component state at the end of the prerender and restores them in the interactive render, and the new `DashboardController.LoadAsync` loads a page like `RefreshAsync` but keeps restored data. The data goes through the app's `JsonTypeInfo`, never reflection, carries the filter values it was loaded with (other values refuse it), is dropped past `KlyrooDashboardOptions.PersistMaxAge` (5 minutes), and stays within `KlyrooDashboardOptions.PersistMaxBytes` (8 KB per resource) and `PersistPageMaxBytes` (12 KB per page), counted as sent. `AddKlyrooDashboard` takes an optional `Action<KlyrooDashboardOptions>`.
 
 ### Fixed
 

@@ -4,7 +4,7 @@
 
 ## Klyroo.Dashboard.Core
 
-Static classes and extensions (1) · Classes (4) · Records (14) · Interfaces (1) · Enums (8)
+Static classes and extensions (1) · Classes (4) · Records (14) · Interfaces (2) · Enums (8)
 
 ### Static classes and extensions
 
@@ -64,6 +64,8 @@ Central controller for an analytical dashboard: coordinates filters, views, stag
 | `AddView(string key, string label, string? badge = null, bool enabled = true)` | `DashboardViewMeta` | Adds a view tab. The first enabled view added becomes the current one. Later changes of its `Badge` and `Enabled` raise `Changed`. |
 | `static CombineStates(IEnumerable<DashboardResourceState> states)` | `DashboardResourceState` | Combines several states into one. Disabled states are ignored. No state gives `DashboardResourceState.Ready`, only disabled states give `DashboardResourceState.Disabled`, then any error wins, then any loading, then all idle gives `DashboardResourceState.Idle`, otherwise `DashboardResourceState.Ready`. |
 | `Dispose()` | `void` | Stops the `DashboardController.AutoRefresh` timer and disposes the registered resources that are disposable, which cancels their loads. Later calls to `DashboardController.RefreshAsync` do nothing. |
+| `FilterFingerprint()` | `string` | A text that changes when a filter value changes: the keys and values of the filters. `DashboardPersistence` stores it with the handed-over data and refuses the data when the next render starts from other filter values. |
+| `LoadAsync()` | `Task` | The first load of a page: like `DashboardController.RefreshAsync`, except that a resource whose data was handed over by an earlier render (`IDashboardPersistentSource.Restored`) keeps it instead of loading again. Call it once where the page loads its data, and `DashboardController.RefreshAsync` for every later reload. Without restored data, it is the same as `DashboardController.RefreshAsync`. |
 | `RefreshAsync()` | `Task` | Loads all `DashboardQueryStage.Essential` resources in parallel, waits for them, then loads the `DashboardQueryStage.Background` resources and the already active `DashboardQueryStage.Deferred` ones in parallel. A resource still loading from an earlier call is cancelled and loaded again. After `DashboardController.Dispose` it does nothing. |
 | `RegisterResource<TData>(DashboardResource<TData> resource)` | `DashboardResource<TData>` | Registers a resource so that `DashboardController.RefreshAsync` loads it, its changes are forwarded to `Changed` and `DashboardController.Dispose` disposes it. |
 | `ResetFilters()` | `void` | Restores the default values of every enabled filter that is not headless. |
@@ -117,7 +119,7 @@ A staged, optionally gated asynchronous data resource managed by a `DashboardCon
 
 | Constructor | Description |
 | :--- | :--- |
-| `DashboardResource<TData>(string key, Func<CancellationToken, Task<TData>>? loader = null, DashboardQueryStage stage = Essential, TData defaultValue = null, Func<bool>? enabled = null, Func<bool>? requires = null)` | Creates a resource. |
+| `DashboardResource<TData>(string key, Func<CancellationToken, Task<TData>>? loader = null, DashboardQueryStage stage = Essential, TData defaultValue = null, Func<bool>? enabled = null, Func<bool>? requires = null, JsonTypeInfo<TData>? json = null)` | Creates a resource. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -128,6 +130,7 @@ A staged, optionally gated asynchronous data resource managed by a `DashboardCon
 | `Fetching` | `bool` | `true` while the loader is running. |
 | `Key` | `string` | Identifier of the resource. |
 | `Refreshing` | `bool` | `true` while data that was already loaded is being reloaded. |
+| `Restored` | `bool` | `true` while the data is the one `IDashboardPersistentSource.RestoreJson` took back: `DashboardController.LoadAsync` keeps it instead of loading again. Any load, `SetData`, `SetError` or closed gate clears it. |
 | `Stage` | `DashboardQueryStage` | The stage in which the controller loads the resource. |
 | `State` | `DashboardResourceState` | The lifecycle state of the resource. |
 | `UpdatedAt` | `DateTimeOffset?` | When data was last set or loaded successfully (UTC). |
@@ -136,7 +139,9 @@ A staged, optionally gated asynchronous data resource managed by a `DashboardCon
 | :--- | :--- | :--- |
 | `ActivateAsync()` | `Task` | Marks the resource active and loads it when its state is `DashboardResourceState.Idle`, or `DashboardResourceState.Disabled` with an `enabled` predicate that now returns `true`. A resource that is still disabled stays `DashboardResourceState.Disabled` with its default value, and `Changed` is only raised when it was not disabled before. |
 | `Dispose()` | `void` | Cancels the load in progress and makes later calls to `DashboardResource.RefreshAsync` and `DashboardResource.ActivateAsync` do nothing. The state and the data are left as they are. `DashboardController.Dispose` disposes the resources registered with it. |
+| `ExportJson()` | `string?` | The loaded data as JSON text, or `null` when there is nothing to hand over: no `JsonTypeInfo`, no successful load yet, or a load still running. |
 | `RefreshAsync()` | `Task` | Runs the loader. A disabled resource goes to `DashboardResourceState.Disabled`. An unmet `requires` gate resets the data to the default value without calling the loader. Otherwise the state is `DashboardResourceState.Loading` on the first load, or stays `DashboardResourceState.Ready` with `DashboardResource.Refreshing` set on later ones. An exception from the loader is caught and stored in `DashboardResource.Error`. |
+| `RestoreJson(string json, DateTimeOffset? updatedAt)` | `bool` | Takes data written by `IDashboardPersistentSource.ExportJson` as if it had been loaded at `updatedAt`, and sets `IDashboardPersistentSource.Restored`. Returns `false` and changes nothing when the source cannot take it: no `JsonTypeInfo`, a load already started, a disabled or disposed source, a closed `requires` gate, or text that does not read as the data type. |
 | `SetData(TData data)` | `void` | Sets the resource data directly and transitions to `DashboardResourceState.Ready`. A load in progress is cancelled and its result ignored. |
 | `SetError(string message)` | `void` | Transitions the resource to `DashboardResourceState.Error`. A load in progress is cancelled and its result ignored. |
 
@@ -409,6 +414,21 @@ Active sort state of `KlyDashboardTable`.
 
 ### Interfaces
 
+#### `IDashboardPersistentSource`
+
+`Klyroo.Dashboard` · interface
+
+A source whose loaded data can be written as JSON text and read back, so that a render hands it to the next one instead of loading it again: the prerender of a Blazor page to its interactive render, for example. The text is written with a `JsonTypeInfo` the app gives, never by reflection, so it works with trimming and NativeAOT.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Restored` | `bool` | `true` while the data is the one `IDashboardPersistentSource.RestoreJson` took back: `DashboardController.LoadAsync` keeps it instead of loading again. Any load, `SetData`, `SetError` or closed gate clears it. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `ExportJson()` | `string?` | The loaded data as JSON text, or `null` when there is nothing to hand over: no `JsonTypeInfo`, no successful load yet, or a load still running. |
+| `RestoreJson(string json, DateTimeOffset? updatedAt)` | `bool` | Takes data written by `IDashboardPersistentSource.ExportJson` as if it had been loaded at `updatedAt`, and sets `IDashboardPersistentSource.Restored`. Returns `false` and changes nothing when the source cannot take it: no `JsonTypeInfo`, a load already started, a disabled or disposed source, a closed `requires` gate, or text that does not read as the data type. |
+
 #### `IDashboardSource`
 
 `Klyroo.Dashboard` · interface
@@ -559,7 +579,7 @@ Skeleton geometry kind rendered while a `KlyDashboardCard` is loading.
 
 ## Klyroo.Dashboard
 
-Components (13) · Static classes and extensions (1)
+Components (13) · Static classes and extensions (1) · Classes (2)
 
 ### Components
 
@@ -879,4 +899,32 @@ Registration of the Klyroo.Dashboard services.
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `static AddKlyrooDashboard(IServiceCollection services)` | `IServiceCollection` | Registers the services the dashboard components need. The dashboard has none of its own: this calls `AddKlyrooUi()` from Klyroo.UI, so a second call to `AddKlyrooUi()` is not needed. |
+| `static AddKlyrooDashboard(IServiceCollection services, Action<KlyrooDashboardOptions>? configure = null)` | `IServiceCollection` | Registers the services the dashboard components need: `DashboardPersistence` (scoped), the `KlyrooDashboardOptions`, and Klyroo.UI through `AddKlyrooUi()`, so a second call to `AddKlyrooUi()` is not needed. |
+
+### Classes
+
+#### `DashboardPersistence`
+
+`Klyroo.Dashboard` · class
+
+Hands the data the prerender of a page loaded to its interactive render, so the resources do not load twice. In `OnInitializedAsync`, register the resources, set the filters, call `DashboardPersistence.Attach`, then load with `DashboardController.LoadAsync`: in the prerender the ready resources are written into the persistent component state of the page, and in the interactive render they take that data back, which `DashboardController.LoadAsync` keeps instead of loading again. Only resources created with a `json` type info take part (see `IDashboardPersistentSource`).
+
+| Constructor | Description |
+| :--- | :--- |
+| `DashboardPersistence(IServiceProvider services)` | Creates the service. Use the instance `AddKlyrooDashboard` registers rather than creating one. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `Attach(DashboardController dashboard, IComponentRenderMode? renderMode)` | `IDisposable` | Restores the resources of `dashboard` that the previous render handed over, and hands them over at the end of this render. Call it after registering the resources and setting the filters: a resource registered later is handed over but never restored, and data written under other filter values is refused. |
+
+#### `KlyrooDashboardOptions`
+
+`Klyroo.Dashboard` · class
+
+Options of Klyroo.Dashboard, set with `services.AddKlyrooDashboard(options => ...)`.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `PersistMaxAge` (get, set) | `TimeSpan` | The oldest handed-over data `DashboardPersistence` restores (5 minutes by default), measured from when it was loaded. A prerender hands its data over within seconds, but .NET can also persist the state of an Interactive Server circuit when it pauses and give it back when the circuit resumes, possibly much later: older data is dropped and the resource loads again. |
+| `PersistMaxBytes` (get, set) | `int` | The largest data, in bytes as sent, that one resource hands from the prerender to the interactive render through `DashboardPersistence` (8 KB by default). The size counts the escaping and the two base64 encodings Blazor adds, so the JSON of the data itself is roughly half of it. A resource over it is not handed over: the interactive render loads it again once. |
+| `PersistPageMaxBytes` (get, set) | `int` | The largest data, in bytes as sent, that all the dashboard resources of one prerendered page hand over together (12 KB by default). The browser sends everything persisted back to the server when an Interactive Server circuit starts, in one message that SignalR refuses past 32 KB by default, so keep this and the limits of other libraries (Klyroo.Table) under that together. |
