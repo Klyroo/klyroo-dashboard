@@ -34,7 +34,8 @@ public sealed partial class DashboardPersistence
     {
         ArgumentNullException.ThrowIfNull(services);
         _state = services.GetService<PersistentComponentState>();
-        _options = services.GetService<KlyrooDashboardOptions>() ?? new KlyrooDashboardOptions();
+        // The options AddKlyrooDashboard configures: the extension of the Klyroo.UI options, the one the components read too.
+        _options = services.GetService<KlyrooOptions>()?.Extension<KlyrooDashboardOptions>() ?? new KlyrooDashboardOptions();
         _logger = services.GetService<ILogger<DashboardPersistence>>();
         _budget = services.GetService<KlyPersistedStateBudget>() ?? new KlyPersistedStateBudget(services.GetService<KlyrooOptions>() ?? new KlyrooOptions());
     }

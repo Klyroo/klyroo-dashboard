@@ -73,8 +73,8 @@ public sealed class LocalizationTests : BunitContext
         Assert.Equal("Actualiser", cut.Find("[data-slot=dashboard-refresh]").GetAttribute("aria-label"));
         Assert.Equal("Mis à jour à l’instant", cut.Find("[data-slot=dashboard-freshness]").TextContent.Trim());
         Assert.Equal("Filtres", cut.Find("[data-slot=dashboard-filters]").GetAttribute("aria-label"));
-        Assert.Equal("Période : début", cut.Find("[data-slot=dashboard-filter-start]").GetAttribute("aria-label"));
-        Assert.Equal("Période : fin", cut.Find("[data-slot=dashboard-filter-end]").GetAttribute("aria-label"));
+        Assert.Equal("Période\u00a0: début", cut.Find("[data-slot=dashboard-filter-start]").GetAttribute("aria-label"));
+        Assert.Equal("Période\u00a0: fin", cut.Find("[data-slot=dashboard-filter-end]").GetAttribute("aria-label"));
         Assert.Equal("Effacer Région", cut.Find("[data-slot=dashboard-filter-clear]").GetAttribute("aria-label"));
         Assert.Equal("Réinitialiser", cut.Find("[data-slot=dashboard-filters-reset]").TextContent.Trim());
     }
@@ -126,6 +126,30 @@ public sealed class LocalizationTests : BunitContext
     }
 
     [Fact]
+    public void Options_registered_by_hand_are_refused_so_they_never_split_from_the_extension()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(new KlyrooDashboardOptions { PersistMaxBytes = 1 });
+        var error = Assert.Throws<InvalidOperationException>(() => services.AddKlyrooDashboard());
+        Assert.Contains("already registered", error.Message);
+    }
+
+    [Fact]
+    public void Calling_AddKlyrooDashboard_twice_configures_one_instance_that_the_container_and_the_components_share()
+    {
+        var services = new ServiceCollection();
+        services.AddKlyrooDashboard(o => o.PersistMaxBytes = 111);
+        services.AddKlyrooDashboard(o => o.PersistMaxAge = TimeSpan.FromSeconds(7));
+        using var provider = services.BuildServiceProvider();
+
+        var fromContainer = provider.GetRequiredService<KlyrooDashboardOptions>();
+        Assert.Same(provider.GetRequiredService<KlyrooOptions>().Extension<KlyrooDashboardOptions>(), fromContainer);
+        Assert.Equal(111, fromContainer.PersistMaxBytes);
+        Assert.Equal(TimeSpan.FromSeconds(7), fromContainer.PersistMaxAge);
+        Assert.Single(services, d => d.ServiceType == typeof(KlyrooDashboardOptions));
+    }
+
+    [Fact]
     public void Texts_cannot_change_once_a_component_resolved_one()
     {
         InLocale<KlyDashboardBars>(KlyLocales.En, p => p.Add(x => x.Items, []));
@@ -166,6 +190,42 @@ public sealed class LocalizationTests : BunitContext
                 Assert.NotEqual(DashboardLocales.En.ColumnCategory, texts.ColumnCategory);
                 Assert.NotEqual(DashboardLocales.En.RelativeJustNow, texts.RelativeJustNow);
             }
+        }
+    }
+
+    [Fact]
+    public void No_text_of_any_locale_holds_a_literal_unicode_escape()
+    {
+        foreach (var (code, texts) in DashboardLocales.Tables)
+        {
+            foreach (var property in typeof(DashboardTexts).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var shown = property.GetValue(texts) switch
+                {
+                    string s => new[] { s },
+                    Func<int, string> f => new[] { f(1), f(5) },
+                    Func<string, string> f => new[] { f("Region") },
+                    _ => [],
+                };
+                Assert.All(shown, s => Assert.DoesNotContain("\\u", s));
+            }
+        }
+    }
+
+    [Fact]
+    public void French_puts_a_no_break_space_before_a_colon_and_a_percent_sign()
+    {
+        var fr = DashboardLocales.Fr;
+        Assert.Equal("base 100\u00a0%", fr.FunnelBase);
+        Assert.Equal("60\u00a0% de l’étape précédente", fr.FunnelStep(60));
+        Assert.Equal("Cible\u00a0: 80", fr.Target("80"));
+        Assert.Equal("Période\u00a0: début", fr.FilterFrom("Période"));
+        Assert.Equal("Période\u00a0: fin", fr.FilterTo("Période"));
+        Assert.Equal("par rapport à 4 sur la période précédente", fr.VersusPrevious("4"));
+        // Nowhere a plain space before the signs that French sets apart with a no-break one.
+        foreach (var text in new[] { fr.FunnelBase, fr.Target("x"), fr.FilterFrom("x"), fr.FilterTo("x"), fr.FunnelStep(1) })
+        {
+            Assert.DoesNotMatch(@" [:;!?%]", text);
         }
     }
 
