@@ -16,8 +16,44 @@ packages:
   - Klyroo.Dashboard.Core
   - Klyroo.Dashboard
 
-# The primary color of the site, the name of a Tailwind palette (blue, emerald, violet...). Without it the Klyroo colors are used.
-# accent: blue
+# The home page. headline is two lines, the second in the accent color; lead is the paragraph under it. Without them: the title and the tagline.
+headline: |
+  Dashboards that load
+  one resource at a time.
+lead: >-
+  Each query is a resource with its own state. The important ones load first, and every block shows its own loading, error and empty state, so one failing query leaves the rest of the page intact.
+
+# The accent of the site (#rrggbb): buttons, links, marks and the second line of the headline. The text variants that pass the contrast rules in light and
+# dark mode are computed from it. Without it: the color of the library in klyroo-stack/docs-site/Klyroo.Docs.Site/libraries.yml.
+accent: "#8b5cf6"
+
+# The texture of the ground behind the header and the hero: blueprint-grid, dot-matrix, ruled-rows, baseline-grid, chart-ticks, halftone, cell-grid or node-dots.
+texture: chart-ticks
+
+# What the hero demonstrates. Either board: table | form (a board with feature chips and several results, authored in docs-site), or a simple hero: the code,
+# the lines the leader line starts at (focus) and one result (output: lines of text, or preview: ui-settings | display-stat | spreadsheet-rows).
+demo:
+  file: Program.cs
+  language: csharp
+  focus: 11-12
+  code: |
+    var controller = new DashboardController("sales");
+
+    var revenue = controller.RegisterResource(new DashboardResource<double>(
+        "revenue", async _ => { await Task.Delay(50); return 48_500; }));
+
+    var regions = controller.RegisterResource(new DashboardResource<string[]>(
+        "regions", _ => Task.FromResult(new[] { "EMEA", "AMER" }), DashboardQueryStage.Background));
+
+    await controller.RefreshAsync();
+
+    Console.WriteLine(DashboardFormat.Format(revenue.Data, DashboardFormatPreset.Compact)); // 48.5K
+    Console.WriteLine(string.Join(", ", regions.Data!));                                      // EMEA, AMER
+  result:
+    title: What it prints
+    output: |
+      48.5K
+      EMEA, AMER
 
 # The pages in the order of the navigation. docs/README.md comes first, as "Documentation". A page that is not listed follows, by file name.
 # An entry is a file name below docs/ without .md, or a map with page and any of: title, navTitle, description, tocDepth, indexText. A group has a group name and its pages.
