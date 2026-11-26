@@ -79,7 +79,7 @@
     [Parameter] public bool Stacked { get; set; }
     /// <summary>Draws the bars of a <c>bar</c> chart along the horizontal axis, with the categories on the vertical one.</summary>
     [Parameter] public bool Horizontal { get; set; }
-    /// <summary>Called with the category, the series key and the value when the user picks a data point. In the drawing of <c>KlyChart</c> (every chart except the compact one described at <see cref="Type"/>) the bars, points and slices themselves are the choice: a click on one, or Enter or Space on the one the arrow keys are on, with a pointer cursor and the same keyboard hint as <c>KlyChart.OnSelect</c>. A pick of a comparison series, or of a row where the series has no value, stands for the first other series that has a value in that category, and the pick of a gap is ignored. The compact drawing, which <c>KlyChart</c> cannot draw (a bar chart with a line series, or with <see cref="ShowLabels"/>), has no selectable marks, so it shows a group of buttons under the drawing instead, one per category and series (one per slice for a donut, comparison series left out), which works with the keyboard and with a screen reader too. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    /// <summary>Called with the category, the series key and the value when the user picks a data point. In the drawing of <c>KlyChart</c> (every chart except the compact one described at <see cref="Type"/>) the bars, points and slices themselves are the choice: a click on one, or Enter or Space on the one the arrow keys are on, with a pointer cursor and the same keyboard hint as <c>KlyChart.OnSelect</c>. A pick is reported for the series it landed on, a comparison series included (its own key and value); from the keyboard, or for a series with no value in that category, it is the first series that is not a comparison and has a value, and a category with nothing to pick is ignored. The compact drawing, which <c>KlyChart</c> cannot draw (a bar chart with a line series, or with <see cref="ShowLabels"/>), has no selectable marks, so it shows a group of buttons under the drawing instead, one per category and series (one per slice for a donut, comparison series left out), which works with the keyboard and with a screen reader too. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
     [Parameter] public EventCallback<DashboardChartSelection> OnSelect { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 8.</summary>
     [Parameter] public int Span { get; set; } = 8;
@@ -165,13 +165,14 @@
         </div>
     };
 
-    // What KlyChart reports is a row and the series the pick landed on. A comparison series is a reference, not a choice (it has no button in the compact
-    // drawing either), so the first other series with a value in the row stands for the category; a row with nothing to pick is ignored.
+    // What KlyChart reports is a row and the series the pick landed on, and that series is what is reported, a comparison series included (its own key and value).
+    // Only when the series cannot be told (the keyboard) or has no value in the row, the first non-comparison series with a value stands for the category;
+    // a row with nothing to pick is ignored.
     private Task Pick(KlyChartSelectEventArgs<int> e, IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series, IReadOnlyList<DashboardChartSeries> shown)
     {
         if (e.Row < 0 || e.Row >= categories.Count) return Task.CompletedTask;
         var picked = e.SeriesIndex >= 0 && e.SeriesIndex < shown.Count ? shown[e.SeriesIndex] : null;
-        if (picked is null || picked.IsComparison || ValueOrNull(picked, e.Row) is null)
+        if (picked is null || ValueOrNull(picked, e.Row) is null)
         {
             picked = series.FirstOrDefault(s => !s.IsComparison && ValueOrNull(s, e.Row) is not null);
         }

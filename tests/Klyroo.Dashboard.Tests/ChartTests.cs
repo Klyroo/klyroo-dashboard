@@ -191,7 +191,7 @@ public sealed class ChartTests : BunitContext
     }
 
     [Fact]
-    public async Task A_pick_names_its_series_and_a_comparison_series_stands_for_the_first_other_one()
+    public async Task A_pick_is_reported_for_the_series_it_landed_on_comparison_series_included()
     {
         var picked = new List<DashboardChartSelection>();
         var two = Chart("bar", [Revenue, new DashboardChartSeries("cost", "Cost", [1, 2, 3])], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
@@ -200,7 +200,12 @@ public sealed class ChartTests : BunitContext
 
         var compared = Chart("bar", [Revenue, Previous], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
         await Pick(compared, 2, 1);
-        Assert.Equal(new DashboardChartSelection("Mar", "revenue", 30), picked[^1]);
+        Assert.Equal(new DashboardChartSelection("Mar", "previous", 25), picked[^1]);
+
+        // A comparison series with no value in the category is not picked: the first other series with a value stands for it.
+        var gappy = Chart("bar", [Revenue, new DashboardChartSeries("previous", "Previous", [8, double.NaN, 25], IsComparison: true)], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+        await Pick(gappy, 1, 1);
+        Assert.Equal(new DashboardChartSelection("Feb", "revenue", 20), picked[^1]);
 
         // The keyboard does not tell the series: the first one with a value.
         await Pick(compared, 0, -1);
