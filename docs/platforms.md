@@ -12,7 +12,11 @@ What runs where. The facts below come from the project files and from running th
 
 ## Blazor render modes
 
-The components use plain `@onclick` handlers and no JavaScript of their own, so they have no browser-only code path. What differs between modes is whether those handlers can run.
+The components use plain `@onclick` handlers, so there is no browser-only code path for the tabs, the filters, the refresh button, sorting and the card menu. What differs between modes is whether those handlers can run. A few features do use JavaScript, and none of them is needed to render a block:
+
+- `_content/Klyroo.Dashboard/klyroo-dashboard.js` is a small ES module with one function, `downloadText`, that saves a file. It is imported on demand (`import()` through JS interop) the first time the user clicks Download CSV and `KlyDashboardCard.OnCsvExported` has no handler. Nothing is loaded before that click, and a handler replaces it (see [.NET MAUI Blazor Hybrid](#net-maui-blazor-hybrid)).
+- The copy button of `KlyDashboardDetails` calls `navigator.clipboard.writeText` through JS interop. It does nothing outside an interactive render mode.
+- The chart tooltip with its arrow-key exploration (`KlyChart`) and the Expand dialog (`KlyModal`) are custom elements of Klyroo.UI, loaded with the Klyroo.UI script that `<KlyApp>` adds. The chart tooltip works in static rendering too, since it runs in the browser; opening the Expand dialog is a click handler, so it needs an interactive render mode.
 
 | Render mode | Blocks render | Interaction (tabs, filters, refresh, Retry, sort, menu) |
 | :--- | :--- | :--- |
