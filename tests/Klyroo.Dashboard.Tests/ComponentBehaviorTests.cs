@@ -75,19 +75,19 @@ public sealed class ComponentBehaviorTests : BunitContext
         Assert.Contains("\"Acme\",4.25,120000\r\n", listCsv);
         Assert.DoesNotContain("Beta", listCsv);
 
-        var table = Render<KlyDashboardTable>(p => p
+        var table = Render<KlyDashboardTable<RegionRow>>(p => p
             .Add(x => x.Title, "Regions")
             .Add(x => x.Menu, true)
             .Add(x => x.Limit, 1)
             .Add(x => x.Sort, new DashboardTableSort("revenue", Descending: true))
             .Add(x => x.Columns, [
-                new DashboardTableColumn("region", "Region"),
-                new DashboardTableColumn("revenue", "Revenue", Type: "number", Format: DashboardFormatPreset.Compact),
-                new DashboardTableColumn("growth", "Growth", Type: "delta"),
+                DashboardTableColumn.For<RegionRow, string>("region", "Region", r => r.Name),
+                DashboardTableColumn.For<RegionRow, double>("revenue", "Revenue", r => r.Revenue, DashboardFormatPreset.Compact),
+                DashboardTableColumn.For<RegionRow, double?>("growth", "Growth", r => r.Growth, kind: DashboardTableColumnKind.Delta),
             ])
             .Add(x => x.Rows, [
-                new Dictionary<string, object?> { ["region"] = "EMEA", ["revenue"] = 21_300.0, ["growth"] = -4.5 },
-                new Dictionary<string, object?> { ["region"] = "AMER", ["revenue"] = 18_900.0, ["growth"] = 2.0 },
+                new RegionRow("EMEA", 21_300.0, -4.5),
+                new RegionRow("AMER", 18_900.0, 2.0),
             ]));
         table.Find("[data-slot=dashboard-card-csv]").Click();
         var tableCsv = (string)_module.Invocations["downloadText"][1].Arguments[1]!;

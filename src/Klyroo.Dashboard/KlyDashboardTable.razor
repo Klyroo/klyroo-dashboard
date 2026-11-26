@@ -1,5 +1,6 @@
 @namespace Klyroo.Dashboard
 @using System.Globalization
+@typeparam TRow
 @inherits KlyComponentBase
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
@@ -13,7 +14,7 @@
                     {
                         @foreach (var col in Columns)
                         {
-                            var isNum = col.Type is "number" or "delta" or "percent" or "bar";
+                            var isNum = col.IsNumeric;
                             var ariaSort = Sort?.Key == col.Key
                                 ? (Sort.Descending ? "descending" : "ascending")
                                 : (col.Sortable ? "none" : null);
@@ -58,9 +59,8 @@
                             @for (var c = 0; c < Columns.Count; c++)
                             {
                                 var col = Columns[c];
-                                row.TryGetValue(col.Key, out var raw);
-                                var isNum = col.Type is "number" or "delta" or "percent" or "bar";
-                                <td class="px-3 py-2 @(isNum ? "text-end tabular-nums" : "text-start")" data-slot="dashboard-table-cell" data-type="@col.Type">
+                                var isNum = col.IsNumeric;
+                                <td class="px-3 py-2 @(isNum ? "text-end tabular-nums" : "text-start")" data-slot="dashboard-table-cell" data-type="@KindName(col.Kind)">
                                     @if (clickable && c == 0)
                                     {
                                         <button type="button"
@@ -68,12 +68,12 @@
                                                 data-slot="dashboard-table-row-button"
                                                 @onclick="@(() => OnRowClick.InvokeAsync(current))"
                                                 @onclick:stopPropagation="true">
-                                            @RenderCell(col, raw)
+                                            @RenderCell(col, row)
                                         </button>
                                     }
                                     else
                                     {
-                                        @RenderCell(col, raw)
+                                        @RenderCell(col, row)
                                     }
                                 </td>
                             }
@@ -93,15 +93,15 @@
     /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
     /// <summary>The column definitions, in display order.</summary>
-    [Parameter] public IReadOnlyList<DashboardTableColumn>? Columns { get; set; }
-    /// <summary>The rows: one dictionary per row, holding the raw value of each column by key. Missing and <see langword="null"/> cells show the missing-value placeholder.</summary>
-    [Parameter] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Rows { get; set; }
+    [Parameter] public IReadOnlyList<DashboardTableColumn<TRow>>? Columns { get; set; }
+    /// <summary>The rows. Each column reads its value from the row with its own delegate (<see cref="DashboardTableColumn.For{TRow, TValue}"/>), and a <see langword="null"/> value shows the missing-value placeholder. Blazor infers <c>TRow</c> from this list or from <see cref="Columns"/>.</summary>
+    [Parameter] public IReadOnlyList<TRow>? Rows { get; set; }
     /// <summary>The active sort. The table updates it itself when a header is clicked, and <see cref="SortChanged"/> reports the change. Numeric columns sort descending first, then ascending, then unsorted. Empty cells always come last.</summary>
     [Parameter] public DashboardTableSort? Sort { get; set; }
     /// <summary>Raised when the sort changes, with <see langword="null"/> when the sort is cleared.</summary>
     [Parameter] public EventCallback<DashboardTableSort?> SortChanged { get; set; }
-    /// <summary>Called with the row (the dictionary from <see cref="Rows"/>) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
-    [Parameter] public EventCallback<IReadOnlyDictionary<string, object?>> OnRowClick { get; set; }
+    /// <summary>Called with the row (the item of <see cref="Rows"/>) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    [Parameter] public EventCallback<TRow> OnRowClick { get; set; }
     /// <summary>The maximum number of rows shown, applied after sorting. The CSV export holds the same rows.</summary>
     [Parameter] public int? Limit { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 12.</summary>
@@ -114,10 +114,10 @@
     [Parameter] public bool? Freshness { get; set; }
 
     // Without a handler the row gets no click binding at all.
-    private EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> RowClick(IReadOnlyDictionary<string, object?> row) =>
+    private EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> RowClick(TRow row) =>
         OnRowClick.HasDelegate ? EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => OnRowClick.InvokeAsync(row)) : default;
 
-    private IReadOnlyList<IReadOnlyDictionary<string, object?>> SortedRows
+    private IReadOnlyList<TRow> SortedRows
     {
         get
         {
@@ -125,43 +125,21 @@
             if (Sort is null || Columns is null) return Rows;
             var col = Columns.FirstOrDefault(c => c.Key == Sort.Key);
             if (col is null) return Rows;
-            var isNumeric = col.Type is "number" or "delta" or "percent" or "bar";
 
-            var nonNull = new List<IReadOnlyDictionary<string, object?>>();
-            var nulls = new List<IReadOnlyDictionary<string, object?>>();
-            foreach (var r in Rows)
-            {
-                if (!r.TryGetValue(col.Key, out var val) || val is null) nulls.Add(r);
-                else nonNull.Add(r);
-            }
-
-            nonNull.Sort((a, b) =>
-            {
-                a.TryGetValue(col.Key, out var va);
-                b.TryGetValue(col.Key, out var vb);
-                int cmp;
-                if (isNumeric && TryToDouble(va, out var da) && TryToDouble(vb, out var db))
-                {
-                    cmp = da.CompareTo(db);
-                }
-                else
-                {
-                    cmp = string.Compare(va?.ToString(), vb?.ToString(), StringComparison.OrdinalIgnoreCase);
-                }
-                return Sort.Descending ? -cmp : cmp;
-            });
-
-            nonNull.AddRange(nulls);
-            return nonNull;
+            // Rows without a value come last, whatever the direction. The sort is stable.
+            var comparer = Comparer<TRow>.Create((a, b) => Sort.Descending ? -col.Compare(a, b) : col.Compare(a, b));
+            var sorted = Rows.Where(r => !col.IsMissing(r)).Order(comparer).ToList();
+            sorted.AddRange(Rows.Where(col.IsMissing));
+            return sorted;
         }
     }
 
-    private IReadOnlyList<IReadOnlyDictionary<string, object?>> SortedAndLimitedRows =>
+    private IReadOnlyList<TRow> SortedAndLimitedRows =>
         Limit is > 0 ? SortedRows.Take(Limit.Value).ToList() : SortedRows;
 
-    private async Task CycleSortAsync(DashboardTableColumn col)
+    private async Task CycleSortAsync(DashboardTableColumn<TRow> col)
     {
-        var naturalDesc = col.Type is "number" or "delta" or "percent" or "bar";
+        var naturalDesc = col.IsNumeric;
         if (Sort?.Key != col.Key)
         {
             Sort = new DashboardTableSort(col.Key, naturalDesc);
@@ -177,12 +155,12 @@
         await SortChanged.InvokeAsync(Sort);
     }
 
-    private RenderFragment RenderCell(DashboardTableColumn col, object? raw)
+    private RenderFragment RenderCell(DashboardTableColumn<TRow> col, TRow row)
     {
-        if (raw is null) return @<span class="text-(--klyroo-text-dimmed)">@DashboardFormat.MissingValue</span>;
-        if (TryToDouble(raw, out var num))
+        if (col.IsMissing(row)) return @<span class="text-(--klyroo-text-dimmed)">@DashboardFormat.MissingValue</span>;
+        if (col.Number(row) is { } num)
         {
-            if (col.Type == "delta")
+            if (col.Kind == DashboardTableColumnKind.Delta)
             {
                 var good = col.InvertDelta ? num < 0 : num > 0;
                 var tone = DashboardDelta.IsZero(num) ? "text-(--klyroo-text-muted)" : good ? "text-(--klyroo-success-text)" : "text-(--klyroo-error-text)";
@@ -190,11 +168,11 @@
                     @DashboardFormat.Format(num, DashboardFormatPreset.Delta, FormatCulture)
                 </span>;
             }
-            if (col.Type == "percent")
+            if (col.Kind == DashboardTableColumnKind.Percent)
             {
                 return @<span>@DashboardFormat.Format(num, DashboardFormatPreset.Percent, FormatCulture)</span>;
             }
-            if (col.Type == "bar")
+            if (col.Kind == DashboardTableColumnKind.Bar)
             {
                 // The scale includes zero: a zero has no bar and a negative value extends to the left of a zero line.
                 var (lo, hi) = ColumnScale(col.Key);
@@ -210,62 +188,43 @@
                     </span>
                 </div>;
             }
-            if (col.Type == "number")
+            if (col.Kind == DashboardTableColumnKind.Number)
             {
                 return @<span>@DashboardFormat.Format(num, col.Format, FormatCulture)</span>;
             }
         }
-        return @<span>@raw</span>;
+        return @<span>@col.Display(row)</span>;
     }
 
     private (double Lo, double Hi) ColumnScale(string key)
     {
         var values = new List<double>();
+        var col = Columns?.FirstOrDefault(c => c.Key == key);
         foreach (var r in Rows ?? [])
         {
-            if (r.TryGetValue(key, out var v) && TryToDouble(v, out var d)) values.Add(d);
+            if (col?.Number(r) is { } d) values.Add(d);
         }
         return DashboardBarGeometry.Domain(values);
     }
 
-    private static bool IsNumeric(DashboardTableColumn col) => col.Type is "number" or "delta" or "percent" or "bar";
-
-    private static bool TryToDouble(object? val, out double result)
+    private static string KindName(DashboardTableColumnKind kind) => kind switch
     {
-        switch (val)
-        {
-            case double d:
-                result = d;
-                return true;
-            case int i:
-                result = i;
-                return true;
-            case long l:
-                result = l;
-                return true;
-            case decimal m:
-                result = (double)m;
-                return true;
-            case float f:
-                result = f;
-                return true;
-            default:
-                return double.TryParse(val?.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out result);
-        }
-    }
+        DashboardTableColumnKind.Number => "number",
+        DashboardTableColumnKind.Delta => "delta",
+        DashboardTableColumnKind.Percent => "percent",
+        DashboardTableColumnKind.Bar => "bar",
+        _ => "text",
+    };
 
     private DashboardDataTable BuildDataTable()
     {
-        var cols = (Columns ?? []).Select(c => new DashboardDataColumn(c.Key, c.Label, IsNumeric(c))).ToList();
+        var cols = (Columns ?? []).Select(c => new DashboardDataColumn(c.Key, c.Label, c.IsNumeric)).ToList();
         var rows = SortedAndLimitedRows.Select(r =>
         {
             var dict = new Dictionary<string, string?>();
             foreach (var c in Columns ?? [])
             {
-                r.TryGetValue(c.Key, out var v);
-                dict[c.Key] = v is not null && IsNumeric(c) && TryToDouble(v, out var d)
-                    ? DashboardFormat.FormatInvariant(d)
-                    : v?.ToString();
+                dict[c.Key] = c.Number(r) is { } d && c.IsNumeric ? DashboardFormat.FormatInvariant(d) : c.Display(r);
             }
             return (IReadOnlyDictionary<string, string?>)dict;
         }).ToList();

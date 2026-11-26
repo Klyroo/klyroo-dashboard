@@ -143,10 +143,10 @@
             ? categories.Select((_, i) => new KlyColor(ColorOf(i))).ToList()
             : shown.Select(s => s.IsComparison ? KlyColor.Neutral : new KlyColor(ColorOf(series.ToList().IndexOf(s)))).ToList();
         var total = donut ? categories.Select((_, i) => Math.Max(0, ValueOrNull(shown[0], i) ?? 0)).Sum() : 0;
-        var select = OnSelect.HasDelegate ? EventCallback.Factory.Create<KlyChartSelectEventArgs<int>>(this, e => Pick(e, categories, series, shown)) : default;
+        var select = OnSelect.HasDelegate ? EventCallback.Factory.Create<KlyChartSelectEventArgs<int, string>>(this, e => Pick(e, categories, series, shown)) : default;
 
         <div class="mx-auto flex w-full max-w-160 flex-col items-center" data-slot="dashboard-chart-canvas">
-            <KlyChart TItem="int" Data="rows" Index="@(i => categories[i])" Categories="kinds" Type="kind"
+            <KlyChart TItem="int" TIndex="string" Data="rows" Index="@(i => categories[i])" Categories="kinds" Type="kind"
                       Horizontal="@(Horizontal && kind == KlyChartType.Bar)"
                       Stacked="@(Stacked && kind is KlyChartType.Bar or KlyChartType.Area)"
                       Height="@(donut ? Math.Clamp(Height, 96, 240) : Height)" Width="@(donut ? Math.Clamp(Height, 96, 240) : 640)"
@@ -168,7 +168,7 @@
     // What KlyChart reports is a row and the series the pick landed on, and that series is what is reported, a comparison series included (its own key and value).
     // Only when the series cannot be told (the keyboard) or has no value in the row, the first non-comparison series with a value stands for the category;
     // a row with nothing to pick is ignored.
-    private Task Pick(KlyChartSelectEventArgs<int> e, IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series, IReadOnlyList<DashboardChartSeries> shown)
+    private Task Pick(KlyChartSelectEventArgs<int, string> e, IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series, IReadOnlyList<DashboardChartSeries> shown)
     {
         if (e.Row < 0 || e.Row >= categories.Count) return Task.CompletedTask;
         var picked = e.SeriesIndex >= 0 && e.SeriesIndex < shown.Count ? shown[e.SeriesIndex] : null;

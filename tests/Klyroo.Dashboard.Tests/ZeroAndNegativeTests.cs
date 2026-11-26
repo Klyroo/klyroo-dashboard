@@ -82,12 +82,11 @@ public sealed class ZeroAndNegativeTests : BunitContext
     [Fact]
     public void A_bar_column_of_a_table_follows_the_same_scale()
     {
-        var cut = Render<KlyDashboardTable>(p => p
-            .Add(x => x.Columns, [new DashboardTableColumn("name", "Name", Sortable: false), new DashboardTableColumn("net", "Net", "bar", Sortable: false)])
-            .Add(x => x.Rows, [
-                new Dictionary<string, object?> { ["name"] = "A", ["net"] = 20.0 },
-                new Dictionary<string, object?> { ["name"] = "B", ["net"] = 0.0 },
-                new Dictionary<string, object?> { ["name"] = "C", ["net"] = -20.0 }]));
+        var cut = Render<KlyDashboardTable<RegionRow>>(p => p
+            .Add(x => x.Columns, [
+                DashboardTableColumn.For<RegionRow, string>("name", "Name", r => r.Name, sortable: false),
+                DashboardTableColumn.For<RegionRow, double>("net", "Net", r => r.Revenue, kind: DashboardTableColumnKind.Bar, sortable: false)])
+            .Add(x => x.Rows, [new RegionRow("A", 20.0), new RegionRow("B", 0.0), new RegionRow("C", -20.0)]));
         var fills = cut.FindAll("[data-slot=dashboard-table-cell] span.bg-\\(--klyroo-primary\\)");
 
         Assert.Equal(3, fills.Count);
@@ -127,9 +126,9 @@ public sealed class ZeroAndNegativeTests : BunitContext
         Assert.Contains("success", deltas[1].ClassName);
         Assert.Contains("error", deltas[2].ClassName);
 
-        var table = Render<KlyDashboardTable>(p => p
-            .Add(x => x.Columns, [new DashboardTableColumn("d", "Growth", "delta")])
-            .Add(x => x.Rows, [new Dictionary<string, object?> { ["d"] = 0.0 }, new Dictionary<string, object?> { ["d"] = -3.0 }]));
+        var table = Render<KlyDashboardTable<RegionRow>>(p => p
+            .Add(x => x.Columns, [DashboardTableColumn.For<RegionRow, double?>("d", "Growth", r => r.Growth, kind: DashboardTableColumnKind.Delta)])
+            .Add(x => x.Rows, [new RegionRow("A", 0, 0.0), new RegionRow("B", 0, -3.0)]));
         var cells = table.FindAll("[data-slot=dashboard-table-cell] span");
         Assert.Contains("text-(--klyroo-text-muted)", cells[0].ClassName);
         Assert.Contains("error", cells[1].ClassName);

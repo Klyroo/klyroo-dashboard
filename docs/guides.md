@@ -251,31 +251,35 @@ By default the delta is the percent change, `+15.5%` for 48,500 against 42,000. 
 
 Goal: a table whose columns the user can sort, with typed cells.
 
+A row is an object of your own type, and each column reads its value from it with a delegate:
+
 ```razor
 <KlyDashboardTable Title="Regions" Columns="_columns" Rows="_rows" @bind-Sort="_sort" />
 
 @code {
+    private sealed record RegionRow(string Region, double Revenue, int Orders, double Growth);
+
     private DashboardTableSort? _sort = new("revenue", Descending: true);
 
-    private readonly IReadOnlyList<DashboardTableColumn> _columns =
+    private readonly IReadOnlyList<DashboardTableColumn<RegionRow>> _columns =
     [
-        new("region", "Region"),
-        new("revenue", "Revenue", Type: "bar", Format: DashboardFormatPreset.Compact),
-        new("orders", "Orders", Type: "number", Format: DashboardFormatPreset.Integer),
-        new("growth", "Growth", Type: "delta"),
+        DashboardTableColumn.For<RegionRow, string>("region", "Region", r => r.Region),
+        DashboardTableColumn.For<RegionRow, double>("revenue", "Revenue", r => r.Revenue, DashboardFormatPreset.Compact, kind: DashboardTableColumnKind.Bar),
+        DashboardTableColumn.For<RegionRow, int>("orders", "Orders", r => r.Orders, DashboardFormatPreset.Integer),
+        DashboardTableColumn.For<RegionRow, double>("growth", "Growth", r => r.Growth, kind: DashboardTableColumnKind.Delta),
     ];
 
-    private readonly IReadOnlyList<IReadOnlyDictionary<string, object?>> _rows =
+    private readonly IReadOnlyList<RegionRow> _rows =
     [
-        new Dictionary<string, object?> { ["region"] = "EMEA", ["revenue"] = 21_300.0, ["orders"] = 140, ["growth"] = 12.5 },
-        new Dictionary<string, object?> { ["region"] = "AMER", ["revenue"] = 18_900.0, ["orders"] = 120, ["growth"] = -4.0 },
+        new("EMEA", 21_300.0, 140, 12.5),
+        new("AMER", 18_900.0, 120, -4.0),
     ];
 }
 ```
 
-Column types are strings: `text`, `number`, `delta`, `percent` and `bar`. Any other value behaves like `text`. A `delta` cell is colored green when positive and red when negative (reversed by `InvertDelta`), and a `bar` cell adds a bar scaled to the largest value of the column. Rows hold raw values: the table formats them.
+The kind of a column is a `DashboardTableColumnKind`: `Text`, `Number`, `Delta`, `Percent` and `Bar`. When you do not give it, a number type (`double`, `decimal`, `int`, `long`, their nullable forms and the other built-in numbers) is a `Number` column and any other type is `Text`; a number kind on a text type throws when the column is created. A `Delta` cell is colored green when positive and red when negative (reversed by `invertDelta`), and a `Bar` cell adds a bar scaled to the largest value of the column. The table formats the values, and a `null` shows the missing-value placeholder.
 
-Clicking a header cycles the sort. A text column goes ascending, descending, then unsorted. A numeric column goes descending first. Rows with an empty value always come last. Sorting happens in the component on the rows you pass, so for a large result set sort and page on the server and leave the table to display one page.
+Clicking a header cycles the sort, by the type of the value: numbers by value, strings ignoring case, dates and other comparable values by value. A text column goes ascending, descending, then unsorted. A numeric column goes descending first. Rows with a `null` value always come last. Sorting happens in the component on the rows you pass, so for a large result set sort and page on the server and leave the table to display one page.
 
 ## Export a block to CSV
 
@@ -487,14 +491,14 @@ Goal: let the user pick a bar, a row or a chart point and filter the rest of the
 
     private void PickPoint(DashboardChartSelection point) => _dashboard.Controls.First(c => c.Key == "month").Value = point.Category;
 
-    private void PickRow(IReadOnlyDictionary<string, object?> row) => Nav.NavigateTo($"/regions/{row["id"]}");
+    private void PickRow(RegionRow row) => Nav.NavigateTo($"/regions/{row.Region}");
 }
 ```
 
 Every pick control takes the focus, works with Enter and Space, and has an accessible name:
 
 - A bar of `KlyDashboardBars` becomes a button as a whole, with `aria-pressed` following `DashboardBarItem.Selected`.
-- In `KlyDashboardTable`, the first cell of each row holds a button, and a click anywhere on the row does the same for the pointer. The row passed to `OnRowClick` is the dictionary from `Rows`, whatever the sort.
+- In `KlyDashboardTable`, the first cell of each row holds a button, and a click anywhere on the row does the same for the pointer. The row passed to `OnRowClick` is the item of `Rows`, whatever the sort.
 - In `KlyDashboardList`, the label of a row becomes a button, and a click on the row does the same. A row with an `Href` keeps its link and raises nothing.
 - In `KlyDashboardChart` the bars, points and slices are the choice: a click on one, or Enter or Space on the one the arrow keys are on, raises `OnSelect` (it uses `KlyChart.OnSelect` of Klyroo.UI), the pointer turns into a hand over them and the keyboard hint says Enter selects. A pick is reported for the series it landed on, a comparison series included (its own key and value); from the keyboard (which names no series), or for a series with no value in that category, it is the first series that is not a comparison and has a value, and a category with nothing to pick is ignored. A chart that uses the compact drawing (a bar chart with a `line` series, or with `ShowLabels`, which `KlyChart` cannot draw) has no selectable marks, so it keeps a group of buttons under the drawing instead, one per category and series (one per slice for a donut, comparison series left out).
 

@@ -4,7 +4,7 @@
 
 ## Klyroo.Dashboard.Core
 
-Static classes and extensions (1) · Classes (4) · Records (16) · Interfaces (2) · Enums (8)
+Static classes and extensions (2) · Classes (5) · Records (15) · Interfaces (2) · Enums (9)
 
 ### Static classes and extensions
 
@@ -29,6 +29,16 @@ Number, delta, relative-time, comparison-range and CSV helpers. Numbers use the 
 | `static FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now, DashboardRelativeTimeTexts texts)` | `string` | Describes how long ago something happened like `DashboardFormat.FormatRelativeTime`, with the wording of `texts`. Past a week the text is still an ISO date. |
 | `static ResolveComparisonRange((DateTimeOffset, DateTimeOffset)? range, DashboardComparisonMode comparison)` | `(DateTimeOffset, DateTimeOffset)?` | Computes the comparison range of a date range. `DashboardComparisonMode.Previous` gives the range of the same number of days that ends the day before the start. `DashboardComparisonMode.Year` shifts both bounds back one year, clamping February 29. |
 | `static ResolveFileName(string? title, string extension = "csv")` | `string` | Turns a title into a file name: lowercase, accents removed, anything that is not a letter or digit collapsed into one hyphen. Falls back to `dashboard` when nothing is left. |
+
+#### `DashboardTableColumn`
+
+`Klyroo.Dashboard` · service
+
+Creates the columns of `KlyDashboardTable<TRow>`. The column reads its value from the row with a delegate, so nothing is looked up by name and a wrong type does not compile.
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static For<TRow, TValue>(string key, string label, Func<TRow, TValue> value, DashboardFormatPreset format = Number, DashboardTableColumnKind? kind = null, bool invertDelta = false, bool sortable = true)` | `DashboardTableColumn<TRow>` | Creates a column that shows `value` of each row. |
 
 ### Classes
 
@@ -149,6 +159,21 @@ A staged, optionally gated asynchronous data resource managed by a `DashboardCon
 | `RestoreJson(string json, DateTimeOffset? updatedAt)` | `bool` | Takes data written by `IDashboardPersistentSource.ExportJson` as if it had been loaded at `updatedAt`, and sets `IDashboardPersistentSource.Restored`. Returns `false` and changes nothing when the source cannot take it: no `JsonTypeInfo`, a load already started, a disabled or disposed source, a closed `requires` gate, or text that does not read as the data type. |
 | `SetData(TData data)` | `void` | Sets the resource data directly and transitions to `DashboardResourceState.Ready`. A load in progress is cancelled and its result ignored. |
 | `SetError(string message)` | `void` | Transitions the resource to `DashboardResourceState.Error`. A load in progress is cancelled and its result ignored. |
+
+#### `DashboardTableColumn<TRow>`
+
+`Klyroo.Dashboard` · class
+
+A column of `KlyDashboardTable<TRow>`. Create one with `DashboardTableColumn.For``.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Format` | `DashboardFormatPreset` | The number format of `DashboardTableColumnKind.Number` and `DashboardTableColumnKind.Bar` cells. |
+| `InvertDelta` | `bool` | Whether a negative `DashboardTableColumnKind.Delta` is shown as good news. |
+| `Key` | `string` | The key of the column: the sort key, and the column of the table view and of the CSV export. |
+| `Kind` | `DashboardTableColumnKind` | How the column shows and sorts its values. |
+| `Label` | `string` | The column header. |
+| `Sortable` | `bool` | Whether the header is a sort button. |
 
 #### `DashboardViewMeta`
 
@@ -414,34 +439,15 @@ Status pill shown on a `KlyDashboardStat` or `DashboardStatsItem`.
 | `Color` (init) | `string?` | A semantic color name such as `success`, `warning`, `error`, `info` or `primary`; neutral when `null`. It must not be empty. |
 | `Label` (init) | `string` | The text of the pill. |
 
-#### `DashboardTableColumn`
-
-`Klyroo.Dashboard` · record
-
-Column definition for `KlyDashboardTable`.
-
-| Constructor | Description |
-| :--- | :--- |
-| `DashboardTableColumn(string Key, string Label, string Type = "text", DashboardFormatPreset Format = Number, bool InvertDelta = false, bool Sortable = true)` | Column definition for `KlyDashboardTable`. |
-
-| Property | Type | Description |
-| :--- | :--- | :--- |
-| `Format` (init) | `DashboardFormatPreset` | The number format of `number` and `bar` cells. `delta` and `percent` cells use their own format. |
-| `InvertDelta` (init) | `bool` | When set, a negative `delta` is shown as good news. |
-| `Key` (init) | `string` | The key of the cell in each row. |
-| `Label` (init) | `string` | The column header. |
-| `Sortable` (init) | `bool` | Whether the header is a sort button. |
-| `Type` (init) | `string` | One of `text`, `number`, `delta`, `percent` or `bar`. Any other value is treated as `text`. |
-
 #### `DashboardTableSort`
 
 `Klyroo.Dashboard` · record
 
-Active sort state of `KlyDashboardTable`.
+Active sort state of `KlyDashboardTable<TRow>`.
 
 | Constructor | Description |
 | :--- | :--- |
-| `DashboardTableSort(string Key, bool Descending)` | Active sort state of `KlyDashboardTable`. |
+| `DashboardTableSort(string Key, bool Descending)` | Active sort state of `KlyDashboardTable<TRow>`. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -612,6 +618,20 @@ Skeleton geometry kind rendered while a `KlyDashboardCard` is loading.
 | `Feed` | A timeline, used by `KlyDashboardFeed`. Rendered as three lines. |
 | `Lines` | Same shape as `DashboardSkeletonKind.Bars`, used by `KlyDashboardChart` when `Type` is `line`. |
 | `Donut` | A donut chart, used by `KlyDashboardChart` when `Type` is `donut`. Rendered as three lines. |
+
+#### `DashboardTableColumnKind`
+
+`Klyroo.Dashboard` · enum
+
+How a `DashboardTableColumn` shows and sorts its values.
+
+| Value | Description |
+| :--- | :--- |
+| `Text` | The value as text. Strings sort ignoring case, other comparable values (a date) by value. |
+| `Number` | A number formatted with the `DashboardTableColumn.Format` of the column, right-aligned, sorted by value. |
+| `Delta` | A percent change: `+12.5%`, green when positive and red when negative (reversed by `DashboardTableColumn.InvertDelta`). |
+| `Percent` | A percentage. |
+| `Bar` | A number with a bar scaled to the largest value of the column. |
 
 ## Klyroo.Dashboard
 
@@ -909,21 +929,21 @@ Several metrics side by side, each with an optional delta, progress bar and stat
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlyDashboardTable`
+#### `KlyDashboardTable<TRow>`
 
 `Klyroo.Dashboard` · component · inherits `KlyComponentBase`
 
-A table with typed columns (text, number, delta, percent, bar) and click-to-sort headers.
+A table over rows of your own type, with typed columns (text, number, delta, percent, bar) and click-to-sort headers.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Card` | `bool` | Whether the block draws its own surface (border, background and shadow; only the background in a `panels` grid). Defaults to `true`. |
-| `Columns` | `IReadOnlyList<DashboardTableColumn>?` | The column definitions, in display order. |
+| `Columns` | `IReadOnlyList<DashboardTableColumn<TRow>>?` | The column definitions, in display order. |
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
 | `Limit` | `int?` | The maximum number of rows shown, applied after sorting. The CSV export holds the same rows. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
-| `OnRowClick` | `EventCallback<IReadOnlyDictionary<string, object?>>` | Called with the row (the dictionary from `KlyDashboardTable.Rows`) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the `DashboardController`. |
-| `Rows` | `IReadOnlyList<IReadOnlyDictionary<string, object?>>?` | The rows: one dictionary per row, holding the raw value of each column by key. Missing and `null` cells show the missing-value placeholder. |
+| `OnRowClick` | `EventCallback<TRow>` | Called with the row (the item of `KlyDashboardTable.Rows`) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the `DashboardController`. |
+| `Rows` | `IReadOnlyList<TRow>?` | The rows. Each column reads its value from the row with its own delegate (`DashboardTableColumn.For``), and a `null` value shows the missing-value placeholder. Blazor infers `TRow` from this list or from `KlyDashboardTable.Columns`. |
 | `Sort` | `DashboardTableSort?` | The active sort. The table updates it itself when a header is clicked, and `KlyDashboardTable.SortChanged` reports the change. Numeric columns sort descending first, then ascending, then unsorted. Empty cells always come last. |
 | `SortChanged` | `EventCallback<DashboardTableSort?>` | Raised when the sort changes, with `null` when the sort is cleared. |
 | `Source` | `IDashboardSource?` | The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read `Data` from it, so pass the data through the other parameters. Without a source the content renders immediately. |

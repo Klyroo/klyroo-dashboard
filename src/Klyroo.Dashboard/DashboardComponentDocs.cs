@@ -36,5 +36,5 @@ public partial class KlyDashboardGauge;
 /// <summary>A ranked list of rows with an optional value, percentage and delta.</summary>
 public partial class KlyDashboardList;
 
-/// <summary>A table with typed columns (text, number, delta, percent, bar) and click-to-sort headers.</summary>
-public partial class KlyDashboardTable;
+/// <summary>A table over rows of your own type, with typed columns (text, number, delta, percent, bar) and click-to-sort headers.</summary>
+public partial class KlyDashboardTable<TRow>;

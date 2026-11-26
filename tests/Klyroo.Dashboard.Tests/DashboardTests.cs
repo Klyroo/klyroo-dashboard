@@ -110,18 +110,15 @@ public sealed class DashboardTests : BunitContext
     [Fact]
     public void KlyDashboardBlocks_render_Table_sorting_Bars_Funnel_Alerts_Feed_Gauge_and_Details()
     {
-        var cut = Render<KlyDashboardTable>(p => p
+        var cut = Render<KlyDashboardTable<RegionRow>>(p => p
             .Add(x => x.Title, "Top Regions")
             .Add(x => x.Menu, true)
             .Add(x => x.Columns, [
-                new DashboardTableColumn("region", "Region", Type: "text"),
-                new DashboardTableColumn("revenue", "Revenue", Type: "bar"),
-                new DashboardTableColumn("delta", "Growth", Type: "delta")
+                DashboardTableColumn.For<RegionRow, string>("region", "Region", r => r.Name),
+                DashboardTableColumn.For<RegionRow, double>("revenue", "Revenue", r => r.Revenue, kind: DashboardTableColumnKind.Bar),
+                DashboardTableColumn.For<RegionRow, double?>("delta", "Growth", r => r.Growth, kind: DashboardTableColumnKind.Delta)
             ])
-            .Add(x => x.Rows, [
-                new Dictionary<string, object?> { ["region"] = "EMEA", ["revenue"] = 200.0, ["delta"] = 12.5 },
-                new Dictionary<string, object?> { ["region"] = "AMER", ["revenue"] = 450.0, ["delta"] = -4.0 }
-            ]));
+            .Add(x => x.Rows, [new RegionRow("EMEA", 200.0, 12.5), new RegionRow("AMER", 450.0, -4.0)]));
 
         // Click numeric column "revenue": natural sort is descending (AMER 450 first)
         cut.FindAll("[data-slot=dashboard-table-sort]")[1].Click();

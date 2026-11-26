@@ -56,22 +56,24 @@ public sealed class DrillDownTests : BunitContext
     [Fact]
     public void A_table_without_OnRowClick_has_no_buttons_in_its_rows()
     {
-        var cut = Render<KlyDashboardTable>(p => p
-            .Add(x => x.Columns, [new DashboardTableColumn("name", "Name")])
-            .Add(x => x.Rows, [new Dictionary<string, object?> { ["name"] = "EMEA" }]));
+        var cut = Render<KlyDashboardTable<RegionRow>>(p => p
+            .Add(x => x.Columns, [DashboardTableColumn.For<RegionRow, string>("name", "Name", r => r.Name)])
+            .Add(x => x.Rows, [new RegionRow("EMEA", 0)]));
         Assert.Empty(cut.FindAll("[data-slot=dashboard-table-row-button]"));
     }
 
     [Fact]
     public void A_table_row_is_picked_with_the_button_of_its_first_cell_or_a_click_on_the_row_once()
     {
-        var picked = new List<IReadOnlyDictionary<string, object?>>();
-        IReadOnlyDictionary<string, object?> emea = new Dictionary<string, object?> { ["name"] = "EMEA", ["revenue"] = 10.0 };
-        IReadOnlyDictionary<string, object?> amer = new Dictionary<string, object?> { ["name"] = "AMER", ["revenue"] = 20.0 };
-        var cut = Render<KlyDashboardTable>(p => p
-            .Add(x => x.Columns, [new DashboardTableColumn("name", "Name", Sortable: false), new DashboardTableColumn("revenue", "Revenue", "number", Sortable: false)])
+        var picked = new List<RegionRow>();
+        var emea = new RegionRow("EMEA", 10.0);
+        var amer = new RegionRow("AMER", 20.0);
+        var cut = Render<KlyDashboardTable<RegionRow>>(p => p
+            .Add(x => x.Columns, [
+                DashboardTableColumn.For<RegionRow, string>("name", "Name", r => r.Name, sortable: false),
+                DashboardTableColumn.For<RegionRow, double>("revenue", "Revenue", r => r.Revenue, sortable: false)])
             .Add(x => x.Rows, [emea, amer])
-            .Add(x => x.OnRowClick, (IReadOnlyDictionary<string, object?> r) => picked.Add(r)));
+            .Add(x => x.OnRowClick, (RegionRow r) => picked.Add(r)));
 
         var buttons = cut.FindAll("[data-slot=dashboard-table-row-button]");
         // One button per row, in the first cell only.
@@ -90,17 +92,17 @@ public sealed class DrillDownTests : BunitContext
     [Fact]
     public void A_sorted_table_reports_the_row_that_was_clicked_not_its_position()
     {
-        var picked = new List<IReadOnlyDictionary<string, object?>>();
-        var cut = Render<KlyDashboardTable>(p => p
-            .Add(x => x.Columns, [new DashboardTableColumn("name", "Name"), new DashboardTableColumn("revenue", "Revenue", "number")])
-            .Add(x => x.Rows, [
-                new Dictionary<string, object?> { ["name"] = "EMEA", ["revenue"] = 10.0 },
-                new Dictionary<string, object?> { ["name"] = "AMER", ["revenue"] = 20.0 }])
-            .Add(x => x.OnRowClick, (IReadOnlyDictionary<string, object?> r) => picked.Add(r)));
+        var picked = new List<RegionRow>();
+        var cut = Render<KlyDashboardTable<RegionRow>>(p => p
+            .Add(x => x.Columns, [
+                DashboardTableColumn.For<RegionRow, string>("name", "Name", r => r.Name),
+                DashboardTableColumn.For<RegionRow, double>("revenue", "Revenue", r => r.Revenue)])
+            .Add(x => x.Rows, [new RegionRow("EMEA", 10.0), new RegionRow("AMER", 20.0)])
+            .Add(x => x.OnRowClick, (RegionRow r) => picked.Add(r)));
         cut.FindAll("[data-slot=dashboard-table-sort]")[1].Click();
 
         cut.FindAll("[data-slot=dashboard-table-row-button]")[0].Click();
-        Assert.Equal("AMER", Assert.Single(picked)["name"]);
+        Assert.Equal("AMER", Assert.Single(picked).Name);
     }
 
     [Fact]

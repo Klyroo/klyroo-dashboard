@@ -1457,22 +1457,157 @@ public sealed record DashboardListItem(
     string? Href = null,
     bool Selected = false);
 
-/// <summary>Column definition for <c>KlyDashboardTable</c>.</summary>
-/// <param name="Key">The key of the cell in each row.</param>
-/// <param name="Label">The column header.</param>
-/// <param name="Type">One of <c>text</c>, <c>number</c>, <c>delta</c>, <c>percent</c> or <c>bar</c>. Any other value is treated as <c>text</c>.</param>
-/// <param name="Format">The number format of <c>number</c> and <c>bar</c> cells. <c>delta</c> and <c>percent</c> cells use their own format.</param>
-/// <param name="InvertDelta">When set, a negative <c>delta</c> is shown as good news.</param>
-/// <param name="Sortable">Whether the header is a sort button.</param>
-public sealed record DashboardTableColumn(
-    string Key,
-    string Label,
-    string Type = "text",
-    DashboardFormatPreset Format = DashboardFormatPreset.Number,
-    bool InvertDelta = false,
-    bool Sortable = true);
+/// <summary>How a <see cref="DashboardTableColumn{TRow}"/> shows and sorts its values.</summary>
+public enum DashboardTableColumnKind
+{
+    /// <summary>The value as text. Strings sort ignoring case, other comparable values (a date) by value.</summary>
+    Text,
+    /// <summary>A number formatted with the <see cref="DashboardTableColumn{TRow}.Format"/> of the column, right-aligned, sorted by value.</summary>
+    Number,
+    /// <summary>A percent change: <c>+12.5%</c>, green when positive and red when negative (reversed by <see cref="DashboardTableColumn{TRow}.InvertDelta"/>).</summary>
+    Delta,
+    /// <summary>A percentage.</summary>
+    Percent,
+    /// <summary>A number with a bar scaled to the largest value of the column.</summary>
+    Bar,
+}
 
-/// <summary>Active sort state of <c>KlyDashboardTable</c>.</summary>
+/// <summary>Creates the columns of <c>KlyDashboardTable&lt;TRow&gt;</c>. The column reads its value from the row with a delegate, so nothing is looked up by name and a wrong type does not compile.</summary>
+public static class DashboardTableColumn
+{
+    /// <summary>Creates a column that shows <paramref name="value"/> of each row.</summary>
+    /// <typeparam name="TRow">The row type of the table.</typeparam>
+    /// <typeparam name="TValue">The type the column reads, such as <see cref="string"/>, <see cref="double"/>, <see cref="decimal"/>, <see cref="int"/> or a nullable number. A <see langword="null"/> shows the missing-value placeholder and sorts last.</typeparam>
+    /// <param name="key">The key of the column: the sort key (<see cref="DashboardTableSort.Key"/>), the column of the table view and of the CSV export.</param>
+    /// <param name="label">The column header.</param>
+    /// <param name="value">Reads the value from a row, <c>r =&gt; r.Revenue</c>.</param>
+    /// <param name="format">The number format of <see cref="DashboardTableColumnKind.Number"/> and <see cref="DashboardTableColumnKind.Bar"/> cells. Delta and percent cells use their own format.</param>
+    /// <param name="kind">How the column shows its values. When <see langword="null"/>, a number type gives <see cref="DashboardTableColumnKind.Number"/> and any other type <see cref="DashboardTableColumnKind.Text"/>.</param>
+    /// <param name="invertDelta">When set, a negative <see cref="DashboardTableColumnKind.Delta"/> is shown as good news.</param>
+    /// <param name="sortable">Whether the header is a sort button.</param>
+    /// <returns>The column, to pass in <c>KlyDashboardTable&lt;TRow&gt;.Columns</c>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="kind"/> is a number kind (<see cref="DashboardTableColumnKind.Number"/>, <see cref="DashboardTableColumnKind.Delta"/>, <see cref="DashboardTableColumnKind.Percent"/> or <see cref="DashboardTableColumnKind.Bar"/>) and <typeparamref name="TValue"/> is not a number type.</exception>
+    public static DashboardTableColumn<TRow> For<TRow, TValue>(
+        string key,
+        string label,
+        Func<TRow, TValue> value,
+        DashboardFormatPreset format = DashboardFormatPreset.Number,
+        DashboardTableColumnKind? kind = null,
+        bool invertDelta = false,
+        bool sortable = true)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(value);
+        var numeric = IsNumberType(typeof(TValue));
+        var resolved = kind ?? (numeric ? DashboardTableColumnKind.Number : DashboardTableColumnKind.Text);
+        if (resolved != DashboardTableColumnKind.Text && !numeric)
+        {
+            throw new ArgumentException($"The column \"{key}\" is a {resolved} column, which needs a number type, and its values are {typeof(TValue).Name}.", nameof(kind));
+        }
+        return new TypedDashboardTableColumn<TRow, TValue>(key, label, resolved, format, invertDelta, sortable, value);
+    }
+
+    private static bool IsNumberType(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        return type == typeof(double) || type == typeof(decimal) || type == typeof(float) || type == typeof(int) || type == typeof(long)
+            || type == typeof(short) || type == typeof(sbyte) || type == typeof(byte) || type == typeof(uint) || type == typeof(ulong) || type == typeof(ushort);
+    }
+}
+
+/// <summary>A column of <c>KlyDashboardTable&lt;TRow&gt;</c>. Create one with <see cref="DashboardTableColumn.For{TRow, TValue}"/>.</summary>
+/// <typeparam name="TRow">The row type of the table.</typeparam>
+public abstract class DashboardTableColumn<TRow>
+{
+    internal DashboardTableColumn(string key, string label, DashboardTableColumnKind kind, DashboardFormatPreset format, bool invertDelta, bool sortable)
+    {
+        Key = key;
+        Label = label;
+        Kind = kind;
+        Format = format;
+        InvertDelta = invertDelta;
+        Sortable = sortable;
+    }
+
+    /// <summary>The key of the column: the sort key, and the column of the table view and of the CSV export.</summary>
+    public string Key { get; }
+
+    /// <summary>The column header.</summary>
+    public string Label { get; }
+
+    /// <summary>How the column shows and sorts its values.</summary>
+    public DashboardTableColumnKind Kind { get; }
+
+    /// <summary>The number format of <see cref="DashboardTableColumnKind.Number"/> and <see cref="DashboardTableColumnKind.Bar"/> cells.</summary>
+    public DashboardFormatPreset Format { get; }
+
+    /// <summary>Whether a negative <see cref="DashboardTableColumnKind.Delta"/> is shown as good news.</summary>
+    public bool InvertDelta { get; }
+
+    /// <summary>Whether the header is a sort button.</summary>
+    public bool Sortable { get; }
+
+    internal bool IsNumeric => Kind != DashboardTableColumnKind.Text;
+
+    // Whether the row has no value in this column: it shows the placeholder and sorts last.
+    internal abstract bool IsMissing(TRow row);
+
+    // The value of a number column as a double, for the formatting, the scale of a bar and the delta.
+    internal abstract double? Number(TRow row);
+
+    // The text of a value that is not formatted as a number.
+    internal abstract string? Display(TRow row);
+
+    // The order of two rows that both have a value.
+    internal abstract int Compare(TRow left, TRow right);
+}
+
+internal sealed class TypedDashboardTableColumn<TRow, TValue>(
+    string key,
+    string label,
+    DashboardTableColumnKind kind,
+    DashboardFormatPreset format,
+    bool invertDelta,
+    bool sortable,
+    Func<TRow, TValue> value) : DashboardTableColumn<TRow>(key, label, kind, format, invertDelta, sortable)
+{
+    internal override bool IsMissing(TRow row) => value(row) is null;
+
+    internal override double? Number(TRow row) => value(row) switch
+    {
+        null => null,
+        double d => d,
+        float f => f,
+        decimal m => (double)m,
+        int i => i,
+        long l => l,
+        short s => s,
+        sbyte sb => sb,
+        byte b => b,
+        uint ui => ui,
+        ulong ul => ul,
+        ushort us => us,
+        _ => null,
+    };
+
+    internal override string? Display(TRow row) => value(row)?.ToString();
+
+    internal override int Compare(TRow left, TRow right)
+    {
+        if (IsNumeric)
+        {
+            return (Number(left) ?? 0).CompareTo(Number(right) ?? 0);
+        }
+        var a = value(left);
+        var b = value(right);
+        if (a is string sa && b is string sb) return string.Compare(sa, sb, StringComparison.OrdinalIgnoreCase);
+        if (a is IComparable<TValue> || a is IComparable) return Comparer<TValue>.Default.Compare(a, b);
+        return string.Compare(a?.ToString(), b?.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+/// <summary>Active sort state of <c>KlyDashboardTable&lt;TRow&gt;</c>.</summary>
 /// <param name="Key">The key of the sorted column.</param>
 /// <param name="Descending">Whether the order is descending.</param>
 public sealed record DashboardTableSort(string Key, bool Descending);
