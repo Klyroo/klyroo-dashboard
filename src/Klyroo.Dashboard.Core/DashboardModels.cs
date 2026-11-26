@@ -923,8 +923,16 @@ public sealed partial class DashboardController : IDisposable
     public DashboardFilterControl AddFilter(DashboardFilterControl filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
-        filter.ChangedEvent += () => Changed?.Invoke();
-        filter.MetaChanged += () => Changed?.Invoke();
+        filter.ChangedEvent += () =>
+        {
+            ApplyDeferredQuery();
+            Changed?.Invoke();
+        };
+        filter.MetaChanged += () =>
+        {
+            ApplyDeferredQuery();
+            Changed?.Invoke();
+        };
         _controls.Add(filter);
         return filter;
     }

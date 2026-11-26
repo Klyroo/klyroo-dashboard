@@ -6,6 +6,9 @@ public sealed partial class DashboardController
 {
     private const int MaxQueryValueLength = 512;
 
+    // The selection a URL gave to a filter that was disabled at the time: it is applied when the filter is enabled, if the URL still has it.
+    private readonly Dictionary<DashboardFilterControl, List<string>> _deferredQuery = [];
+
     /// <summary>
     /// Writes the filters that differ from their default values as a URL query string, without the leading <c>?</c>: <c>region=EMEA&amp;region=APAC&amp;period=2026-01-01&amp;period=2026-01-31</c>.
     /// Each value is its own <c>key=value</c> pair, in the order of the filters and of their values, and every key and value is percent-encoded, so the same
@@ -23,7 +26,8 @@ public sealed partial class DashboardController
     /// (a number that is not a number, a date that is not <c>yyyy-MM-dd</c>, a <see cref="DashboardFilterKind.Boolean"/> that is not <c>true</c> or <c>false</c>, a
     /// <see cref="DashboardFilterKind.Comparison"/> that is not a <see cref="DashboardComparisonMode"/> name, a text longer than 512 characters, an option that is not
     /// among the loaded <see cref="DashboardFilterControl.Items"/> of an <see cref="DashboardFilterKind.Options"/> or <see cref="DashboardFilterKind.Enum"/>
-    /// filter) is ignored, so a hand-edited URL cannot put an unexpected value in a filter. A filter is only touched when its selection changes, so
+    /// filter) is ignored, so a hand-edited URL cannot put an unexpected value in a filter. A disabled filter ignores changes, so the controller remembers what the
+    /// query gave it and applies it when the filter is enabled, if no later <c>ApplyQuery</c> took it out of the URL in the meantime. A filter is only touched when its selection changes, so
     /// nothing is raised for a query that matches the current state, and applying the same query twice is the same as once. The method
     /// does not reload any resource: call <see cref="RefreshAsync"/> or <see cref="LoadAsync"/> afterwards, or let the subscribers of
     /// <see cref="DashboardFilterControl.ChangedEvent"/> do it. It uses no reflection.
@@ -47,12 +51,20 @@ public sealed partial class DashboardController
         var changed = false;
         foreach (var control in _controls)
         {
-            if (control.Headless || !control.Enabled) continue;
+            if (control.Headless) continue;
             List<string>? wanted = null;
             if (fromUrl.TryGetValue((prefix ?? "") + control.Key, out var given))
             {
                 wanted = Normalize(control, given);
             }
+            if (!control.Enabled)
+            {
+                // A disabled filter ignores changes: keep what the URL says for when it is enabled.
+                if (wanted is null) _deferredQuery.Remove(control);
+                else _deferredQuery[control] = wanted;
+                continue;
+            }
+            _deferredQuery.Remove(control);
             if (wanted is null)
             {
                 // Not in the URL, or not a value this filter takes: the default selection.
@@ -73,19 +85,65 @@ public sealed partial class DashboardController
 
     /// <summary>
     /// Replaces the filters of this controller in an existing query string with <see cref="ToQuery"/> and keeps every other pair as it was, so a page can write
-    /// its filters into a URL that also carries a search term or a page number. Headless filters are not the controller's: a pair with the key of one is kept.
+    /// its filters into a URL that also carries a search term or a page number. Headless filters are not the controller's: a pair with the key of one is kept. A disabled
+    /// filter keeps its pair too, so its value is still in the URL when the filter is enabled again.
     /// </summary>
     /// <param name="existingQuery">The query string of the URL with or without the leading <c>?</c> and with or without a <c>#fragment</c>. <see langword="null"/> for none.</param>
     /// <param name="prefix">The prefix <see cref="ToQuery"/> is given. <see langword="null"/> for none.</param>
     /// <returns>The new query string without the leading <c>?</c>, empty when nothing remains.</returns>
     public string MergeQuery(string? existingQuery, string? prefix = null)
     {
-        var owned = _controls.Where(c => !c.Headless).Select(c => (prefix ?? "") + c.Key).ToHashSet(StringComparer.Ordinal);
+        var owned = OwnedKeys(prefix);
         var parts = QuerySegments(existingQuery).Where(s => !owned.Contains(SplitSegment(s).Name)).ToList();
         var own = ToQuery(prefix);
         if (own.Length > 0) parts.Add(own);
         return string.Join('&', parts);
     }
+
+    // Called when a filter changes or is enabled: a filter enabled since ApplyQuery takes the selection the URL gave it.
+    private void ApplyDeferredQuery()
+    {
+        if (_deferredQuery.Count == 0) return;
+        foreach (var (control, wanted) in _deferredQuery.Where(p => p.Key.Enabled).ToList())
+        {
+            _deferredQuery.Remove(control);
+            if (!control.Values.SequenceEqual(wanted, StringComparer.Ordinal))
+            {
+                control.SetValues(wanted);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tells whether the filters in a query string already say what <see cref="ToQuery"/> would write: the pairs with the keys of this controller are compared
+    /// decoded, ignoring their order among the keys and how they are encoded, and the other pairs are ignored. A page uses it to leave a URL alone when only the
+    /// spelling of the query differs from the one it would write.
+    /// </summary>
+    /// <param name="query">The query string of the URL with or without the leading <c>?</c> and with or without a <c>#fragment</c>. <see langword="null"/> for none.</param>
+    /// <param name="prefix">The prefix <see cref="ToQuery"/> is given. <see langword="null"/> for none.</param>
+    /// <returns><see langword="true"/> when the query holds exactly the pairs <see cref="ToQuery"/> writes for the filters of this controller.</returns>
+    public bool QueryMatches(string? query, string? prefix = null)
+    {
+        var owned = OwnedKeys(prefix);
+        static Dictionary<string, List<string>> Group(IEnumerable<(string Key, string Value)> pairs)
+        {
+            var groups = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (var (key, value) in pairs)
+            {
+                if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
+                list.Add(value);
+            }
+            return groups;
+        }
+        var current = Group(QuerySegments(query).Select(SplitSegment).Where(p => owned.Contains(p.Name)).Select(p => (p.Name, p.Value)));
+        var wanted = Group(QueryPairs(prefix ?? ""));
+        return current.Count == wanted.Count
+            && wanted.All(w => current.TryGetValue(w.Key, out var c) && c.SequenceEqual(w.Value, StringComparer.Ordinal));
+    }
+
+    // The keys this controller writes: those of the filters that are enabled and not headless. A disabled filter keeps its pair in the URL.
+    private HashSet<string> OwnedKeys(string? prefix) =>
+        _controls.Where(c => !c.Headless && c.Enabled).Select(c => (prefix ?? "") + c.Key).ToHashSet(StringComparer.Ordinal);
 
     private IEnumerable<(string Key, string Value)> QueryPairs(string prefix)
     {

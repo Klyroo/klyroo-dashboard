@@ -286,6 +286,57 @@ public sealed class UrlQueryTests
     }
 
     [Fact]
+    public void A_disabled_filter_keeps_its_pair_in_the_url_and_takes_it_when_it_is_enabled_again()
+    {
+        var dashboard = Sales(out var f);
+        f["q"].Enabled = false;
+        f["region"].SetValues(["APAC"]);
+
+        // The pair of the disabled filter is not the controller's to remove.
+        Assert.Equal("q=acme&region=APAC", dashboard.MergeQuery("q=acme&region=EMEA"));
+
+        Assert.False(dashboard.ApplyQuery("q=acme&region=APAC"));
+        Assert.Null(f["q"].Value);
+
+        f["q"].Enabled = true;
+        Assert.Equal("acme", f["q"].Value);
+        Assert.Equal("region=APAC&q=acme", dashboard.ToQuery());
+    }
+
+    [Fact]
+    public void A_value_the_url_no_longer_has_is_not_applied_when_the_filter_is_enabled()
+    {
+        var dashboard = Sales(out var f);
+        f["q"].Enabled = false;
+        dashboard.ApplyQuery("q=acme");
+        dashboard.ApplyQuery("region=EMEA");
+        f["q"].Enabled = true;
+        Assert.Null(f["q"].Value);
+
+        // An invalid value in the URL is not remembered either.
+        f["min"].Enabled = false;
+        dashboard.ApplyQuery("min=abc");
+        f["min"].Enabled = true;
+        Assert.Null(f["min"].Value);
+    }
+
+    [Fact]
+    public void QueryMatches_compares_decoded_pairs_of_the_controller_ignoring_order_and_encoding()
+    {
+        var dashboard = Sales(out var f);
+        f["region"].SetValues(["APAC", "EMEA"]);
+        f["q"].Value = "a b";
+
+        Assert.True(dashboard.QueryMatches("?q=a+b&region=APAC&region=EMEA&page=2#x"));
+        Assert.True(dashboard.QueryMatches("region=APAC&q=a%20b&region=EMEA"));
+        // The order of the values of one filter is part of its selection; a missing, extra or other pair is not a match.
+        Assert.False(dashboard.QueryMatches("region=EMEA&region=APAC&q=a%20b"));
+        Assert.False(dashboard.QueryMatches("region=APAC&region=EMEA"));
+        Assert.False(dashboard.QueryMatches("region=APAC&region=EMEA&q=a%20b&segment=free"));
+        Assert.True(Sales(out _).QueryMatches("page=2"));
+    }
+
+    [Fact]
     public void MergeQuery_with_a_prefix_only_touches_the_keys_of_that_prefix()
     {
         var dashboard = Sales(out var f);

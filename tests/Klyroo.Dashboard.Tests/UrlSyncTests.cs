@@ -135,6 +135,99 @@ public sealed class UrlSyncTests : BunitContext
     }
 
     [Fact]
+    public void A_url_that_says_the_same_in_another_order_or_encoding_is_not_rewritten()
+    {
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        _nav.NavigateTo("/sales?q=a+b&page=2&region=EMEA");
+        var dashboard = Dashboard(out var region, out var search);
+        Page(dashboard);
+        var writes = 0;
+        _nav.LocationChanged += (_, _) => writes++;
+
+        // A change that leaves the state as the URL already spells it: nothing to write.
+        search.Value = "a b";
+        region.Value = "EMEA";
+        dashboard.ApplyQuery(new Uri(_nav.Uri).Query);
+
+        Assert.Equal(0, writes);
+        Assert.Equal("http://localhost/sales?q=a+b&page=2&region=EMEA", _nav.Uri);
+    }
+
+    [Fact]
+    public void A_write_repeated_before_it_came_back_is_skipped_each_time()
+    {
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        _nav.NavigateTo("/sales");
+        var dashboard = Dashboard(out var region, out _);
+        Page(dashboard);
+
+        // Two writes of one address, then an external navigation to it must still be applied after both have been seen.
+        var written = new Uri("http://localhost/sales?region=EMEA");
+        region.Value = "EMEA";
+        Assert.Equal(["EMEA"], region.Values);
+        region.Value = "APAC";
+        region.Value = "EMEA";
+        Assert.Equal(["EMEA"], region.Values);
+        Assert.Equal(written.AbsoluteUri, new Uri(_nav.Uri).AbsoluteUri);
+
+        _nav.NavigateTo("/sales?region=APAC");
+        Assert.Equal(["APAC"], region.Values);
+    }
+
+    [Fact]
+    public void A_route_that_reuses_the_component_for_another_address_keeps_syncing()
+    {
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        _nav.NavigateTo("/dash/1?region=APAC");
+        var dashboard = Dashboard(out var region, out _);
+        var cut = Page(dashboard);
+        Assert.Equal(["APAC"], region.Values);
+
+        // The router gives the same component /dash/2 and sets its parameters again.
+        _nav.NavigateTo("/dash/2?region=EMEA");
+        cut.Render();
+        Assert.Equal(["EMEA"], region.Values);
+
+        region.Value = "APAC";
+        Assert.Equal("http://localhost/dash/2?region=APAC", _nav.Uri);
+    }
+
+    [Fact]
+    public void The_page_compares_addresses_ignoring_case_and_a_trailing_slash_and_writes_nothing_on_another_page()
+    {
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        _nav.NavigateTo("/Sales/");
+        var dashboard = Dashboard(out var region, out _);
+        Page(dashboard);
+
+        _nav.NavigateTo("/sales?region=APAC");
+        Assert.Equal(["APAC"], region.Values);
+
+        // On another page the controller's changes are not written into that page's address.
+        _nav.NavigateTo("/other");
+        region.Value = "EMEA";
+        Assert.Equal("http://localhost/other", _nav.Uri);
+    }
+
+    [Fact]
+    public void A_filter_disabled_while_in_the_url_keeps_its_value_there_and_gets_it_back_when_enabled()
+    {
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        _nav.NavigateTo("/sales?q=acme");
+        var dashboard = Dashboard(out var region, out var search);
+        search.Enabled = false;
+        Page(dashboard);
+
+        region.Value = "EMEA";
+        Assert.Equal("http://localhost/sales?q=acme&region=EMEA", _nav.Uri);
+
+        search.Enabled = true;
+        Assert.Equal("acme", search.Value);
+        // The URL already says it, in another order: left as it is.
+        Assert.Equal("http://localhost/sales?q=acme&region=EMEA", _nav.Uri);
+    }
+
+    [Fact]
     public void Leaving_the_page_does_not_reset_the_filters()
     {
         SetRendererInfo(new RendererInfo("Server", isInteractive: true));

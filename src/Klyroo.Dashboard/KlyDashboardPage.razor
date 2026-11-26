@@ -278,7 +278,8 @@
     private DashboardController? _urlApplied;
     private string? _urlPath;
     private bool _locationSubscribed;
-    private readonly HashSet<string> _written = new(StringComparer.Ordinal);
+    // The addresses this page navigated to itself and has not seen come back yet, with how many times: a write repeated before the round trip is skipped each time.
+    private readonly Dictionary<string, int> _written = new(StringComparer.Ordinal);
 
     private IReadOnlyList<DashboardFilterControl> VisibleControls =>
         Dashboard?.Controls.Where(c => c.Enabled && !c.Headless && (c.Kind != DashboardFilterKind.Custom || CustomFilter is not null)).ToList() ?? [];
@@ -289,12 +290,17 @@
     protected override void OnParametersSet()
     {
         // Before the page subscribes: the filters of the URL are the starting state, not a change to write back.
-        if (SyncUrl && Dashboard is not null && !ReferenceEquals(_urlApplied, Dashboard))
+        if (SyncUrl && Dashboard is not null)
         {
-            _urlApplied = Dashboard;
             var uri = new Uri(Nav.Uri);
-            _urlPath = uri.GetLeftPart(UriPartial.Path);
-            Dashboard.ApplyQuery(uri.Query, UrlPrefix);
+            var path = PathKey(uri);
+            // The first time, and again when a route such as /dash/{id} gives this same component another address: that URL is the new starting state.
+            if (!ReferenceEquals(_urlApplied, Dashboard) || !string.Equals(_urlPath, path, StringComparison.Ordinal))
+            {
+                _urlApplied = Dashboard;
+                _urlPath = path;
+                Dashboard.ApplyQuery(uri.Query, UrlPrefix);
+            }
         }
         if (SyncUrl && !_locationSubscribed)
         {
@@ -321,12 +327,17 @@
     {
         if (!SyncUrl || Dashboard is null || !ReferenceEquals(_urlApplied, Dashboard) || !RendererInfo.IsInteractive) return;
         var uri = new Uri(Nav.Uri);
+        // Not another page's address, and not when only the order or the encoding of the pairs differs from what would be written.
+        if (!string.Equals(PathKey(uri), _urlPath, StringComparison.Ordinal) || Dashboard.QueryMatches(uri.Query, UrlPrefix)) return;
         var merged = Dashboard.MergeQuery(uri.Query, UrlPrefix);
-        if (string.Equals(merged, uri.Query.TrimStart('?'), StringComparison.Ordinal)) return;
         var target = uri.GetLeftPart(UriPartial.Path) + (merged.Length > 0 ? "?" + merged : "") + uri.Fragment;
-        _written.Add(new Uri(target).AbsoluteUri);
+        var written = new Uri(target).AbsoluteUri;
+        _written[written] = _written.GetValueOrDefault(written) + 1;
         Nav.NavigateTo(target, forceLoad: false, replace: true);
     }
+
+    // The address without query and fragment, compared ignoring case and a trailing slash.
+    private static string PathKey(Uri uri) => uri.GetLeftPart(UriPartial.Path).TrimEnd('/').ToLowerInvariant();
 
     // A navigation to this page with another query (a link with ?region=EMEA) sets the filters. The ones this page wrote itself are
     // skipped, since a late event for an older write would undo a newer change, and so is any navigation to another page.
@@ -334,8 +345,14 @@
     {
         if (!SyncUrl || Dashboard is null) return;
         var uri = new Uri(e.Location);
-        if (_written.Remove(uri.AbsoluteUri)) return;
-        if (!string.Equals(uri.GetLeftPart(UriPartial.Path), _urlPath, StringComparison.Ordinal)) return;
+        if (_written.TryGetValue(uri.AbsoluteUri, out var pending))
+        {
+            if (pending > 1) _written[uri.AbsoluteUri] = pending - 1;
+            else _written.Remove(uri.AbsoluteUri);
+            return;
+        }
+        // Another page, or a route that gives this component another address (the parameters then set it up again).
+        if (!string.Equals(PathKey(uri), _urlPath, StringComparison.Ordinal)) return;
         _ = InvokeAsync(() => Dashboard.ApplyQuery(uri.Query, UrlPrefix));
     }
 

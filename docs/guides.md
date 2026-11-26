@@ -467,6 +467,8 @@ Add `SyncUrl` to `KlyDashboardPage` to do both for you: the page applies the que
 - `LoadAsync`, so the first load uses the filters of the URL and not the defaults.
 - Your `ChangedEvent` subscriptions, otherwise applying the URL starts a refresh of its own.
 
+A filter that is disabled keeps its pair in the URL: `MergeQuery` leaves it alone, `ApplyQuery` remembers the value the URL gave it, and the filter takes that value when it is enabled, as long as the URL still has it. `QueryMatches` tells whether a query already says what `ToQuery` would write, ignoring order and encoding, which is how `SyncUrl` avoids rewriting a URL that only spells the same state differently. `SyncUrl` also keeps working when a route such as `/dash/{id}` gives the same component another address: the new URL is applied as the starting state.
+
 Two dashboards on one page share one query string: give each page a `UrlPrefix` (`SyncUrl="true" UrlPrefix="sales."`) and pass the same prefix to `ToQuery`, `ApplyQuery` and `MergeQuery`.
 
 ## Drill down from a block
@@ -502,7 +504,7 @@ Goal: show the buttons, accessible names, empty and error states, column headers
 
 Every text of the blocks (Refresh, View as table, Download CSV, Expand, Retry, `No data for this period`, the alert badges, the `Category` column of a chart table, `Updated 5 min ago` and so on) comes from a `DashboardTexts` set chosen by the locale of Klyroo.UI: the one of an enclosing `KlyApp` or `KlyLocale` cascading value, then `KlyrooOptions.Locale`, then the current UI culture. There is one set per locale of `KlyLocales.All` in `DashboardLocales.Tables`. English and French are reviewed (`DashboardLocales.ReviewedCodes`); the other ten are drafts that wait for a native speaker.
 
-Change a set in `AddKlyrooDashboard`, in code shared by the server and the WebAssembly client. `Texts` receives the set the locale resolves to, so `fr-CA` starts from `fr`:
+Change a set in `AddKlyrooDashboard`, in code shared by the server and the WebAssembly client. The options live in the Klyroo.UI options: do not register a `KlyrooDashboardOptions` yourself, `AddKlyrooDashboard` throws if you did. `Texts` receives the set the locale resolves to, so `fr-CA` starts from `fr`:
 
 ```csharp
 builder.Services.AddKlyrooDashboard(o => o
