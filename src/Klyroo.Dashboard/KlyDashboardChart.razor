@@ -28,9 +28,11 @@
                 <div class="flex flex-wrap items-center justify-between gap-3 border-t border-(--klyroo-border) pt-2 text-xs" data-slot="dashboard-chart-totals">
                     @foreach (var s in Series.Where(s => !s.IsComparison))
                     {
-                        var totalVal = string.Equals(Totals, "average", StringComparison.OrdinalIgnoreCase) && s.Values.Count > 0
-                            ? s.Values.Average()
-                            : s.Values.Sum();
+                        // A NaN or infinite value is a gap: it is in neither the sum nor the average.
+                        var finite = s.Values.Where(double.IsFinite).ToList();
+                        double? totalVal = string.Equals(Totals, "average", StringComparison.OrdinalIgnoreCase)
+                            ? (finite.Count > 0 ? finite.Average() : null)
+                            : finite.Sum();
                         <div class="flex items-baseline gap-1.5" data-slot="dashboard-chart-total">
                             <span class="text-(--klyroo-text-muted)">@s.Label:</span>
                             <span class="font-bold tabular-nums text-(--klyroo-text-highlighted)">
@@ -114,7 +116,8 @@
 
     private string Describe(IReadOnlyList<string> categories, IEnumerable<DashboardChartSeries> series) =>
         string.Join("; ", series.Select(s =>
-            $"{s.Label}: " + string.Join(", ", categories.Select((c, i) => $"{c} {DashboardFormat.Format(i < s.Values.Count ? s.Values[i] : null, Format, FormatCulture)}"))));
+            $"{s.Label}: " + string.Join(", ", categories.Select((c, i) => (Category: c, Value: ValueOrNull(s, i)))
+                .Where(p => p.Value is not null).Select(p => $"{p.Category} {FormatValue(p.Value!.Value)}"))));
 
     private RenderFragment RenderChart(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
     {
@@ -234,7 +237,7 @@
                                 var idx = i;
                                 var cat = categories[idx];
                                 <div class="flex h-full min-w-0 flex-1 justify-center gap-0.5 px-1"
-                                     title="@($"{cat}: {string.Join(", ", bars.Select(b => $"{b.Series.Label} {DashboardFormat.Format(ValueOrNull(b.Series, idx), Format, FormatCulture)}"))}")"
+                                     title="@($"{cat}: {string.Join(", ", bars.Where(b => ValueOrNull(b.Series, idx) is not null).Select(b => $"{b.Series.Label} {FormatValue(ValueOrNull(b.Series, idx)!.Value)}"))}")"
                                      data-slot="dashboard-chart-column">
                                     @foreach (var (s, color) in bars)
                                     {

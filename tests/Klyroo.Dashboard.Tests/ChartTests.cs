@@ -211,6 +211,31 @@ public sealed class ChartTests : BunitContext
     }
 
     [Fact]
+    public void A_NaN_or_infinite_value_is_a_gap_in_the_totals_the_description_and_the_table()
+    {
+        var series = new DashboardChartSeries("n", "Net", [10, double.NaN, double.PositiveInfinity, 20]);
+        IReadOnlyList<string> cats = ["a", "b", "c", "d"];
+        foreach (var compact in new[] { false, true })
+        {
+            var sum = Render<KlyDashboardChart>(p => p.Add(x => x.Categories, cats).Add(x => x.Series, [series]).Add(x => x.Totals, "sum").Add(x => x.ShowLabels, compact));
+            Assert.Equal("30", sum.Find("[data-slot=dashboard-chart-total] span:last-child").TextContent.Trim());
+            var average = Render<KlyDashboardChart>(p => p.Add(x => x.Categories, cats).Add(x => x.Series, [series]).Add(x => x.Totals, "average").Add(x => x.ShowLabels, compact));
+            Assert.Equal("15", average.Find("[data-slot=dashboard-chart-total] span:last-child").TextContent.Trim());
+            var description = sum.Find(compact ? "[data-slot=dashboard-chart-plot]" : "kly-chart [data-slot=plot]").GetAttribute("aria-label")!;
+            Assert.DoesNotContain("NaN", description);
+            Assert.DoesNotContain("Infinity", description);
+            if (compact) Assert.Equal("Net: a 10, d 20", description);
+        }
+
+        var onlyGaps = Render<KlyDashboardChart>(p => p.Add(x => x.Categories, ["a"]).Add(x => x.Series, [new DashboardChartSeries("n", "Net", [double.NaN])]).Add(x => x.Totals, "average"));
+        Assert.Equal("—", onlyGaps.Find("[data-slot=dashboard-chart-total] span:last-child").TextContent.Trim());
+
+        var table = Render<KlyDashboardChart>(p => p.Add(x => x.Categories, cats).Add(x => x.Series, [series]).Add(x => x.Menu, true));
+        table.Find("[data-slot=dashboard-card-table-toggle]").Click();
+        Assert.Equal(["10", "", "", "20"], table.FindAll("[data-slot=dashboard-data-table] tbody tr").Select(r => r.QuerySelectorAll("td")[1].TextContent.Replace("—", "").Trim()));
+    }
+
+    [Fact]
     public void Totals_keep_negative_values_and_leave_out_comparison_series()
     {
         var cut = Chart("bar", [new DashboardChartSeries("net", "Net", [10, 0, -15]), Previous], p => p.Add(x => x.Totals, "sum"));
