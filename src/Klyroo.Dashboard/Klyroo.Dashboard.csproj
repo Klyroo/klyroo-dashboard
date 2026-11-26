@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Klyroo.Dashboard</RootNamespace>
     <PackageId>Klyroo.Dashboard</PackageId>
+    <PackageTags>klyroo;blazor;dashboard;kpi;charts;analytics;maui</PackageTags>
     <Description>Klyroo Dashboard components for Blazor Web &amp; .NET MAUI Hybrid.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);BL0007</NoWarn>

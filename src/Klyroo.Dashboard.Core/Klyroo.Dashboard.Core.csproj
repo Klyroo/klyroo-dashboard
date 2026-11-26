@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Klyroo.Dashboard</RootNamespace>
     <PackageId>Klyroo.Dashboard.Core</PackageId>
+    <PackageTags>klyroo;dashboard;kpi;analytics;csv;headless;nativeaot</PackageTags>
     <Description>Klyroo Dashboard Core: Headless analytical dashboard controller, staged queries, filters, formatters and CSV export. Zero UI dependency, NativeAOT compatible.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsTrimmable>true</IsTrimmable>
