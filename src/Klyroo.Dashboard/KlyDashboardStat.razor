@@ -3,7 +3,7 @@
 @inherits KlyComponentBase
 
 <KlyDashboardCard Source="@Source" Title="@Label" Span="@Span" Card="@Card" Skeleton="DashboardSkeletonKind.Stat"
-                 Menu="@Menu" Freshness="@Freshness" Expandable="false" ViewAsTable="false" Class="@Class">
+                 Menu="@Menu" Freshness="@Freshness" Expandable="false" Tabulate="BuildDataTable" Class="@Class">
     <HeaderRight>
         @if (Status is not null)
         {
@@ -97,11 +97,11 @@
     [Parameter] public double? Goal { get; set; }
     /// <summary>A status pill in the header.</summary>
     [Parameter] public DashboardStatus? Status { get; set; }
-    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 4.</summary>
+    /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 4.</summary>
     [Parameter] public int Span { get; set; } = 4;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
-    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
@@ -136,6 +136,43 @@
         !string.IsNullOrEmpty(Caption) ? Caption
         : Compare.HasValue ? $"vs {DashboardFormat.Format(Compare, Format, FormatCulture)} previous period"
         : null;
+
+    private string ChangeLabel => EffectiveDeltaFormat switch
+    {
+        DashboardFormatPreset.Delta or DashboardFormatPreset.Percent => "Change (%)",
+        DashboardFormatPreset.Points => "Change (pts)",
+        _ => "Change",
+    };
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("label", "Label"),
+            new("value", "Value", Numeric: true),
+        };
+        var row = new Dictionary<string, string?>
+        {
+            ["label"] = Label,
+            ["value"] = TextValue ?? DashboardFormat.FormatInvariant(Value),
+        };
+        if (Compare.HasValue)
+        {
+            cols.Add(new("previous", "Previous", Numeric: true));
+            row["previous"] = DashboardFormat.FormatInvariant(Compare);
+        }
+        if (EffectiveDelta is { } delta && !double.IsNaN(delta))
+        {
+            cols.Add(new("change", ChangeLabel, Numeric: true));
+            row["change"] = DashboardFormat.FormatInvariant(delta);
+        }
+        if (Goal is > 0)
+        {
+            cols.Add(new("goal", "Goal", Numeric: true));
+            row["goal"] = DashboardFormat.FormatInvariant(Goal);
+        }
+        return new DashboardDataTable(cols, [row]);
+    }
 
     private static RenderFragment RenderSparkline(IReadOnlyList<double> points)
     {

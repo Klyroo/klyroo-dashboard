@@ -4,46 +4,19 @@
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Categories is not { Count: > 0 } || Series is not { Count: > 0 })"
-                 Skeleton="@(Type == "donut" ? DashboardSkeletonKind.Donut : Type == "line" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
+                 Skeleton="@(ChartType == "donut" ? DashboardSkeletonKind.Donut : ChartType == "line" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
-    <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@Type">
+    <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@ChartType">
         @if (Categories is { Count: > 0 } && Series is { Count: > 0 })
         {
-            var maxVal = Math.Max(1.0, Series.SelectMany(s => s.Values).DefaultIfEmpty(1.0).Max());
-
-            @if (ShowLegend)
+            @if (ChartType == "donut")
             {
-                <div class="flex flex-wrap items-center gap-3 text-xs" data-slot="dashboard-chart-legend">
-                    @foreach (var s in Series)
-                    {
-                        <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item">
-                            <span class="inline-block size-2.5 rounded-full @(s.IsComparison ? "border border-dashed border-(--klyroo-text-muted)" : "bg-(--klyroo-primary)")"></span>
-                            <span class="text-(--klyroo-text-muted)">@s.Label</span>
-                        </span>
-                    }
-                </div>
+                @RenderDonut(Categories)
             }
-
-            <div class="flex items-end gap-2 pt-2" style="@($"height:{Height}px")" data-slot="dashboard-chart-canvas">
-                @for (var i = 0; i < Categories.Count; i++)
-                {
-                    var cat = Categories[i];
-                    var val = i < Series[0].Values.Count ? Series[0].Values[i] : 0;
-                    var pct = Math.Clamp(val / maxVal * 100.0, 4, 100).ToString("0.#", CultureInfo.InvariantCulture);
-                    <div class="flex h-full flex-1 flex-col items-center justify-end gap-1"
-                         title="@($"{cat}: {DashboardFormat.Format(val, Format, FormatCulture)}")"
-                         data-slot="dashboard-chart-column">
-                        @if (ShowLabels)
-                        {
-                            <span class="text-[10px] font-semibold tabular-nums text-(--klyroo-text-muted)">
-                                @DashboardFormat.Format(val, Format, FormatCulture)
-                            </span>
-                        }
-                        <div class="w-full rounded-t-sm bg-(--klyroo-primary)" style="@($"height:{pct}%")" data-slot="dashboard-chart-bar"></div>
-                        <span class="max-w-full truncate text-[11px] text-(--klyroo-text-muted)" data-slot="dashboard-chart-label">@cat</span>
-                    </div>
-                }
-            </div>
+            else
+            {
+                @RenderCartesian(Categories, Series)
+            }
 
             @if (!string.IsNullOrEmpty(Totals))
             {
@@ -67,36 +40,223 @@
 </KlyDashboardCard>
 
 @code {
+    // Series and slice colors: the chart tokens of Klyroo.UI (--klyroo-chart-1..6, which fall back to the semantic colors), then neutral.
+    private static readonly string[] Palette = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "neutral"];
+    private static readonly double DonutCircumference = 2 * Math.PI * 40;
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
     [Parameter] public string? Title { get; set; }
     /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
-    /// <summary>The chart type: <c>bar</c> (the default), <c>line</c> or <c>donut</c>. Every type is currently drawn as vertical bars; the value only picks the loading skeleton.</summary>
+    /// <summary>The chart type: <c>bar</c> (the default) draws one bar per series in each category, side by side, and draws the series whose <c>Type</c> is <c>line</c> as lines over them; <c>line</c> draws every series as a line with a dot per category; <c>donut</c> draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. It also picks the loading skeleton.</summary>
     [Parameter] public string Type { get; set; } = "bar";
-    /// <summary>The labels of the horizontal axis, one per bar.</summary>
+    /// <summary>The labels of the horizontal axis, one per category, or the slices of a donut.</summary>
     [Parameter] public IReadOnlyList<string>? Categories { get; set; }
-    /// <summary>The data series. Only the first series is drawn; the others appear in the legend, in the totals and in the table view.</summary>
+    /// <summary>The data series, all drawn (a donut draws the first one that is not a comparison) and all in the table view. Each series takes the next chart color of Klyroo.UI (<c>--klyroo-chart-1</c> to <c>--klyroo-chart-6</c>, then neutral); comparison series are muted.</summary>
     [Parameter] public IReadOnlyList<DashboardChartSeries>? Series { get; set; }
     /// <summary>How the values of labels, tooltips, totals and the table view are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
     /// <summary>The height of the plot area in pixels. Defaults to 220.</summary>
     [Parameter] public int Height { get; set; } = 220;
-    /// <summary>Shows the series legend. Defaults to <see langword="true"/>.</summary>
+    /// <summary>Shows the legend: the series, or the slices with their share for a donut. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowLegend { get; set; } = true;
-    /// <summary>Shows the formatted value above each bar.</summary>
+    /// <summary>Shows the formatted value above each bar. Lines and donuts show their values in tooltips.</summary>
     [Parameter] public bool ShowLabels { get; set; }
     /// <summary><c>average</c> shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty.</summary>
     [Parameter] public string? Totals { get; set; }
-    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 8.</summary>
+    /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 8.</summary>
     [Parameter] public int Span { get; set; } = 8;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
-    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
+
+    private string ChartType =>
+        string.Equals(Type, "line", StringComparison.OrdinalIgnoreCase) ? "line"
+        : string.Equals(Type, "donut", StringComparison.OrdinalIgnoreCase) ? "donut"
+        : "bar";
+
+    private bool DrawsAsLine(DashboardChartSeries series) =>
+        ChartType == "line" || string.Equals(series.Type, "line", StringComparison.OrdinalIgnoreCase);
+
+    private static string ColorOf(int index) => Palette[index % Palette.Length];
+
+    private static double ValueAt(DashboardChartSeries series, int index) =>
+        index < series.Values.Count && double.IsFinite(series.Values[index]) ? series.Values[index] : 0;
+
+    private string Percent(double value) => DashboardFormat.Format(value, DashboardFormatPreset.Percent, FormatCulture);
+
+    private string Describe(IReadOnlyList<string> categories, IEnumerable<DashboardChartSeries> series) =>
+        string.Join("; ", series.Select(s =>
+            $"{s.Label}: " + string.Join(", ", categories.Select((c, i) => $"{c} {DashboardFormat.Format(i < s.Values.Count ? s.Values[i] : null, Format, FormatCulture)}"))));
+
+    private RenderFragment RenderCartesian(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
+    {
+        var indexed = series.Select((s, i) => (Series: s, Color: ColorOf(i))).ToList();
+        var bars = indexed.Where(x => !DrawsAsLine(x.Series)).ToList();
+        var lines = indexed.Where(x => DrawsAsLine(x.Series)).ToList();
+        var maxVal = Math.Max(1.0, series.SelectMany(s => s.Values).Where(double.IsFinite).DefaultIfEmpty(1.0).Max());
+        var count = categories.Count;
+        string X(int i) => ((i + 0.5) / count * 100.0).ToString("0.###", CultureInfo.InvariantCulture);
+        double Share(double v) => Math.Clamp(v / maxVal, 0, 1);
+
+        if (ShowLegend)
+        {
+            <div class="flex flex-wrap items-center gap-3 text-xs" data-slot="dashboard-chart-legend">
+                @foreach (var (s, color) in indexed)
+                {
+                    var isLine = DrawsAsLine(s);
+                    <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item" data-series="@s.Key">
+                        @if (s.IsComparison)
+                        {
+                            <span class="inline-block @(isLine ? "h-0.5 w-3 border-t-2" : "size-2.5 rounded-full border") border-dashed border-(--klyroo-text-muted)"></span>
+                        }
+                        else
+                        {
+                            <span class="inline-block @(isLine ? "h-0.5 w-3" : "size-2.5 rounded-full") bg-(--kly-color)" data-color="@color"></span>
+                        }
+                        <span class="text-(--klyroo-text-muted)">@s.Label</span>
+                    </span>
+                }
+            </div>
+        }
+
+        <div class="flex flex-col gap-1 pt-2" style="@($"height:{Height}px")" data-slot="dashboard-chart-canvas">
+            <div class="relative min-h-0 flex-1" role="img" aria-label="@Describe(categories, series)" data-slot="dashboard-chart-plot">
+                <div class="absolute inset-x-0 bottom-0 @(ShowLabels && bars.Count > 0 ? "top-4" : "top-0")">
+                    @if (bars.Count > 0)
+                    {
+                        <div class="flex h-full items-end">
+                            @for (var i = 0; i < count; i++)
+                            {
+                                var idx = i;
+                                var cat = categories[idx];
+                                <div class="flex h-full min-w-0 flex-1 items-end justify-center gap-0.5 px-1"
+                                     title="@($"{cat}: {string.Join(", ", bars.Select(b => $"{b.Series.Label} {DashboardFormat.Format(ValueAt(b.Series, idx), Format, FormatCulture)}"))}")"
+                                     data-slot="dashboard-chart-column">
+                                    @foreach (var (s, color) in bars)
+                                    {
+                                        var val = ValueAt(s, idx);
+                                        var pct = Math.Clamp(val / maxVal * 100.0, 4, 100).ToString("0.#", CultureInfo.InvariantCulture);
+                                        <div class="relative min-w-0 max-w-12 flex-1 rounded-t-sm @(s.IsComparison ? "bg-(--klyroo-text-muted)/50" : "bg-(--kly-color)")"
+                                             data-color="@(s.IsComparison ? null : color)"
+                                             style="@($"height:{pct}%")"
+                                             data-slot="dashboard-chart-bar"
+                                             data-series="@s.Key">
+                                            @if (ShowLabels)
+                                            {
+                                                <span class="absolute inset-x-0 bottom-full whitespace-nowrap pb-0.5 text-center text-[10px] font-semibold tabular-nums text-(--klyroo-text-muted)">
+                                                    @DashboardFormat.Format(val, Format, FormatCulture)
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (lines.Count > 0)
+                    {
+                        <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-slot="dashboard-chart-lines">
+                            @foreach (var (s, color) in lines)
+                            {
+                                var points = string.Join(' ', Enumerable.Range(0, count).Select(i =>
+                                    $"{X(i)},{(100.0 - Share(ValueAt(s, i)) * 100.0).ToString("0.###", CultureInfo.InvariantCulture)}"));
+                                <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                          vector-effect="non-scaling-stroke"
+                                          stroke-dasharray="@(s.IsComparison ? "4 3" : null)"
+                                          class="@(s.IsComparison ? "text-(--klyroo-text-muted)" : "text-(--kly-color)")"
+                                          data-color="@(s.IsComparison ? null : color)"
+                                          points="@points"
+                                          data-slot="dashboard-chart-line"
+                                          data-series="@s.Key" />
+                            }
+                        </svg>
+                        @foreach (var (s, color) in lines)
+                        {
+                            @for (var i = 0; i < count; i++)
+                            {
+                                var idx = i;
+                                var val = ValueAt(s, idx);
+                                <span class="absolute size-2 rounded-full border-2 border-(--klyroo-bg) @(s.IsComparison ? "bg-(--klyroo-text-muted)" : "bg-(--kly-color)")"
+                                      data-color="@(s.IsComparison ? null : color)"
+                                      style="@($"left:calc({X(idx)}% - 4px);bottom:calc({(Share(val) * 100.0).ToString("0.###", CultureInfo.InvariantCulture)}% - 4px)")"
+                                      title="@($"{categories[idx]} · {s.Label}: {DashboardFormat.Format(val, Format, FormatCulture)}")"
+                                      data-slot="dashboard-chart-point"
+                                      data-series="@s.Key"></span>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+            <div class="flex" data-slot="dashboard-chart-labels">
+                @foreach (var cat in categories)
+                {
+                    <span class="min-w-0 flex-1 truncate px-1 text-center text-[11px] text-(--klyroo-text-muted)" data-slot="dashboard-chart-label">@cat</span>
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderDonut(IReadOnlyList<string> categories) => __builder =>
+    {
+        var series = Series?.FirstOrDefault(s => !s.IsComparison);
+        if (series is null)
+        {
+            return;
+        }
+        var values = categories.Select((_, i) => Math.Max(0, ValueAt(series, i))).ToList();
+        var total = values.Sum();
+        var size = Math.Clamp(Height, 96, 240);
+        var offset = 0.0;
+        var describe = $"{series.Label}: " + string.Join(", ", categories.Select((c, i) =>
+            $"{c} {DashboardFormat.Format(values[i], Format, FormatCulture)} ({Percent(total > 0 ? values[i] / total * 100.0 : 0)})"));
+
+        <div class="flex flex-wrap items-center justify-center gap-6 pt-2" data-slot="dashboard-chart-canvas">
+            <div class="relative shrink-0" style="@($"width:{size}px;height:{size}px")">
+                <svg viewBox="0 0 100 100" class="size-full -rotate-90" role="img" aria-label="@describe" data-slot="dashboard-chart-donut">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="16" class="text-(--klyroo-bg-muted)" />
+                    @for (var i = 0; i < categories.Count; i++)
+                    {
+                        var idx = i;
+                        if (total <= 0 || values[idx] <= 0) continue;
+                        var length = values[idx] / total * DonutCircumference;
+                        var dash = $"{length.ToString("0.###", CultureInfo.InvariantCulture)} {(DonutCircumference - length).ToString("0.###", CultureInfo.InvariantCulture)}";
+                        var dashOffset = (-offset).ToString("0.###", CultureInfo.InvariantCulture);
+                        offset += length;
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="16"
+                                stroke-dasharray="@dash" stroke-dashoffset="@dashOffset"
+                                class="text-(--kly-color)" data-color="@ColorOf(idx)"
+                                data-slot="dashboard-chart-slice" data-category="@categories[idx]">
+                            <title>@($"{categories[idx]}: {DashboardFormat.Format(values[idx], Format, FormatCulture)} ({Percent(values[idx] / total * 100.0)})")</title>
+                        </circle>
+                    }
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center" aria-hidden="true">
+                    <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="dashboard-chart-donut-total">@DashboardFormat.Format(total, Format, FormatCulture)</span>
+                    <span class="max-w-full truncate px-4 text-[11px] text-(--klyroo-text-muted)">@series.Label</span>
+                </div>
+            </div>
+            @if (ShowLegend)
+            {
+                <div class="flex min-w-0 flex-col gap-1.5 text-xs" data-slot="dashboard-chart-legend">
+                    @for (var i = 0; i < categories.Count; i++)
+                    {
+                        var idx = i;
+                        <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item" data-category="@categories[idx]">
+                            <span class="inline-block size-2.5 shrink-0 rounded-full bg-(--kly-color)" data-color="@ColorOf(idx)"></span>
+                            <span class="truncate text-(--klyroo-text-muted)">@categories[idx]</span>
+                            <span class="ms-auto ps-2 font-semibold tabular-nums text-(--klyroo-text-highlighted)">@Percent(total > 0 ? values[idx] / total * 100.0 : 0)</span>
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+    };
 
     private DashboardDataTable BuildDataTable()
     {
@@ -114,7 +274,7 @@
             foreach (var s in Series ?? [])
             {
                 var v = i < s.Values.Count ? (double?)s.Values[i] : null;
-                row[s.Key] = DashboardFormat.Format(v, Format, FormatCulture);
+                row[s.Key] = DashboardFormat.FormatInvariant(v);
             }
             rows.Add(row);
         }

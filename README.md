@@ -13,13 +13,13 @@ test it without a renderer. The Blazor components run in a Blazor Web App and in
 
 ## Features
 
-- **Staged loading**: a resource is Essential (loaded first, in parallel), Background (loaded once the essential ones settle) or Deferred (loaded only when something activates it).
+- **Staged loading**: a resource is Essential (loaded first, in parallel), Background (loaded once the essential ones settle) or Deferred (loaded only when something activates it). A new load cancels the one it supersedes, and `AutoRefresh` reloads on a timer.
 - **Per-block states**: every block shows a skeleton while loading, the error message with a retry button when its query fails, and an empty state, so one failing query leaves the rest of the page intact.
-- **Filters and views**: `DashboardFilterControl` supports single and multiple selection with a maximum, presets, default values and reset detection, and views appear as tabs with optional badges.
-- **Ten blocks on a 12-column grid**: stat, stats, gauge, bars (with a funnel variant), chart, list, table, details, feed and alerts, wrapped by a page, a grid and a card.
+- **Filters and views**: `DashboardFilterControl` supports single and multiple selection with a maximum, presets, default values and reset detection, drawn as option lists, text, number and date inputs or your own template, and views appear as tabs with optional badges.
+- **Ten blocks on a grid of 12 columns by default**: stat, stats, gauge (ring or bar), bars (with a funnel variant), chart (grouped bars, lines or donut), list, table, details, feed and alerts, wrapped by a page, a grid and a card.
 - **Comparisons**: a stat computes its delta from a previous value, and `DashboardFormat.ResolveComparisonRange` gives the previous period or the same dates one year earlier.
 - **Number formatting**: nine presets (compact, percent, ratio, delta, points and more), relative times and currency, with an explicit culture.
-- **CSV export**: `DashboardFormat.ExportCsv` writes a UTF-8 byte order mark and picks the delimiter from the culture.
+- **CSV export**: every block with a menu downloads what it shows, with raw numbers; `DashboardFormat.ExportCsv` writes a UTF-8 byte order mark, picks the delimiter from the culture and neutralizes spreadsheet formulas.
 - **Headless core**: `Klyroo.Dashboard.Core` marks itself trimmable and AOT compatible.
 
 ## Packages
@@ -137,7 +137,7 @@ A block does not read the data of its `Source`: the source only drives the loadi
 - .NET 10 SDK.
 - `Klyroo.Dashboard.Core` runs in any .NET 10 app (minimal APIs, workers, console apps, MAUI view models) and declares `IsTrimmable` and `IsAotCompatible`.
 - `Klyroo.Dashboard` needs a Blazor Web App or a .NET MAUI Blazor Hybrid app. It declares `IsTrimmable` but not `IsAotCompatible`, and declares the supported platforms `browser`, `ios`, `android`, `maccatalyst` and `windows`.
-- Static SSR renders the blocks, but tabs, filter pills, the refresh button and the table sort need an interactive render mode (Interactive Server, WebAssembly or Auto).
+- Static SSR renders the blocks, but tabs, filter controls, the refresh button, the table sort and the copy and CSV buttons need an interactive render mode (Interactive Server, WebAssembly or Auto).
 - The block texts (Refresh, View as table, Retry and so on) are in English.
 
 ## Klyroo ecosystem

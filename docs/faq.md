@@ -8,7 +8,7 @@ The resource is still `Idle`: nothing has loaded it. Call `controller.RefreshAsy
 
 **A block does not appear at all**
 
-Its source is `Disabled`: the `enabled` predicate returned `false`, and a card bound to a disabled source renders nothing. Fix the predicate. A resource that becomes enabled later stays `Disabled` until the next `RefreshAsync`.
+Its source is `Disabled`: the `enabled` predicate returned `false`, and a card bound to a disabled source renders nothing. Fix the predicate. Once it returns `true`, the card loads the source on its next render, and `ActivateAsync` or `RefreshAsync` loads it too, so a resource that nothing renders or refreshes stays `Disabled`.
 
 **Changing a filter does not change the data**
 
@@ -26,9 +26,9 @@ The page is rendered with Static SSR, where `@onclick` handlers cannot run. Add 
 
 They only render when the controller has at least two enabled views and `ShowTabs` is true. A single view gives no tab bar.
 
-**Download CSV does nothing**
+**Download CSV does nothing in a .NET MAUI app**
 
-The button passes the CSV text to `KlyDashboardCard.OnCsvExported`, and only `KlyDashboardCard` has that parameter. The ready-made blocks (`KlyDashboardStats`, `KlyDashboardTable` and the others) do not expose it, so their button has no handler. Build the block on `KlyDashboardCard` as shown in [Export a block to CSV](guides.md#export-a-block-to-csv). Even then the card does not start a download: your handler receives the text and saves it.
+The button starts a browser download, which the MAUI web view does not support. Handle `KlyDashboardCard.OnCsvExported` and save the text with the MAUI file APIs.
 
 **The Error message shows an internal exception text**
 
@@ -36,7 +36,7 @@ A card shows `Source.Error`, which is the message of the exception thrown by the
 
 **The queries run twice on a page**
 
-The page is prerendered and then rendered again when it becomes interactive, and the resources do not use persistent component state. Either accept two loads, cache in your data layer, or disable prerendering for the page. See [Platforms](platforms.md#blazor-render-modes).
+The page is prerendered and then rendered again when it becomes interactive, and the resources do not use persistent component state (see Known limitations). Either accept two loads, cache in your data layer, persist the loaded data in your own page (for example in a `[PersistentState]` property) and feed the resource with `SetData` when it comes back instead of calling `RefreshAsync`, or disable prerendering for the page. See [Platforms](platforms.md#blazor-render-modes).
 
 **The block is unstyled or misaligned**
 
@@ -48,19 +48,30 @@ Only `KlyDashboardPage` subscribes to the controller. A block placed outside a p
 
 **A parameter has no visible effect**
 
-A few parameters are not read by the components yet. See the list under Known limitations.
+String parameters such as `Variant`, `Type`, `Order`, `Emphasis`, `CompareMode` and the column `Type` fall back to their default when the value is unknown, so check the spelling. In a chart, a series `Type` only matters when the chart `Type` is `bar`.
+
+**A filter does not appear in the toolbar**
+
+The toolbar leaves out filters that are disabled or headless, and filters whose `Kind` is `Custom` when the page has no `CustomFilter` template. Give the page a `CustomFilter` to draw them, as in [Filter by text, number or date](guides.md#filter-by-text-number-or-date).
+
+**The copy button of a details row does nothing**
+
+It calls `navigator.clipboard.writeText`, which needs an interactive render mode and a secure context (HTTPS, or `localhost` during development). The browser can also refuse it without user permission; the button then does nothing and no error is shown.
+
+**The automatic refresh keeps running after the user leaves the page**
+
+`DashboardController.AutoRefresh` runs a timer until the controller is disposed. Implement `IDisposable` in the page that creates the controller and call `_dashboard.Dispose()`, as in [Refresh on a timer](guides.md#refresh-on-a-timer).
 
 ## Known limitations
 
-- **Chart.** `KlyDashboardChart` draws vertical bars for the first series only. `Type` (`bar`, `line`, `donut`) only chooses the loading skeleton, `DashboardChartSeries.Type` is not read, and series after the first appear in the legend, the totals and the table view but are not drawn. `IsComparison` only changes the legend marker and leaves the series out of the totals.
-- **Reserved members.** These exist but nothing reads them: `KlyDashboardGrid.Columns` (the grid is always 12 columns), `KlyDashboardGauge.Variant`, `DashboardDetailsItem.Copy` (no copy button), `DashboardController.AutoRefresh`, `DashboardOption.Description` and `Icon`, `DashboardFilterPreset.Icon`, and `DashboardFilterControl.Kind` (the toolbar draws every filter the same way, as an option list).
-- **Filters.** The toolbar draws every visible filter as a pill with a list of options and presets. There is no date, range, text or number input, even though `DashboardFilterKind` names them.
-- **Charts and gauges.** The gauge is a ring, and `Target` is shown as text only.
-- **Cancellation.** A loader always receives `CancellationToken.None`. Refreshes are not cancelled or serialized, and the last one to finish wins.
+- **Chart.** The chart block draws grouped bars, lines and a donut with HTML and SVG and no charting dependency. It has no axes, gridlines, zoom or interactive tooltips beyond the browser's `title` text, negative values are drawn as zero, and a donut shows only the first series that is not a comparison. `IsComparison` series are left out of the totals. For more, use a charting library inside a `KlyDashboardCard`.
+- **Filters.** `Remote` filters are drawn like `Options`: the library does not fetch anything, so load the options and assign `Items` yourself, and the search box only filters the options already loaded. Text and number boxes apply their value when they lose focus or the user presses Enter.
+- **Gauge.** The `ring` variant shows `Target` as text only; the `bar` variant also draws a marker.
+- **Cancellation.** A refresh cancels the token of the load it supersedes and ignores its result, but a loader that does not pass the token on keeps running until it finishes.
 - **Language.** The texts of the blocks and `FormatRelativeTime` are English.
-- **Number formats.** `DashboardFormat` uses the invariant culture unless you pass one. `FormatCompact(999_999)` gives `1000K`, because the value is rounded after the suffix is chosen.
-- **Disabled to enabled.** `ActivateAsync` only loads a resource that is `Idle`, so a resource that was `Disabled` needs `RefreshAsync` once its predicate turns true.
-- **CSV.** Numeric cells are not quoted, and the header line ends with the platform newline while data lines end with `\r\n`.
+- **Number formats.** `DashboardFormat` uses the invariant culture unless you pass one.
+- **CSV.** The ready-made blocks write numbers with a dot as decimal separator (`1234.5`), also in the `;`-delimited files made for cultures with a decimal comma, so a spreadsheet set to such a culture may read them as text.
+- **Persistence.** Resources do not persist their data across prerendering. `PersistentComponentState` only serializes with reflection-based JSON (`PersistAsJson` requires unreferenced code), which the trimmable packages cannot use without user-supplied serialization, and the library does not own the moment your page loads its data. Persist the data in your page instead (see Troubleshooting).
 - **NativeAOT.** Only `Klyroo.Dashboard.Core` declares it. See [Platforms](platforms.md#nativeaot-and-trimming).
 
 ## Questions
@@ -71,7 +82,7 @@ Yes. `Klyroo.Dashboard.Core` has no UI dependency. Register resources, call `Ref
 
 **How do I refresh automatically?**
 
-Run a timer yourself and call `controller.RefreshAsync()`, as in [Refresh on a timer](guides.md#refresh-on-a-timer). Data already loaded stays visible during the refresh.
+Set `controller.AutoRefresh` to a number of seconds and dispose the controller with the page, as in [Refresh on a timer](guides.md#refresh-on-a-timer). Data already loaded stays visible during the refresh.
 
 **Can several blocks share one resource?**
 

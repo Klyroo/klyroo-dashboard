@@ -27,7 +27,7 @@ In Static SSR, await your resources in `OnInitializedAsync` before the render co
 
 **Registration.** Call `AddKlyrooDashboard()` in the server project, and also in the `.Client` project when the page can run in WebAssembly (Interactive WebAssembly or Auto). A page that runs in both places needs the services in both.
 
-**Prerendering runs your loaders twice.** An interactive page is rendered on the server first and then again when the circuit or the WebAssembly runtime starts. Resources do not use persistent component state, so each loader runs once per pass. Turn prerendering off for the page if the queries are expensive or not idempotent, for example `@rendermode="new InteractiveServerRenderMode(prerender: false)"`.
+**Prerendering runs your loaders twice.** An interactive page is rendered on the server first and then again when the circuit or the WebAssembly runtime starts. Resources do not use persistent component state, so each loader runs once per pass. Turn prerendering off for the page if the queries are expensive or not idempotent, for example `@rendermode="new InteractiveServerRenderMode(prerender: false)"`, or persist the loaded data in the page yourself and feed the resources with `SetData` (see the [FAQ](faq.md#troubleshooting)). Dispose the controller in the page's `Dispose` so a prerendered pass leaves no `AutoRefresh` timer behind.
 
 **WebAssembly.** The loaders run in the browser, so they must call an API your client can reach. The parallel stages are concurrent tasks on the single browser thread, not extra threads.
 
@@ -48,7 +48,7 @@ In Static SSR, await your resources in `OnInitializedAsync` before the render co
 
 3. Use the components in a Razor page of the `BlazorWebView` as you would in a web app. A Hybrid app renders in the web view on the device, with no server-side prerendering step.
 
-The Download CSV hand-off (`KlyDashboardCard.OnCsvExported`) gives you the CSV text and nothing more. How you save it is platform specific: the browser download shown in the [guides](guides.md#export-a-block-to-csv) is a web technique, and in a Hybrid app you would write the file with the platform file APIs instead.
+Without a handler, Download CSV starts a browser download through the `_content/Klyroo.Dashboard/klyroo-dashboard.js` module, which a web view does not always support. In a Hybrid app handle `KlyDashboardCard.OnCsvExported`, which receives the CSV text instead, and write the file with the platform file APIs. The copy button of `KlyDashboardDetails` uses `navigator.clipboard.writeText`, which the web views allow for the app's own content.
 
 ### Native C# MAUI without a web view
 
@@ -67,6 +67,5 @@ dotnet publish -c Release -p:PublishAot=true
 ## Known limitations
 
 - The block texts are English: Refresh, Updated, View as table, Download CSV, Expand, Retry, the alert labels (`Critical`, `Warning`, `Info`, `Resolved`) and the relative times from `DashboardFormat.FormatRelativeTime`.
-- The chart block draws bars for its first series only, whatever its `Type`.
-- There is no automatic refresh: `DashboardController.AutoRefresh` is stored but not used.
+- The chart block has no axes or interactions, and a donut shows a single series.
 - More in the [FAQ](faq.md#known-limitations).

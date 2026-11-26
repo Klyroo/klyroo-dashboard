@@ -4,6 +4,7 @@ Task-oriented recipes. They assume the setup from [Getting started](getting-star
 
 - [Load data in two stages](#load-data-in-two-stages)
 - [Reload when a filter changes](#reload-when-a-filter-changes)
+- [Filter by text, number or date](#filter-by-text-number-or-date)
 - [Load a block only when its tab opens](#load-a-block-only-when-its-tab-opens)
 - [Handle failures and skip queries that cannot run](#handle-failures-and-skip-queries-that-cannot-run)
 - [Compare with the previous period](#compare-with-the-previous-period)
@@ -76,7 +77,42 @@ Goal: change the data when the user picks another region.
 
 The page draws a pill for every filter that is enabled and not headless. Selecting an option updates the filter and raises `ChangedEvent`, but nothing reloads on its own, so the handler calls `RefreshAsync`. The loader reads `region.Value` when it runs, which is why it needs no other wiring. With no default values, `Value` is `null` while nothing is selected and the pill shows the placeholder.
 
-Refreshes are neither serialized nor cancelled, and a loader always receives `CancellationToken.None`. If the user changes the filter twice quickly, both loads run and the one that finishes last wins. `ResetFilters()` also raises `ChangedEvent` once for every enabled, non-headless filter, so it can trigger several refreshes at once.
+A refresh cancels the load still running for the same resource: the token the earlier loader received is cancelled and its result is ignored, so when the user changes the filter twice quickly the data of the latest selection wins. Pass the token on to your data access, as `GetSummaryAsync(region.Value, ct)` does here, so the superseded query stops too. `ResetFilters()` raises `ChangedEvent` once for every enabled, non-headless filter, so it can start several refreshes at once, and each one cancels the one before.
+
+## Filter by text, number or date
+
+Goal: let the user type a customer name, set a minimum amount or pick a period.
+
+```razor
+<KlyDashboardPage Dashboard="_dashboard" Title="Orders">
+    <CustomFilter Context="filter">
+        <button type="button" @onclick="@(() => filter.Value = "me")">Only mine</button>
+    </CustomFilter>
+    <ChildContent>
+        @* blocks *@
+    </ChildContent>
+</KlyDashboardPage>
+
+@code {
+    private readonly DashboardController _dashboard = new("orders");
+
+    protected override void OnInitialized()
+    {
+        var customer = _dashboard.AddFilter(new DashboardFilterControl("customer", "Customer", DashboardFilterKind.String));
+        var minimum = _dashboard.AddFilter(new DashboardFilterControl("min", "Min amount", DashboardFilterKind.Number));
+        var period = _dashboard.AddFilter(new DashboardFilterControl(
+            "period", "Period", DashboardFilterKind.DateRange,
+            presets: [new("Q1", ["2026-01-01", "2026-03-31"], Icon: "calendar")]));
+        var compare = _dashboard.AddFilter(new DashboardFilterControl(
+            "compare", "Compare", DashboardFilterKind.Comparison, defaultValues: ["previous"]));
+        _dashboard.AddFilter(new DashboardFilterControl("owner", "Owner", DashboardFilterKind.Custom));
+    }
+}
+```
+
+The toolbar picks the control from `Kind`: a text box for `String`, a number box for `Number`, a date picker for `Date`, two date pickers for `DateRange`, your `CustomFilter` template for `Custom`, and the option pill for `Options`, `Enum`, `Remote`, `Boolean` and `Comparison`. A `Boolean` or `Comparison` filter created without items gets built-in options (`true` and `false`, or `none`, `previous` and `year`). Presets show next to the inputs, or in the option menu for the option kinds, with their icon when they have one.
+
+Every kind keeps its selection as strings, so loaders read it the same way: `customer.Value` is the text, `minimum.Value` an invariant-culture number such as `1234.5`, `period.Values` the start and end as `yyyy-MM-dd` (an open bound is an empty string), and `compare.Value` a name that `Enum.TryParse<DashboardComparisonMode>(compare.Value, ignoreCase: true, out var mode)` reads back. Text and number boxes apply their value when they lose focus or the user presses Enter, and clearing a box restores the default values. Change a selection from code with `Value`, `SetValues` or `Reset`; `SetValues` keeps one value for a single-select filter, two for a date range, and at most `Max` in multiple mode. A `Custom` filter is left out of the toolbar when the page has no `CustomFilter` template.
 
 ## Load a block only when its tab opens
 
@@ -173,7 +209,7 @@ controller.RegisterResource(new DashboardResource<Summary>(
     enabled: () => isAdmin));
 ```
 
-A `Disabled` resource never loads, and a card bound to it renders nothing. The predicate is evaluated when the resource is created and on each activation and refresh.
+A `Disabled` resource does not load, and a card bound to it renders nothing. The predicate is evaluated when the resource is created and on each activation and refresh. Once it returns `true`, the next `RefreshAsync` or `ActivateAsync` loads the resource, and a card bound to it calls `ActivateAsync` on every render, so the block appears as soon as the page renders again.
 
 ## Compare with the previous period
 
@@ -241,15 +277,14 @@ Clicking a header cycles the sort. A text column goes ascending, descending, the
 
 Goal: let the user download the content of a block.
 
-The Download CSV button of a card only hands the CSV text to your code, through `OnCsvExported`, and only the `KlyDashboardCard` exposes that parameter. The ready-made blocks do not, so their Download CSV button does nothing. To offer an export, build the block on `KlyDashboardCard`:
+Every block with `Menu="true"` has a Download CSV button that saves its table as a file named after the title, for example `orders-by-region.csv`. The ready-made blocks build the table themselves, with the rows they show (after `Limit`) and raw numbers rather than the formatted text: `12600` and not `12.6K`, `14.2` for a delta of `+14.2%`. A custom block built on `KlyDashboardCard` gives the table through `Tabulate`:
 
 ```razor
 @using System.Globalization
-@inject IJSRuntime Js
 
 <KlyDashboardCard Title="Orders by region" Menu="true" Source="_orders"
                   IsEmpty="@(_orders.Data is not { Count: > 0 })"
-                  Tabulate="BuildTable" OnCsvExported="DownloadAsync">
+                  Tabulate="BuildTable">
     <ul>
         @foreach (var r in _orders.Data ?? [])
         {
@@ -272,26 +307,14 @@ The Download CSV button of a card only hands the CSV text to your code, through 
             ["region"] = r.Region,
             ["orders"] = r.Orders.ToString(CultureInfo.InvariantCulture),
         }).ToList());
-
-    private async Task DownloadAsync(string csv) =>
-        await Js.InvokeVoidAsync("klyDownload", DashboardFormat.ResolveFileName("Orders by region"), csv);
 }
 ```
 
-The download itself is plain browser code. Add it once, for example in `App.razor`:
+To save the file another way, for example in a .NET MAUI app whose web view cannot download, handle `OnCsvExported` on the card: it receives the CSV text and the card then starts no download.
 
-```html
-<script>
-  window.klyDownload = (name, text) => {
-    const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-    const link = Object.assign(document.createElement("a"), { href: url, download: name });
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-</script>
-```
+`DashboardFormat.FormatInvariant` writes a number the way the ready-made blocks do, which is the safest choice for a numeric column.
 
-Three details of the CSV matter. The text starts with a UTF-8 byte order mark so spreadsheets read accents correctly. Headers and text cells are quoted, and cells of a `Numeric` column are written bare so spreadsheets read them as numbers, unless they contain the delimiter, as a formatted `1,234.5` does in a comma-delimited file, in which case they are quoted. And the delimiter is `;` when the culture uses a decimal comma and `,` otherwise. The card uses the Klyroo.UI format culture for that choice. If you need to control it, skip the menu button and call `DashboardFormat.ExportCsv(table, culture)` yourself.
+Four details of the CSV matter. The text starts with a UTF-8 byte order mark so spreadsheets read accents correctly, and every line, the header included, ends with `\r\n`. Headers and text cells are quoted, and cells of a `Numeric` column that read as a number are written bare so spreadsheets read them as numbers, unless they contain the delimiter, as a formatted `1,234.5` does in a comma-delimited file, in which case they are quoted. Any other cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe, so a spreadsheet shows it as text instead of running it as a formula. And the delimiter is `;` when the culture uses a decimal comma and `,` otherwise. The card uses the Klyroo.UI format culture for that choice. If you need to control it, skip the menu button and call `DashboardFormat.ExportCsv(table, culture)` yourself.
 
 ## Refresh on a timer
 
@@ -309,7 +332,6 @@ Goal: keep a wall display up to date.
 
 @code {
     private readonly DashboardController _dashboard = new("live");
-    private readonly CancellationTokenSource _cts = new();
     private DashboardResource<Summary> _summary = default!;
 
     protected override async Task OnInitializedAsync()
@@ -318,29 +340,16 @@ Goal: keep a wall display up to date.
             new DashboardResource<Summary>("summary", ct => Sales.GetSummaryAsync(null, ct)));
 
         await _dashboard.RefreshAsync();
-        _ = RefreshEvery(TimeSpan.FromSeconds(30));
+        _dashboard.AutoRefresh = 30;
     }
 
-    private async Task RefreshEvery(TimeSpan interval)
-    {
-        using var timer = new PeriodicTimer(interval);
-        try
-        {
-            while (await timer.WaitForNextTickAsync(_cts.Token))
-            {
-                await _dashboard.RefreshAsync();
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    public void Dispose() => _cts.Cancel();
+    public void Dispose() => _dashboard.Dispose();
 }
 ```
 
-`DashboardController.AutoRefresh` is only a number the controller stores for you: nothing in the library reads it or schedules a refresh, so the timer is yours. A refresh of data that is already loaded keeps the old data on screen, shows a thin progress bar on the card while it runs, and `Freshness="true"` adds an `Updated ... ago` footer. A resource that failed on the previous tick goes through `Loading` again.
+`AutoRefresh` is a number of seconds: a positive value starts a timer that calls `RefreshAsync`, and `0` stops it. A tick waits for its refresh to finish, so the timer never stacks refreshes, and it resumes on the synchronization context that set the value, so in Blazor the refresh runs on the renderer like a click would. Disposing the controller stops the timer and cancels the loads in progress, which is why the page implements `IDisposable`: without it the timer keeps the controller alive after the user leaves, and a prerendered page would leave one timer behind on the server.
+
+A refresh of data that is already loaded keeps the old data on screen, shows a thin progress bar on the card while it runs, and `Freshness="true"` adds an `Updated ... ago` footer. A resource that failed on the previous tick goes through `Loading` again. In tests, pass a fake `TimeProvider` to the `DashboardController` constructor to drive the timer.
 
 ## Test a dashboard
 

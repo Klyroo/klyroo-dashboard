@@ -3,8 +3,8 @@
 @inherits KlyComponentBase
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
-                 Skeleton="DashboardSkeletonKind.Gauge" Menu="@Menu" Freshness="@Freshness" Class="@Class">
-    <div class="flex flex-col items-center justify-center gap-2 py-2"
+                 Skeleton="DashboardSkeletonKind.Gauge" Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
+    <div class="@(IsBar ? "flex w-full flex-col gap-2 py-2" : "flex flex-col items-center justify-center gap-2 py-2")"
          role="meter"
          aria-label="@(Title ?? "Gauge")"
          aria-valuemin="@Min.ToString("0.##", CultureInfo.InvariantCulture)"
@@ -12,24 +12,52 @@
          aria-valuenow="@(Value?.ToString("0.##", CultureInfo.InvariantCulture) ?? "0")"
          aria-valuetext="@FormattedValue"
          data-slot="dashboard-gauge"
-         data-variant="@Variant">
-        <div class="relative flex items-center justify-center" style="width:140px;height:140px">
-            <svg viewBox="0 0 100 100" class="size-full -rotate-90 overflow-visible" aria-hidden="true">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8" class="text-(--klyroo-bg-muted)" />
-                <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"
-                        stroke-linecap="round"
-                        stroke-dasharray="263.89"
-                        stroke-dashoffset="@DashOffset.ToString("0.##", CultureInfo.InvariantCulture)"
-                        class="text-(--klyroo-primary) transition-all" />
-            </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+         data-variant="@(IsBar ? "bar" : "ring")">
+        @if (IsBar)
+        {
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="gauge-value">@FormattedValue</span>
                 @if (!string.IsNullOrEmpty(Caption))
                 {
                     <span class="text-xs text-(--klyroo-text-muted)" data-slot="gauge-caption">@Caption</span>
                 }
             </div>
-        </div>
+            <div class="relative h-2.5 w-full rounded-full bg-(--klyroo-bg-muted)" data-slot="gauge-bar" aria-hidden="true">
+                <div class="h-full rounded-full bg-(--klyroo-primary) transition-all"
+                     style="@($"width:{(Share * 100).ToString("0.##", CultureInfo.InvariantCulture)}%")"
+                     data-slot="gauge-bar-fill"></div>
+                @if (TargetShare is { } targetShare)
+                {
+                    <span class="absolute -top-1 -bottom-1 w-0.5 rounded-full bg-(--klyroo-text-highlighted)"
+                          style="@($"left:calc({(targetShare * 100).ToString("0.##", CultureInfo.InvariantCulture)}% - 1px)")"
+                          data-slot="gauge-target-marker"></span>
+                }
+            </div>
+            <div class="flex items-center justify-between text-[11px] tabular-nums text-(--klyroo-text-muted)" data-slot="gauge-scale">
+                <span>@DashboardFormat.Format(Min, Format, FormatCulture)</span>
+                <span>@DashboardFormat.Format(Max, Format, FormatCulture)</span>
+            </div>
+        }
+        else
+        {
+            <div class="relative flex items-center justify-center" style="width:140px;height:140px">
+                <svg viewBox="0 0 100 100" class="size-full -rotate-90 overflow-visible" aria-hidden="true">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8" class="text-(--klyroo-bg-muted)" />
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"
+                            stroke-linecap="round"
+                            stroke-dasharray="263.89"
+                            stroke-dashoffset="@DashOffset.ToString("0.##", CultureInfo.InvariantCulture)"
+                            class="text-(--klyroo-primary) transition-all" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="gauge-value">@FormattedValue</span>
+                    @if (!string.IsNullOrEmpty(Caption))
+                    {
+                        <span class="text-xs text-(--klyroo-text-muted)" data-slot="gauge-caption">@Caption</span>
+                    }
+                </div>
+            </div>
+        }
         @if (Target.HasValue)
         {
             <span class="text-xs text-(--klyroo-text-muted)" data-slot="gauge-target">
@@ -52,19 +80,19 @@
     [Parameter] public double Min { get; set; }
     /// <summary>The value at which the gauge is full. Defaults to 100.</summary>
     [Parameter] public double Max { get; set; } = 100;
-    /// <summary>A target shown as text under the gauge. It does not move a marker on the ring.</summary>
+    /// <summary>A target shown as text under the gauge, and as a marker on the bar of the <c>bar</c> variant.</summary>
     [Parameter] public double? Target { get; set; }
     /// <summary>How the value and the target are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
-    /// <summary>A line of text under the value, inside the ring.</summary>
+    /// <summary>A line of text under the value inside the ring, or next to the value in the <c>bar</c> variant.</summary>
     [Parameter] public string? Caption { get; set; }
-    /// <summary>Reserved. The gauge is always drawn as a ring; the value is only exposed as <c>data-variant</c>.</summary>
-    [Parameter] public string Variant { get; set; } = "arc";
-    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 4.</summary>
+    /// <summary><c>ring</c> (the default) draws a circular gauge with the value in the middle. <c>bar</c> draws a horizontal meter with the value above it, the minimum and maximum under it and a marker at <see cref="Target"/>. Any other value, such as the former default <c>arc</c>, draws the ring. The variant drawn is exposed as <c>data-variant</c>.</summary>
+    [Parameter] public string Variant { get; set; } = "ring";
+    /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 4.</summary>
     [Parameter] public int Span { get; set; } = 4;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
-    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
@@ -80,6 +108,42 @@
         }
     }
 
+    private bool IsBar => string.Equals(Variant, "bar", StringComparison.OrdinalIgnoreCase);
+
+    private double? TargetShare
+    {
+        get
+        {
+            var span = Max - Min;
+            if (span <= 0 || Target is not { } target || double.IsNaN(target)) return null;
+            return Math.Clamp((target - Min) / span, 0, 1);
+        }
+    }
+
     private double DashOffset => 263.89 * (1.0 - Share);
     private string FormattedValue => DashboardFormat.Format(Value, Format, FormatCulture);
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("label", "Label"),
+            new("value", "Value", Numeric: true),
+            new("min", "Minimum", Numeric: true),
+            new("max", "Maximum", Numeric: true),
+        };
+        var row = new Dictionary<string, string?>
+        {
+            ["label"] = Title ?? "Gauge",
+            ["value"] = DashboardFormat.FormatInvariant(Value),
+            ["min"] = DashboardFormat.FormatInvariant(Min),
+            ["max"] = DashboardFormat.FormatInvariant(Max),
+        };
+        if (Target.HasValue)
+        {
+            cols.Add(new("target", "Target", Numeric: true));
+            row["target"] = DashboardFormat.FormatInvariant(Target);
+        }
+        return new DashboardDataTable(cols, [row]);
+    }
 }

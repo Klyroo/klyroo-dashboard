@@ -67,17 +67,17 @@
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
     /// <summary>The value that fills a whole bar. Defaults to the largest item. Ignored by the funnel variant.</summary>
     [Parameter] public double? Max { get; set; }
-    /// <summary>The maximum number of bars shown.</summary>
+    /// <summary>The maximum number of bars shown. The table view and the CSV export hold the same bars.</summary>
     [Parameter] public int? Limit { get; set; }
     /// <summary><c>bars</c> (the default), or <c>funnel</c>: every bar is scaled to the first one and shows its share of the previous step.</summary>
     [Parameter] public string Variant { get; set; } = "bars";
     /// <summary><c>all</c> (the default) colors every bar. <c>first</c> colors the first bar and mutes the others.</summary>
     [Parameter] public string Emphasis { get; set; } = "all";
-    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 6.</summary>
+    /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 6.</summary>
     [Parameter] public int Span { get; set; } = 6;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
-    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
@@ -91,10 +91,12 @@
             new("label", "Label"),
             new("value", "Value", Numeric: true),
         };
-        var rows = (Items ?? []).Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
+        var items = Items ?? [];
+        var visible = Limit is > 0 ? items.Take(Limit.Value) : items;
+        var rows = visible.Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
         {
             ["label"] = i.Label,
-            ["value"] = DashboardFormat.Format(i.Value, Format, FormatCulture),
+            ["value"] = DashboardFormat.FormatInvariant(i.Value),
         }).ToList();
         return new DashboardDataTable(cols, rows);
     }

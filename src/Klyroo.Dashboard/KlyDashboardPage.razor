@@ -74,16 +74,129 @@
                 <div class="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Filters" data-slot="dashboard-filters">
                     @foreach (var filter in VisibleControls)
                     {
-                        <div class="relative inline-flex items-center" data-slot="dashboard-filter" data-key="@filter.Key" data-active="@(filter.Changed ? "true" : null)">
-                            <button type="button"
-                                    class="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium @(filter.Changed ? "border-(--klyroo-primary-text) bg-(--klyroo-primary)/10 text-(--klyroo-text-highlighted)" : "border-(--klyroo-border) bg-(--klyroo-bg) text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)")"
-                                    aria-expanded="@(filter.Open ? "true" : "false")"
-                                    data-slot="dashboard-filter-pill"
-                                    @onclick="@(() => ToggleFilterMenu(filter))">
-                                <span class="text-(--klyroo-text-muted)">@filter.Label:</span>
-                                <span class="font-semibold" data-slot="dashboard-filter-display">@filter.Display</span>
-                            </button>
-                            @if (filter.Changed)
+                        var pillClass = "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium " + (filter.Changed
+                            ? "border-(--klyroo-primary-text) bg-(--klyroo-primary)/10 text-(--klyroo-text-highlighted)"
+                            : "border-(--klyroo-border) bg-(--klyroo-bg) text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)");
+                        <div class="relative inline-flex items-center" data-slot="dashboard-filter" data-key="@filter.Key" data-kind="@filter.Kind.ToString().ToLowerInvariant()" data-active="@(filter.Changed ? "true" : null)">
+                            @switch (filter.Kind)
+                            {
+                                case DashboardFilterKind.Custom:
+                                    @CustomFilter!(filter)
+                                    break;
+
+                                case DashboardFilterKind.String:
+                                case DashboardFilterKind.Number:
+                                case DashboardFilterKind.Date:
+                                    <label class="@pillClass" data-slot="dashboard-filter-field">
+                                        <span class="text-(--klyroo-text-muted)">@filter.Label:</span>
+                                        <input type="@(filter.Kind == DashboardFilterKind.Number ? "number" : filter.Kind == DashboardFilterKind.Date ? "date" : "text")"
+                                               value="@(filter.Value ?? "")"
+                                               placeholder="@(filter.Kind == DashboardFilterKind.Date ? null : filter.Placeholder)"
+                                               step="@(filter.Kind == DashboardFilterKind.Number ? "any" : null)"
+                                               class="@($"h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text) {(filter.Kind == DashboardFilterKind.String ? "w-32" : filter.Kind == DashboardFilterKind.Number ? "w-20" : "")}")"
+                                               data-slot="dashboard-filter-input"
+                                               @onchange="@(e => SetInputValue(filter, e.Value?.ToString()))" />
+                                    </label>
+                                    @RenderInlinePresets(filter)
+                                    break;
+
+                                case DashboardFilterKind.DateRange:
+                                    var start = RangeBound(filter, 0);
+                                    var end = RangeBound(filter, 1);
+                                    <div class="@pillClass" role="group" aria-label="@filter.Label" data-slot="dashboard-filter-field">
+                                        <span class="text-(--klyroo-text-muted)" aria-hidden="true">@filter.Label:</span>
+                                        <input type="date"
+                                               value="@start"
+                                               max="@(string.IsNullOrEmpty(end) ? null : end)"
+                                               aria-label="@($"{filter.Label} from")"
+                                               class="h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text)"
+                                               data-slot="dashboard-filter-start"
+                                               @onchange="@(e => SetRangeBound(filter, 0, e.Value?.ToString()))" />
+                                        <span class="text-(--klyroo-text-muted)" aria-hidden="true">–</span>
+                                        <input type="date"
+                                               value="@end"
+                                               min="@(string.IsNullOrEmpty(start) ? null : start)"
+                                               aria-label="@($"{filter.Label} to")"
+                                               class="h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text)"
+                                               data-slot="dashboard-filter-end"
+                                               @onchange="@(e => SetRangeBound(filter, 1, e.Value?.ToString()))" />
+                                    </div>
+                                    @RenderInlinePresets(filter)
+                                    break;
+
+                                default:
+                                    <button type="button"
+                                            class="@pillClass"
+                                            aria-expanded="@(filter.Open ? "true" : "false")"
+                                            data-slot="dashboard-filter-pill"
+                                            @onclick="@(() => ToggleFilterMenu(filter))">
+                                        <span class="text-(--klyroo-text-muted)">@filter.Label:</span>
+                                        <span class="font-semibold" data-slot="dashboard-filter-display">@filter.Display</span>
+                                    </button>
+                                    @if (filter.Open && (filter.Items.Count > 0 || filter.Presets.Count > 0))
+                                    {
+                                        <div class="absolute start-0 top-full z-30 mt-1.5 flex w-60 flex-col gap-1.5 rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg-elevated) p-2 shadow-lg"
+                                             data-slot="dashboard-filter-menu">
+                                            @if (filter.Searchable)
+                                            {
+                                                <input type="search"
+                                                       value="@filter.Search"
+                                                       placeholder="Search…"
+                                                       aria-label="@($"Search {filter.Label}")"
+                                                       class="h-7 w-full rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg) px-2 text-xs text-(--klyroo-text)"
+                                                       data-slot="dashboard-filter-search"
+                                                       @oninput="@(e => filter.Search = e.Value?.ToString() ?? "")" />
+                                            }
+                                            @if (filter.Presets.Count > 0)
+                                            {
+                                                <div class="flex flex-wrap gap-1 border-b border-(--klyroo-border) pb-1.5" data-slot="dashboard-filter-presets">
+                                                    @foreach (var preset in filter.Presets)
+                                                    {
+                                                        @RenderPreset(filter, preset)
+                                                    }
+                                                </div>
+                                            }
+                                            <div class="flex max-h-52 flex-col gap-0.5 overflow-y-auto"
+                                                 role="listbox"
+                                                 aria-label="@filter.Label"
+                                                 aria-multiselectable="@(filter.Multiple ? "true" : null)">
+                                                @foreach (var opt in filter.FilteredItems)
+                                                {
+                                                    var selected = filter.IsSelected(opt.Value);
+                                                    var maxReached = filter.Multiple && !selected && filter.Max is { } m && filter.Values.Count >= m;
+                                                    <button type="button"
+                                                            role="option"
+                                                            disabled="@(opt.Disabled || maxReached)"
+                                                            aria-selected="@(selected ? "true" : "false")"
+                                                            class="flex w-full items-center justify-between gap-2 rounded-(--klyroo-radius) px-2 py-1.5 text-start text-xs @(selected ? "bg-(--klyroo-bg-muted) font-semibold text-(--klyroo-text-highlighted)" : "text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)") disabled:opacity-40"
+                                                            data-slot="dashboard-filter-option"
+                                                            data-value="@opt.Value"
+                                                            @onclick="@(() => filter.Toggle(opt.Value))">
+                                                        <span class="flex min-w-0 items-center gap-2">
+                                                            @if (!string.IsNullOrEmpty(opt.Icon))
+                                                            {
+                                                                <KlyIcon Name="@opt.Icon" Class="size-3.5 shrink-0 text-(--klyroo-text-muted)" />
+                                                            }
+                                                            <span class="flex min-w-0 flex-col">
+                                                                <span class="truncate">@opt.Label</span>
+                                                                @if (!string.IsNullOrEmpty(opt.Description))
+                                                                {
+                                                                    <span class="truncate text-[11px] font-normal text-(--klyroo-text-muted)" data-slot="dashboard-filter-option-description">@opt.Description</span>
+                                                                }
+                                                            </span>
+                                                        </span>
+                                                        @if (selected)
+                                                        {
+                                                            <span aria-hidden="true">✓</span>
+                                                        }
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                    break;
+                            }
+                            @if (filter.Changed && filter.Kind != DashboardFilterKind.Custom)
                             {
                                 <button type="button"
                                         class="ms-1 inline-flex size-6 items-center justify-center rounded-full text-xs text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text)"
@@ -92,61 +205,6 @@
                                         @onclick="filter.Reset">
                                     ✕
                                 </button>
-                            }
-
-                            @if (filter.Open && (filter.Items.Count > 0 || filter.Presets.Count > 0))
-                            {
-                                <div class="absolute start-0 top-full z-30 mt-1.5 flex w-60 flex-col gap-1.5 rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg-elevated) p-2 shadow-lg"
-                                     data-slot="dashboard-filter-menu">
-                                    @if (filter.Searchable)
-                                    {
-                                        <input type="search"
-                                               value="@filter.Search"
-                                               placeholder="Search…"
-                                               aria-label="@($"Search {filter.Label}")"
-                                               class="h-7 w-full rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg) px-2 text-xs text-(--klyroo-text)"
-                                               data-slot="dashboard-filter-search"
-                                               @oninput="@(e => filter.Search = e.Value?.ToString() ?? "")" />
-                                    }
-                                    @if (filter.Presets.Count > 0)
-                                    {
-                                        <div class="flex flex-wrap gap-1 border-b border-(--klyroo-border) pb-1.5" data-slot="dashboard-filter-presets">
-                                            @foreach (var preset in filter.Presets)
-                                            {
-                                                <button type="button"
-                                                        class="rounded-(--klyroo-radius) bg-(--klyroo-bg-muted) px-2 py-0.5 text-[11px] font-medium text-(--klyroo-text) hover:text-(--klyroo-text-highlighted)"
-                                                        data-slot="dashboard-filter-preset"
-                                                        @onclick="@(() => filter.ApplyPreset(preset))">
-                                                    @preset.Label
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                    <div class="flex max-h-52 flex-col gap-0.5 overflow-y-auto"
-                                         role="listbox"
-                                         aria-label="@filter.Label"
-                                         aria-multiselectable="@(filter.Multiple ? "true" : null)">
-                                        @foreach (var opt in filter.FilteredItems)
-                                        {
-                                            var selected = filter.IsSelected(opt.Value);
-                                            var maxReached = filter.Multiple && !selected && filter.Max is { } m && filter.Values.Count >= m;
-                                            <button type="button"
-                                                    role="option"
-                                                    disabled="@(opt.Disabled || maxReached)"
-                                                    aria-selected="@(selected ? "true" : "false")"
-                                                    class="flex w-full items-center justify-between gap-2 rounded-(--klyroo-radius) px-2 py-1.5 text-start text-xs @(selected ? "bg-(--klyroo-bg-muted) font-semibold text-(--klyroo-text-highlighted)" : "text-(--klyroo-text) hover:bg-(--klyroo-bg-muted)") disabled:opacity-40"
-                                                    data-slot="dashboard-filter-option"
-                                                    data-value="@opt.Value"
-                                                    @onclick="@(() => filter.Toggle(opt.Value))">
-                                                <span class="truncate">@opt.Label</span>
-                                                @if (selected)
-                                                {
-                                                    <span aria-hidden="true">✓</span>
-                                                }
-                                            </button>
-                                        }
-                                    </div>
-                                </div>
                             }
                         </div>
                     }
@@ -184,8 +242,10 @@
     [Parameter] public bool ShowRefresh { get; set; } = true;
     /// <summary>Shows the view tabs when the controller has at least two enabled views. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowTabs { get; set; } = true;
-    /// <summary>Shows a pill for each enabled filter that is not headless. Defaults to <see langword="true"/>.</summary>
+    /// <summary>Shows a control for each enabled filter that is not headless, chosen by its <c>Kind</c>: a text, number or date box, two date boxes for a range, your <see cref="CustomFilter"/> template, or a pill with an option list. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowFilters { get; set; } = true;
+    /// <summary>Draws each enabled filter whose <c>Kind</c> is <c>Custom</c> in the toolbar. It receives the filter: show its selection from <c>Values</c> and change it with <c>Value</c>, <c>SetValues</c> or <c>Reset</c>. Without it the toolbar leaves those filters out.</summary>
+    [Parameter] public RenderFragment<DashboardFilterControl>? CustomFilter { get; set; }
     /// <summary>Keeps the toolbar of tabs and filters at the top of the page while the body scrolls. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Sticky { get; set; } = true;
     /// <summary>Content placed before the refresh button, for example your own buttons.</summary>
@@ -196,7 +256,7 @@
     private DashboardController? _subscribed;
 
     private IReadOnlyList<DashboardFilterControl> VisibleControls =>
-        Dashboard?.Controls.Where(c => c.Enabled && !c.Headless).ToList() ?? [];
+        Dashboard?.Controls.Where(c => c.Enabled && !c.Headless && (c.Kind != DashboardFilterKind.Custom || CustomFilter is not null)).ToList() ?? [];
 
     private string RootClass =>
         $"flex min-h-0 w-full flex-col bg-(--klyroo-bg-muted) text-(--klyroo-text) {Class}".Trim();
@@ -222,6 +282,71 @@
         }
         target.Open = !target.Open;
     }
+
+    private RenderFragment RenderPreset(DashboardFilterControl filter, DashboardFilterPreset preset) =>
+        @<button type="button"
+                 class="inline-flex items-center gap-1 rounded-(--klyroo-radius) bg-(--klyroo-bg-muted) px-2 py-0.5 text-[11px] font-medium text-(--klyroo-text) hover:text-(--klyroo-text-highlighted)"
+                 data-slot="dashboard-filter-preset"
+                 @onclick="@(() => filter.ApplyPreset(preset))">
+            @if (!string.IsNullOrEmpty(preset.Icon))
+            {
+                <KlyIcon Name="@preset.Icon" Class="size-3 shrink-0" />
+            }
+            @preset.Label
+        </button>;
+
+    private RenderFragment RenderInlinePresets(DashboardFilterControl filter) => __builder =>
+    {
+        if (filter.Presets.Count == 0) return;
+        <div class="ms-1 flex flex-wrap items-center gap-1" data-slot="dashboard-filter-presets">
+            @foreach (var preset in filter.Presets)
+            {
+                @RenderPreset(filter, preset)
+            }
+        </div>
+    };
+
+    private static string RangeBound(DashboardFilterControl filter, int index) =>
+        filter.Values.Count > index ? filter.Values[index] : "";
+
+    private static void SetRangeBound(DashboardFilterControl filter, int index, string? value)
+    {
+        var bound = IsIsoDate(value) ? value! : "";
+        var start = index == 0 ? bound : RangeBound(filter, 0);
+        var end = index == 1 ? bound : RangeBound(filter, 1);
+        filter.SetValues([start, end]);
+    }
+
+    private static void SetInputValue(DashboardFilterControl filter, string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            filter.Value = null;
+            return;
+        }
+        switch (filter.Kind)
+        {
+            case DashboardFilterKind.Number:
+                // The browser hands a number box's value over in the invariant format; anything else is not a number and is ignored.
+                if (double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number) && double.IsFinite(number))
+                {
+                    filter.Value = number.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                }
+                break;
+            case DashboardFilterKind.Date:
+                if (IsIsoDate(text))
+                {
+                    filter.Value = text;
+                }
+                break;
+            default:
+                filter.Value = text;
+                break;
+        }
+    }
+
+    private static bool IsIsoDate(string? text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _);
 
     private async Task OnRefreshAsync()
     {

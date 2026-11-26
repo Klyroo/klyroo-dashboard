@@ -4,7 +4,7 @@
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Feed"
-                 Menu="@Menu" Freshness="@Freshness" Class="@Class">
+                 Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <div class="flex flex-col gap-3" data-slot="dashboard-feed">
         @{
             string? lastDayHeading = null;
@@ -58,16 +58,35 @@
     [Parameter] public bool GroupByDay { get; set; } = true;
     /// <summary>The reference moment for the day headings and the relative times. The current UTC time when <see langword="null"/>; set it to get deterministic output in tests.</summary>
     [Parameter] public DateTimeOffset? Now { get; set; }
-    /// <summary>The maximum number of events shown.</summary>
+    /// <summary>The maximum number of events shown. The table view and the CSV export hold the same events.</summary>
     [Parameter] public int? Limit { get; set; }
-    /// <summary>Width of the block in columns of the 12-column grid, clamped between 1 and 12. Defaults to 6.</summary>
+    /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 6.</summary>
     [Parameter] public int Span { get; set; } = 6;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Card { get; set; } = true;
-    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. The CSV text only reaches your code through <c>KlyDashboardCard.OnCsvExported</c>, which the ready-made blocks do not expose, so Download CSV does nothing on them. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
+    /// <summary>Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Menu</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("time", "Time"),
+            new("label", "Event"),
+            new("description", "Description"),
+        };
+        var items = Items ?? [];
+        var visible = Limit is > 0 ? items.Take(Limit.Value) : items;
+        var rows = visible.Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
+        {
+            ["time"] = i.Time.ToString("O", CultureInfo.InvariantCulture),
+            ["label"] = i.Label,
+            ["description"] = i.Description,
+        }).ToList();
+        return new DashboardDataTable(cols, rows);
+    }
 
     private string DayHeading(DateTimeOffset time)
     {

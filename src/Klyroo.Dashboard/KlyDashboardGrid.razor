@@ -1,14 +1,14 @@
 @namespace Klyroo.Dashboard
 @inherits KlyComponentBase
 
-<div class="@RootClass" data-slot="dashboard-grid" data-variant="@Variant" @attributes="AdditionalAttributes">
+<div class="@RootClass" style="@GridStyle" data-slot="dashboard-grid" data-variant="@Variant" data-columns="@EffectiveColumns" @attributes="AdditionalAttributes">
     <CascadingValue Value="this" IsFixed="false">
         @ChildContent
     </CascadingValue>
 </div>
 
 @code {
-    /// <summary>Reserved. The grid is always 12 columns wide and this value is not read.</summary>
+    /// <summary>The number of equal columns of the grid, at least 1. Defaults to 12. A block's <c>Span</c> is clamped to it, so with <c>Columns="3"</c> a block of the default span 12 fills one row and <c>Span="1"</c> takes a third.</summary>
     [Parameter] public int Columns { get; set; } = 12;
     /// <summary><c>cards</c> (the default) draws separate cards with a gap. <c>panels</c> joins the cards into one bordered panel with thin dividers.</summary>
     [Parameter] public string Variant { get; set; } = "cards";
@@ -19,14 +19,19 @@
     /// <summary>The blocks of the grid. Each one sets its width with <c>Span</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <summary>The column count the grid lays out: <see cref="Columns"/>, at least 1.</summary>
+    internal int EffectiveColumns => Math.Max(1, Columns);
+
+    private string GridStyle => $"grid-template-columns: repeat({EffectiveColumns}, minmax(0, 1fr))";
+
     private string RootClass
     {
         get
         {
             var isPanels = string.Equals(Variant, "panels", StringComparison.OrdinalIgnoreCase);
             var baseCls = isPanels
-                ? "grid grid-cols-12 gap-px overflow-hidden rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-border)"
-                : "grid grid-cols-12 gap-4";
+                ? "grid gap-px overflow-hidden rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-border)"
+                : "grid gap-4";
             return $"{baseCls} empty:hidden {Class}".Trim();
         }
     }
