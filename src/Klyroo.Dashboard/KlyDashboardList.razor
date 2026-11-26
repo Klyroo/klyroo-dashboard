@@ -41,7 +41,7 @@
                         }
                         @if (item.Delta is { } delta)
                         {
-                            <span class="font-semibold @(delta >= 0 ? "text-(--klyroo-success-text)" : "text-(--klyroo-error-text)")" data-slot="dashboard-list-delta">
+                            <span class="font-semibold @(DashboardDelta.IsZero(delta) ? "text-(--klyroo-text-muted)" : delta > 0 ? "text-(--klyroo-success-text)" : "text-(--klyroo-error-text)")" data-slot="dashboard-list-delta">
                                 @DashboardFormat.Format(delta, DashboardFormatPreset.Delta, FormatCulture)
                             </span>
                         }

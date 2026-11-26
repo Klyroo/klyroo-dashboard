@@ -28,6 +28,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- Other blocks no longer misrepresent zero and negative values. `KlyDashboardBars` and the `bar` column of `KlyDashboardTable` drew every bar at least 2% wide and treated a largest value under 1 as 1, so a zero looked small but positive and a list of ratios was drawn too short; bars are now proportional to their value on a scale that includes zero, and a negative value extends to the left of a zero line. A `KlyDashboardGauge` ring at zero no longer leaves a dot from its round cap. A change of zero in a list, a table or a stats block is muted instead of red or green.
 - A chart value of zero or below no longer looks positive: the old drawing clamped every bar to at least 4% of the height and drew a negative value as a zero, a missing value as a zero, and a line from a baseline that ignored the sign. Bars start at zero, negative values go below it, a missing or non-finite value is a gap, and a donut leaves out zero and negative values. The totals keep negative values.
 - In a `;`-delimited CSV (decimal-comma cultures), numbers are written with a decimal comma, so the spreadsheet reads them as numbers.
 - Setting `DashboardController.AutoRefresh` after the controller is disposed does nothing instead of throwing, and a refresh that throws no longer stops the timer. Intervals above `MaxAutoRefreshSeconds` (one day) are refused.

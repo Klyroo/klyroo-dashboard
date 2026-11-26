@@ -9,7 +9,7 @@
          aria-label="@(Title ?? Texts.Gauge)"
          aria-valuemin="@Min.ToString("0.##", CultureInfo.InvariantCulture)"
          aria-valuemax="@Max.ToString("0.##", CultureInfo.InvariantCulture)"
-         aria-valuenow="@(FiniteValue?.ToString("0.##", CultureInfo.InvariantCulture) ?? "0")"
+         aria-valuenow="@(FiniteValue is { } now ? Math.Clamp(now, Math.Min(Min, Max), Math.Max(Min, Max)).ToString("0.##", CultureInfo.InvariantCulture) : Min.ToString("0.##", CultureInfo.InvariantCulture))"
          aria-valuetext="@FormattedValue"
          data-slot="dashboard-gauge"
          data-variant="@(IsBar ? "bar" : "ring")">
@@ -43,11 +43,16 @@
             <div class="relative flex items-center justify-center" style="width:140px;height:140px">
                 <svg viewBox="0 0 100 100" class="size-full -rotate-90 overflow-visible" aria-hidden="true">
                     <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8" class="text-(--klyroo-bg-muted)" />
-                    <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"
-                            stroke-linecap="round"
-                            stroke-dasharray="263.89"
-                            stroke-dashoffset="@DashOffset.ToString("0.##", CultureInfo.InvariantCulture)"
-                            class="text-(--klyroo-primary) transition-all" />
+                    @* A share of zero draws nothing: a round cap on an empty arc would still leave a dot. *@
+                    @if (Share > 0)
+                    {
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"
+                                stroke-linecap="round"
+                                stroke-dasharray="263.89"
+                                stroke-dashoffset="@DashOffset.ToString("0.##", CultureInfo.InvariantCulture)"
+                                class="text-(--klyroo-primary) transition-all"
+                                data-slot="gauge-ring-fill" />
+                    }
                 </svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                     <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="gauge-value">@FormattedValue</span>

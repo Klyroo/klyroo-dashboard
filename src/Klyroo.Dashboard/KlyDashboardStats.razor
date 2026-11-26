@@ -26,7 +26,7 @@
                         @if (item.Delta is { } d)
                         {
                             var good = item.InvertDelta ? d < 0 : d > 0;
-                            <span class="text-xs font-semibold tabular-nums @(good ? "text-(--klyroo-success-text)" : "text-(--klyroo-error-text)")"
+                            <span class="text-xs font-semibold tabular-nums @(DashboardDelta.IsZero(d) ? "text-(--klyroo-text-muted)" : good ? "text-(--klyroo-success-text)" : "text-(--klyroo-error-text)")"
                                   data-slot="dashboard-stats-delta">
                                 @DashboardFormat.Format(d, DashboardFormatPreset.Delta, FormatCulture)
                             </span>

@@ -41,5 +41,6 @@ internal static class DashboardBarGeometry
     /// <summary>The position of zero in percent of the track.</summary>
     public static double Zero(double lo, double hi) => Math.Clamp(-lo / (hi - lo) * 100, 0, 100);
 
-    public static string Percent(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    // "-0" would be written for a negative zero: a bar at zero is plain 0.
+    public static string Percent(double value) => (value == 0 ? 0 : value).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 }
