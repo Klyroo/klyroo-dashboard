@@ -8,6 +8,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Added
 
+- The built-in texts follow the Klyroo.UI locale, as in Klyroo.Display: the new `DashboardTexts` record holds every button, accessible name, empty and error state, table column header and relative time, `DashboardLocales` has one set per locale of Klyroo.UI (English and French reviewed, the other ten drafts), and `KlyrooDashboardOptions.Texts(code, change)` changes a set in `AddKlyrooDashboard`. `KlyrooDashboardOptions` is now stored as an extension of `KlyrooOptions`, and the container resolves that same instance.
+- `DashboardFormat.FormatRelativeTime(value, now, DashboardRelativeTimeTexts)` writes the relative time with the words you give it. The overload without them stays English.
 - Download CSV saves the file in the browser through `_content/Klyroo.Dashboard/klyroo-dashboard.js` when `KlyDashboardCard.OnCsvExported` has no handler, so the button works on the ready-made blocks.
 - `KlyDashboardStat`, `KlyDashboardGauge`, `KlyDashboardFeed` and `KlyDashboardAlerts` build a table, so their menu has View as table and Download CSV.
 - `KlyDashboardChart` draws every series: grouped bars, lines (`Type="line"`, or a `line` series over bars) and a donut (`Type="donut"`), in the `--klyroo-chart-*` colors, with a text alternative for screen readers.

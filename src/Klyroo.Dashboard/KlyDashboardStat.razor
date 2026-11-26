@@ -44,12 +44,12 @@
                 var pct = Math.Clamp(currentVal / Goal.Value * 100.0, 0, 100);
                 <div class="flex flex-col gap-1 pt-1" data-slot="dashboard-stat-goal">
                     <div class="flex items-center justify-between text-xs text-(--klyroo-text-muted)">
-                        <span>Goal @DashboardFormat.Format(Goal, Format, FormatCulture)</span>
+                        <span>@Texts.Goal(DashboardFormat.Format(Goal, Format, FormatCulture))</span>
                         <span class="font-semibold tabular-nums">@($"{Math.Round(pct)}%")</span>
                     </div>
                     <div class="h-1.5 w-full overflow-hidden rounded-full bg-(--klyroo-bg-muted)"
                          role="progressbar"
-                         aria-label="@($"Goal {DashboardFormat.Format(Goal, Format, FormatCulture)}")"
+                         aria-label="@Texts.Goal(DashboardFormat.Format(Goal, Format, FormatCulture))"
                          aria-valuenow="@Math.Round(pct)"
                          aria-valuemin="0"
                          aria-valuemax="100"
@@ -69,6 +69,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The name of the metric, shown as the card title. Required.</summary>
@@ -134,22 +136,22 @@
 
     private string? EffectiveCaption =>
         !string.IsNullOrEmpty(Caption) ? Caption
-        : Compare.HasValue ? $"vs {DashboardFormat.Format(Compare, Format, FormatCulture)} previous period"
+        : Compare.HasValue ? Texts.VersusPrevious(DashboardFormat.Format(Compare, Format, FormatCulture))
         : null;
 
     private string ChangeLabel => EffectiveDeltaFormat switch
     {
-        DashboardFormatPreset.Delta or DashboardFormatPreset.Percent => "Change (%)",
-        DashboardFormatPreset.Points => "Change (pts)",
-        _ => "Change",
+        DashboardFormatPreset.Delta or DashboardFormatPreset.Percent => Texts.ColumnChangePercent,
+        DashboardFormatPreset.Points => Texts.ColumnChangePoints,
+        _ => Texts.ColumnChange,
     };
 
     private DashboardDataTable BuildDataTable()
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("label", "Label"),
-            new("value", "Value", Numeric: true),
+            new("label", Texts.ColumnLabel),
+            new("value", Texts.ColumnValue, Numeric: true),
         };
         var row = new Dictionary<string, string?>
         {
@@ -158,7 +160,7 @@
         };
         if (Compare.HasValue)
         {
-            cols.Add(new("previous", "Previous", Numeric: true));
+            cols.Add(new("previous", Texts.ColumnPrevious, Numeric: true));
             row["previous"] = DashboardFormat.FormatInvariant(Compare);
         }
         if (EffectiveDelta is { } delta && !double.IsNaN(delta))
@@ -168,7 +170,7 @@
         }
         if (Goal is > 0)
         {
-            cols.Add(new("goal", "Goal", Numeric: true));
+            cols.Add(new("goal", Texts.ColumnGoal, Numeric: true));
             row["goal"] = DashboardFormat.FormatInvariant(Goal);
         }
         return new DashboardDataTable(cols, [row]);

@@ -40,6 +40,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     // Series and slice colors: the chart tokens of Klyroo.UI (--klyroo-chart-1..6, which fall back to the semantic colors), then neutral.
     private static readonly string[] Palette = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "neutral"];
     private static readonly double DonutCircumference = 2 * Math.PI * 40;
@@ -260,7 +262,7 @@
 
     private DashboardDataTable BuildDataTable()
     {
-        var cols = new List<DashboardDataColumn> { new("category", "Category") };
+        var cols = new List<DashboardDataColumn> { new("category", Texts.ColumnCategory) };
         foreach (var s in Series ?? [])
         {
             cols.Add(new DashboardDataColumn(s.Key, s.Label, Numeric: true));

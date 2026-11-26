@@ -1129,6 +1129,28 @@ public sealed record DashboardDataTable(
     IReadOnlyList<DashboardDataColumn> Columns,
     IReadOnlyList<IReadOnlyDictionary<string, string?>> Rows);
 
+/// <summary>The words <see cref="DashboardFormat.FormatRelativeTime(DateTimeOffset?, DateTimeOffset?, DashboardRelativeTimeTexts)"/> uses. A new instance holds the English words.</summary>
+public sealed record DashboardRelativeTimeTexts
+{
+    /// <summary>The English words, the ones <see cref="DashboardFormat.FormatRelativeTime(DateTimeOffset?, DateTimeOffset?)"/> uses.</summary>
+    public static DashboardRelativeTimeTexts English { get; } = new();
+
+    /// <summary>A moment under 45 seconds ago.</summary>
+    public string JustNow { get; init; } = "just now";
+
+    /// <summary>A moment less than 45 minutes ago, given the number of minutes (at least 1).</summary>
+    public Func<int, string> MinutesAgo { get; init; } = n => $"{n} min ago";
+
+    /// <summary>A moment less than 22 hours ago, given the number of hours (at least 1).</summary>
+    public Func<int, string> HoursAgo { get; init; } = n => $"{n} hr ago";
+
+    /// <summary>A moment about a day ago.</summary>
+    public string Yesterday { get; init; } = "yesterday";
+
+    /// <summary>A moment less than a week ago, given the number of days.</summary>
+    public Func<int, string> DaysAgo { get; init; } = n => $"{n} days ago";
+}
+
 /// <summary>Number, delta, relative-time, comparison-range and CSV helpers. Numbers use the invariant culture unless you pass one; the components pass the format culture of Klyroo.UI.</summary>
 public static class DashboardFormat
 {
@@ -1208,20 +1230,30 @@ public static class DashboardFormat
         return $"{currencySymbol}{value.Value.ToString("#,0.##", c)}";
     }
 
-    /// <summary>Describes how long ago something happened: <c>just now</c> under 45 seconds, then minutes, hours, <c>yesterday</c>, days under a week, and an ISO date (<c>yyyy-MM-dd</c>) beyond that. The text is English.</summary>
+    /// <summary>Describes how long ago something happened: <c>just now</c> under 45 seconds, then minutes, hours, <c>yesterday</c>, days under a week, and an ISO date (<c>yyyy-MM-dd</c>) beyond that. The text is English: pass <see cref="DashboardRelativeTimeTexts"/> to the overload for another language.</summary>
     /// <param name="value">The moment to describe.</param>
     /// <param name="now">The reference moment. The current UTC time when <see langword="null"/>.</param>
     /// <returns>The text, or an empty string when <paramref name="value"/> is <see langword="null"/>.</returns>
-    public static string FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now = null)
+    public static string FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now = null) =>
+        FormatRelativeTime(value, now, DashboardRelativeTimeTexts.English);
+
+    /// <summary>Describes how long ago something happened like <see cref="FormatRelativeTime(DateTimeOffset?, DateTimeOffset?)"/>, with the wording of <paramref name="texts"/>. Past a week the text is still an ISO date.</summary>
+    /// <param name="value">The moment to describe.</param>
+    /// <param name="now">The reference moment. The current UTC time when <see langword="null"/>.</param>
+    /// <param name="texts">The words to use, for example those of another language.</param>
+    /// <returns>The text, or an empty string when <paramref name="value"/> is <see langword="null"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="texts"/> is <see langword="null"/>.</exception>
+    public static string FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now, DashboardRelativeTimeTexts texts)
     {
+        ArgumentNullException.ThrowIfNull(texts);
         if (value is null) return "";
         var reference = now ?? DateTimeOffset.UtcNow;
         var diff = reference - value.Value;
-        if (diff.TotalSeconds < 45) return "just now";
-        if (diff.TotalMinutes < 45) return $"{Math.Max(1, (int)Math.Round(diff.TotalMinutes))} min ago";
-        if (diff.TotalHours < 22) return $"{Math.Max(1, (int)Math.Round(diff.TotalHours))} hr ago";
-        if (diff.TotalDays < 1.5) return "yesterday";
-        if (diff.TotalDays < 7) return $"{(int)Math.Round(diff.TotalDays)} days ago";
+        if (diff.TotalSeconds < 45) return texts.JustNow;
+        if (diff.TotalMinutes < 45) return texts.MinutesAgo(Math.Max(1, (int)Math.Round(diff.TotalMinutes)));
+        if (diff.TotalHours < 22) return texts.HoursAgo(Math.Max(1, (int)Math.Round(diff.TotalHours)));
+        if (diff.TotalDays < 1.5) return texts.Yesterday;
+        if (diff.TotalDays < 7) return texts.DaysAgo((int)Math.Round(diff.TotalDays));
         return value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 

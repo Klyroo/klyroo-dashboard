@@ -46,7 +46,7 @@
                                     aria-pressed="@(_showingTable ? "true" : "false")"
                                     data-slot="dashboard-card-table-toggle"
                                     @onclick="@(() => _showingTable = !_showingTable)">
-                                @(_showingTable ? "Hide table" : "View as table")
+                                @(_showingTable ? Texts.HideTable : Texts.ViewAsTable)
                             </button>
                         }
                         @if (Tabulate is not null)
@@ -55,7 +55,7 @@
                                     class="inline-flex h-7 items-center rounded-(--klyroo-radius) px-2 text-xs font-medium text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text)"
                                     data-slot="dashboard-card-csv"
                                     @onclick="OnExportCsvAsync">
-                                Download CSV
+                                @Texts.DownloadCsv
                             </button>
                         }
                         @if (Expandable)
@@ -65,7 +65,7 @@
                                     aria-expanded="@(_expanded ? "true" : "false")"
                                     data-slot="dashboard-card-expand"
                                     @onclick="@(() => _expanded = !_expanded)">
-                                @(_expanded ? "Collapse" : "Expand")
+                                @(_expanded ? Texts.Collapse : Texts.Expand)
                             </button>
                         }
                     }
@@ -87,7 +87,7 @@
                             <span>@f.Label: @f.Display</span>
                             <button type="button"
                                     class="inline-flex size-4 items-center justify-center rounded-full text-(--klyroo-text-muted) hover:text-(--klyroo-text)"
-                                    aria-label="@($"Remove {f.Label}")"
+                                    aria-label="@Texts.RemoveFilter(f.Label)"
                                     @onclick="f.Reset">✕</button>
                         </span>
                     }
@@ -163,15 +163,15 @@
                 case DashboardBlockPhase.Error:
                     <div class="flex flex-col items-start gap-2 rounded-(--klyroo-radius) border border-(--klyroo-error)/30 bg-(--klyroo-error)/10 p-3 text-xs"
                          role="alert" data-slot="dashboard-error">
-                        <p class="m-0 font-semibold text-(--klyroo-error-text)">This data could not be loaded</p>
-                        <p class="m-0 text-(--klyroo-text-muted)">@(Source?.Error ?? "The rest of the dashboard is unaffected. Try again in a moment.")</p>
+                        <p class="m-0 font-semibold text-(--klyroo-error-text)">@Texts.ErrorTitle</p>
+                        <p class="m-0 text-(--klyroo-text-muted)">@(Source?.Error ?? Texts.ErrorMessage)</p>
                         @if (Source is not null)
                         {
                             <button type="button"
                                     class="rounded-(--klyroo-radius) bg-(--klyroo-bg) px-2.5 py-1 font-semibold text-(--klyroo-text-highlighted) shadow-2xs hover:bg-(--klyroo-bg-muted)"
                                     data-slot="dashboard-retry"
                                     @onclick="Source.RefreshAsync">
-                                Retry
+                                @Texts.Retry
                             </button>
                         }
                     </div>
@@ -179,7 +179,7 @@
 
                 case DashboardBlockPhase.Empty:
                     <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--klyroo-text-muted)" data-slot="dashboard-empty">
-                        <p class="m-0 font-semibold text-(--klyroo-text-highlighted)">@(EmptyTitle ?? "No data for this period")</p>
+                        <p class="m-0 font-semibold text-(--klyroo-text-highlighted)">@(EmptyTitle ?? Texts.NoData)</p>
                         @if (!string.IsNullOrEmpty(EmptyDescription))
                         {
                             <p class="m-0">@EmptyDescription</p>
@@ -233,7 +233,7 @@
                     @if (EffectiveFreshness && Phase == DashboardBlockPhase.Content && Source?.UpdatedAt is { } updatedAt)
                     {
                         <time datetime="@updatedAt.ToString("O")" data-slot="dashboard-card-freshness">
-                            Updated @DashboardFormat.FormatRelativeTime(updatedAt)
+                            @Texts.Updated(DashboardFormat.FormatRelativeTime(updatedAt, null, Texts.RelativeTime))
                         </time>
                     }
                 </footer>
@@ -243,6 +243,8 @@
 }
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     private bool _showingTable;
     private bool _expanded;
 
@@ -260,7 +262,7 @@
     [Parameter] public bool Card { get; set; } = true;
     /// <summary>Shows the empty state instead of the content once the source is ready.</summary>
     [Parameter] public bool IsEmpty { get; set; }
-    /// <summary>The title of the empty state. Defaults to <c>No data for this period</c>.</summary>
+    /// <summary>The title of the empty state. Defaults to the <c>NoData</c> text of the locale (<c>No data for this period</c> in English).</summary>
     [Parameter] public string? EmptyTitle { get; set; }
     /// <summary>A line of text under the title of the empty state.</summary>
     [Parameter] public string? EmptyDescription { get; set; }

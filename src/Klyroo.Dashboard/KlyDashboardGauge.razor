@@ -6,7 +6,7 @@
                  Skeleton="DashboardSkeletonKind.Gauge" Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <div class="@(IsBar ? "flex w-full flex-col gap-2 py-2" : "flex flex-col items-center justify-center gap-2 py-2")"
          role="meter"
-         aria-label="@(Title ?? "Gauge")"
+         aria-label="@(Title ?? Texts.Gauge)"
          aria-valuemin="@Min.ToString("0.##", CultureInfo.InvariantCulture)"
          aria-valuemax="@Max.ToString("0.##", CultureInfo.InvariantCulture)"
          aria-valuenow="@(FiniteValue?.ToString("0.##", CultureInfo.InvariantCulture) ?? "0")"
@@ -61,13 +61,15 @@
         @if (Target.HasValue)
         {
             <span class="text-xs text-(--klyroo-text-muted)" data-slot="gauge-target">
-                Target: @DashboardFormat.Format(Target, Format, FormatCulture)
+                @Texts.Target(DashboardFormat.Format(Target, Format, FormatCulture))
             </span>
         }
     </div>
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
@@ -130,21 +132,21 @@
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("label", "Label"),
-            new("value", "Value", Numeric: true),
-            new("min", "Minimum", Numeric: true),
-            new("max", "Maximum", Numeric: true),
+            new("label", Texts.ColumnLabel),
+            new("value", Texts.ColumnValue, Numeric: true),
+            new("min", Texts.ColumnMinimum, Numeric: true),
+            new("max", Texts.ColumnMaximum, Numeric: true),
         };
         var row = new Dictionary<string, string?>
         {
-            ["label"] = Title ?? "Gauge",
+            ["label"] = Title ?? Texts.Gauge,
             ["value"] = DashboardFormat.FormatInvariant(FiniteValue),
             ["min"] = DashboardFormat.FormatInvariant(Min),
             ["max"] = DashboardFormat.FormatInvariant(Max),
         };
         if (Target.HasValue)
         {
-            cols.Add(new("target", "Target", Numeric: true));
+            cols.Add(new("target", Texts.ColumnTarget, Numeric: true));
             row["target"] = DashboardFormat.FormatInvariant(Target);
         }
         return new DashboardDataTable(cols, [row]);

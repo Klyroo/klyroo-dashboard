@@ -152,7 +152,7 @@ A block does not read the data of its `Source`: the source only drives the loadi
 - `Klyroo.Dashboard.Core` runs in any .NET 10 app (minimal APIs, workers, console apps, MAUI view models) and declares `IsTrimmable` and `IsAotCompatible`.
 - `Klyroo.Dashboard` needs a Blazor Web App or a .NET MAUI Blazor Hybrid app. It declares `IsTrimmable` but not `IsAotCompatible`, and declares the supported platforms `browser`, `ios`, `android`, `maccatalyst` and `windows`.
 - Static SSR renders the blocks, but tabs, filter controls, the refresh button, the table sort and the copy and CSV buttons need an interactive render mode (Interactive Server, WebAssembly or Auto).
-- The block texts (Refresh, View as table, Retry and so on) are in English.
+- The block texts (Refresh, View as table, Retry and so on) follow the Klyroo.UI locale in the 12 languages of Klyroo.UI, English and French reviewed and the others drafts. Change them with `KlyrooDashboardOptions.Texts` (see [Guides](docs/guides.md#translate-or-change-the-built-in-texts)).
 
 ## Klyroo ecosystem
 

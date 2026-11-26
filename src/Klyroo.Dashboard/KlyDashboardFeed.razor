@@ -32,7 +32,7 @@
                         <span class="font-medium text-(--klyroo-text-highlighted)" data-slot="dashboard-feed-label">@item.Label</span>
                         <time datetime="@item.Time.ToString("O")" title="@item.Time.ToString("u")"
                               class="shrink-0 text-[11px] text-(--klyroo-text-muted)" data-slot="dashboard-feed-time">
-                            @DashboardFormat.FormatRelativeTime(item.Time, Now)
+                            @DashboardFormat.FormatRelativeTime(item.Time, Now, Texts.RelativeTime)
                         </time>
                     </div>
                     @if (!string.IsNullOrEmpty(item.Description))
@@ -46,6 +46,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
@@ -73,9 +75,9 @@
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("time", "Time"),
-            new("label", "Event"),
-            new("description", "Description"),
+            new("time", Texts.ColumnTime),
+            new("label", Texts.ColumnEvent),
+            new("description", Texts.ColumnDescription),
         };
         var items = Items ?? [];
         var visible = Limit is > 0 ? items.Take(Limit.Value) : items;
@@ -92,8 +94,8 @@
     {
         var now = (Now ?? DateTimeOffset.UtcNow).UtcDateTime.Date;
         var d = time.UtcDateTime.Date;
-        if (d == now) return "Today";
-        if (d == now.AddDays(-1)) return "Yesterday";
+        if (d == now) return Texts.Today;
+        if (d == now.AddDays(-1)) return Texts.Yesterday;
         return d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 }

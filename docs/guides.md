@@ -12,6 +12,7 @@ Task-oriented recipes. They assume the setup from [Getting started](getting-star
 - [Export a block to CSV](#export-a-block-to-csv)
 - [Refresh on a timer](#refresh-on-a-timer)
 - [Hand the prerendered data to the interactive render](#hand-the-prerendered-data-to-the-interactive-render)
+- [Translate or change the built-in texts](#translate-or-change-the-built-in-texts)
 - [Test a dashboard](#test-a-dashboard)
 
 ## Load data in two stages
@@ -413,6 +414,28 @@ A few rules:
 - A .NET MAUI Blazor Hybrid app has no prerender: `Attach` does nothing there, and `LoadAsync` is `RefreshAsync`.
 
 `IDashboardPersistentSource` (`ExportJson`, `RestoreJson`) is the contract behind it, in `Klyroo.Dashboard.Core`, so any other host can hand data between two runs the same way.
+
+## Translate or change the built-in texts
+
+Goal: show the buttons, accessible names, empty and error states, column headers and relative times in the language of the user.
+
+Every text of the blocks (Refresh, View as table, Download CSV, Expand, Retry, `No data for this period`, the alert badges, the `Category` column of a chart table, `Updated 5 min ago` and so on) comes from a `DashboardTexts` set chosen by the locale of Klyroo.UI: the one of an enclosing `KlyApp` or `KlyLocale` cascading value, then `KlyrooOptions.Locale`, then the current UI culture. There is one set per locale of `KlyLocales.All` in `DashboardLocales.Tables`. English and French are reviewed (`DashboardLocales.ReviewedCodes`); the other ten are drafts that wait for a native speaker.
+
+Change a set in `AddKlyrooDashboard`, in code shared by the server and the WebAssembly client. `Texts` receives the set the locale resolves to, so `fr-CA` starts from `fr`:
+
+```csharp
+builder.Services.AddKlyrooDashboard(o => o
+    .Texts("fr", t => t with
+    {
+        Refresh = "Rafraîchir",
+        RelativeMinutes = n => $"il y a {n} minutes",
+    })
+    .Texts("en", t => t with { NoData = "Nothing to show" }));
+```
+
+A text that holds a number or a name is a function (`RelativeMinutes`, `ClearFilter`, `Updated`), so a language chooses its own plural forms and word order. The sets become read-only the first time a component renders, and `Texts` then throws `InvalidOperationException`.
+
+Text you pass to the blocks (titles, labels, filter options) is never translated. `DashboardFormat.FormatRelativeTime` is English unless you pass the words: `DashboardFormat.FormatRelativeTime(at, now, DashboardLocales.Fr.RelativeTime)`. The options `DashboardFilterControl` creates for a `Boolean` or `Comparison` filter (`Yes`, `No`, `No comparison`, ...) are built in `Klyroo.Dashboard.Core`, which has no locale: pass your own `items` to translate them.
 
 ## Test a dashboard
 

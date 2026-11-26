@@ -52,6 +52,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
@@ -75,9 +77,9 @@
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("label", "Label"),
-            new("value", "Value", Numeric: true),
-            new("change", "Change (%)", Numeric: true),
+            new("label", Texts.ColumnLabel),
+            new("value", Texts.ColumnValue, Numeric: true),
+            new("change", Texts.ColumnChangePercent, Numeric: true),
         };
         var rows = (Items ?? []).Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
         {

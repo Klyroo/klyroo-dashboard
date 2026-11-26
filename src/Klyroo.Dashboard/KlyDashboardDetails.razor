@@ -29,8 +29,8 @@
                         var toCopy = item.Value;
                         <button type="button"
                                 class="inline-flex size-6 shrink-0 items-center justify-center rounded-(--klyroo-radius) text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text)"
-                                aria-label="@($"Copy {item.Label}")"
-                                title="Copy"
+                                aria-label="@Texts.CopyValue(item.Label)"
+                                title="@Texts.Copy"
                                 data-slot="dashboard-details-copy"
                                 @onclick="@(() => CopyToClipboardAsync(toCopy))">
                             <KlyIcon Name="copy" Class="size-3.5" />
@@ -47,6 +47,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
@@ -84,8 +86,8 @@
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("label", "Label"),
-            new("value", "Value"),
+            new("label", Texts.ColumnLabel),
+            new("value", Texts.ColumnValue),
         };
         var rows = VisibleItems.Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
         {

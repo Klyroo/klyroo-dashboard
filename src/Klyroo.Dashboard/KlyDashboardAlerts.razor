@@ -2,7 +2,7 @@
 @inherits KlyComponentBase
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
-                 IsEmpty="@(Items is not { Count: > 0 })" EmptyTitle="Nothing needs attention"
+                 IsEmpty="@(Items is not { Count: > 0 })" EmptyTitle="@Texts.NothingNeedsAttention"
                  Skeleton="DashboardSkeletonKind.Rows" Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <div class="divide-y divide-(--klyroo-border)" data-slot="dashboard-alerts">
         @foreach (var item in OrderedItems)
@@ -55,6 +55,8 @@
 </KlyDashboardCard>
 
 @code {
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
+
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
     /// <summary>The heading of the block.</summary>
@@ -78,22 +80,22 @@
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
-    private static string SeverityLabel(DashboardAlertSeverity severity) => severity switch
+    private string SeverityLabel(DashboardAlertSeverity severity) => severity switch
     {
-        DashboardAlertSeverity.Error => "Critical",
-        DashboardAlertSeverity.Warning => "Warning",
-        DashboardAlertSeverity.Success => "Resolved",
-        _ => "Info",
+        DashboardAlertSeverity.Error => Texts.SeverityCritical,
+        DashboardAlertSeverity.Warning => Texts.SeverityWarning,
+        DashboardAlertSeverity.Success => Texts.SeverityResolved,
+        _ => Texts.SeverityInfo,
     };
 
     private DashboardDataTable BuildDataTable()
     {
         var cols = new List<DashboardDataColumn>
         {
-            new("severity", "Severity"),
-            new("label", "Alert"),
-            new("description", "Description"),
-            new("value", "Value"),
+            new("severity", Texts.ColumnSeverity),
+            new("label", Texts.ColumnAlert),
+            new("description", Texts.ColumnDescription),
+            new("value", Texts.ColumnValue),
         };
         var rows = OrderedItems.Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
         {
