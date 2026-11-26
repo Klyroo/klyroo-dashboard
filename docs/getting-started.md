@@ -2,7 +2,7 @@
 
 In this tutorial you build a small orders dashboard. You start with the headless controller in a console app to see how resources and filters behave, then render the same idea in a Blazor page.
 
-You need the .NET 10 SDK. For the Blazor part, use a Blazor Web App with interactivity enabled (Interactive Server, WebAssembly or Auto).
+Check the [prerequisites](../README.md#prerequisites) first: the .NET 10 SDK, and for the components a Blazor app with Klyroo.UI set up.
 
 ## 1. Install the packages
 
