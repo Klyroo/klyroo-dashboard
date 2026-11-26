@@ -94,7 +94,7 @@ public sealed record DashboardTexts
     /// <summary>The title of an empty block (<c>"No data for this period"</c>).</summary>
     public string NoData { get; init; } = "No data for this period";
 
-    /// <summary>The accessible name of the group of buttons that select a data point of a chart (<c>"Select a data point"</c>).</summary>
+    /// <summary>The accessible name of the group of buttons that select a data point of the compact chart drawing (<c>"Select a data point"</c>); the drawing of <c>KlyChart</c> makes its own bars, points and slices selectable instead.</summary>
     public string SelectPoint { get; init; } = "Select a data point";
 
     // Blocks

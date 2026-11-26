@@ -18,7 +18,8 @@
                 @RenderChart(Categories, Series)
             }
 
-            @if (OnSelect.HasDelegate)
+            @* KlyChart reports the pick of a bar, point or slice itself; only the compact drawing, which KlyChart does not draw, keeps a group of buttons. *@
+            @if (OnSelect.HasDelegate && UsesCompactDrawing)
             {
                 @RenderSelection(Categories, Series)
             }
@@ -78,7 +79,7 @@
     [Parameter] public bool Stacked { get; set; }
     /// <summary>Draws the bars of a <c>bar</c> chart along the horizontal axis, with the categories on the vertical one.</summary>
     [Parameter] public bool Horizontal { get; set; }
-    /// <summary>Called with the category, the series key and the value when the user picks a data point. The chart then shows a group of buttons under the drawing, one per category and series (one per slice for a donut, comparison series left out), so the choice works with the keyboard and with a screen reader too: <c>KlyChart</c> has no selection event of its own, so the bars and slices themselves are not clickable. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    /// <summary>Called with the category, the series key and the value when the user picks a data point. In the drawing of <c>KlyChart</c> (every chart except the compact one described at <see cref="Type"/>) the bars, points and slices themselves are the choice: a click on one, or Enter or Space on the one the arrow keys are on, with a pointer cursor and the same keyboard hint as <c>KlyChart.OnSelect</c>. A pick of a comparison series, or of a row where the series has no value, stands for the first other series that has a value in that category, and the pick of a gap is ignored. The compact drawing, which <c>KlyChart</c> cannot draw (a bar chart with a line series, or with <see cref="ShowLabels"/>), has no selectable marks, so it shows a group of buttons under the drawing instead, one per category and series (one per slice for a donut, comparison series left out), which works with the keyboard and with a screen reader too. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
     [Parameter] public EventCallback<DashboardChartSelection> OnSelect { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 8.</summary>
     [Parameter] public int Span { get; set; } = 8;
@@ -142,13 +143,14 @@
             ? categories.Select((_, i) => new KlyColor(ColorOf(i))).ToList()
             : shown.Select(s => s.IsComparison ? KlyColor.Neutral : new KlyColor(ColorOf(series.ToList().IndexOf(s)))).ToList();
         var total = donut ? categories.Select((_, i) => Math.Max(0, ValueOrNull(shown[0], i) ?? 0)).Sum() : 0;
+        var select = OnSelect.HasDelegate ? EventCallback.Factory.Create<KlyChartSelectEventArgs<int>>(this, e => Pick(e, categories, series, shown)) : default;
 
         <div class="mx-auto flex w-full max-w-160 flex-col items-center" data-slot="dashboard-chart-canvas">
             <KlyChart TItem="int" Data="rows" Index="@(i => categories[i])" Categories="kinds" Type="kind"
                       Horizontal="@(Horizontal && kind == KlyChartType.Bar)"
                       Stacked="@(Stacked && kind is KlyChartType.Bar or KlyChartType.Area)"
                       Height="@(donut ? Math.Clamp(Height, 96, 240) : Height)" Width="@(donut ? Math.Clamp(Height, 96, 240) : 640)"
-                      Legend="ShowLegend" Format="FormatValue" Culture="FormatCulture" Colors="colors"
+                      Legend="ShowLegend" Format="FormatValue" Culture="FormatCulture" Colors="colors" OnSelect="select"
                       Class="w-full" data-slot="dashboard-chart-plot">
                 <Center>
                     @if (donut)
@@ -163,7 +165,22 @@
         </div>
     };
 
-    // One button per data point: the keyboard and a screen reader reach what the pointer reaches in the drawing.
+    // What KlyChart reports is a row and the series the pick landed on. A comparison series is a reference, not a choice (it has no button in the compact
+    // drawing either), so the first other series with a value in the row stands for the category; a row with nothing to pick is ignored.
+    private Task Pick(KlyChartSelectEventArgs<int> e, IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series, IReadOnlyList<DashboardChartSeries> shown)
+    {
+        if (e.Row < 0 || e.Row >= categories.Count) return Task.CompletedTask;
+        var picked = e.SeriesIndex >= 0 && e.SeriesIndex < shown.Count ? shown[e.SeriesIndex] : null;
+        if (picked is null || picked.IsComparison || ValueOrNull(picked, e.Row) is null)
+        {
+            picked = series.FirstOrDefault(s => !s.IsComparison && ValueOrNull(s, e.Row) is not null);
+        }
+        return picked is not null && ValueOrNull(picked, e.Row) is { } value
+            ? OnSelect.InvokeAsync(new DashboardChartSelection(categories[e.Row], picked.Key, value))
+            : Task.CompletedTask;
+    }
+
+    // One button per data point of the compact drawing: the keyboard and a screen reader reach what the pointer reaches in the drawing.
     private RenderFragment RenderSelection(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
     {
         var donut = ChartType == "donut";

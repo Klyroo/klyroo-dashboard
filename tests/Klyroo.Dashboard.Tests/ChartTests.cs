@@ -170,12 +170,71 @@ public sealed class ChartTests : BunitContext
         Assert.Equal(2, cut.FindAll("[data-slot=dashboard-chart-point]").Count);
     }
 
+    // KlyChart reports the pick of a bar, a point or a slice itself (OnSelect of Klyroo.UI): the browser raises kly-pick with the row and the series.
+    private static Task Pick(IRenderedComponent<KlyDashboardChart> cut, int row, int series) =>
+        cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = row, Series = series });
+
     [Fact]
-    public void OnSelect_shows_one_button_per_data_point_and_reports_category_series_and_value()
+    public async Task OnSelect_makes_the_bars_selectable_and_reports_category_series_and_value_with_no_buttons()
     {
         var picked = new List<DashboardChartSelection>();
         var cut = Chart("bar", [Revenue, Previous], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
 
+        // The drawing is the choice: no group of buttons under it, and KlyChart reports the picks.
+        Assert.Empty(cut.FindAll("[data-slot=dashboard-chart-select]"));
+        Assert.True(cut.Find("kly-chart").HasAttribute("data-selectable"));
+        Assert.Contains("cursor-pointer", cut.Find("kly-chart [data-hit] rect").GetAttribute("class"));
+
+        await Pick(cut, 1, 0);
+
+        Assert.Equal(new DashboardChartSelection("Feb", "revenue", 20), Assert.Single(picked));
+    }
+
+    [Fact]
+    public async Task A_pick_names_its_series_and_a_comparison_series_stands_for_the_first_other_one()
+    {
+        var picked = new List<DashboardChartSelection>();
+        var two = Chart("bar", [Revenue, new DashboardChartSeries("cost", "Cost", [1, 2, 3])], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+        await Pick(two, 0, 1);
+        Assert.Equal(new DashboardChartSelection("Jan", "cost", 1), picked[^1]);
+
+        var compared = Chart("bar", [Revenue, Previous], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+        await Pick(compared, 2, 1);
+        Assert.Equal(new DashboardChartSelection("Mar", "revenue", 30), picked[^1]);
+
+        // The keyboard does not tell the series: the first one with a value.
+        await Pick(compared, 0, -1);
+        Assert.Equal(new DashboardChartSelection("Jan", "revenue", 10), picked[^1]);
+    }
+
+    [Fact]
+    public async Task A_donut_slice_is_picked_by_its_category_and_a_gap_or_a_stray_row_is_ignored()
+    {
+        var picked = new List<DashboardChartSelection>();
+        var donut = Chart("donut", [Revenue], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+
+        await Pick(donut, 2, 0);
+        Assert.Equal(new DashboardChartSelection("Mar", "revenue", 30), Assert.Single(picked));
+
+        await Pick(donut, 9, 0);
+        Assert.Single(picked);
+
+        var gap = new DashboardChartSeries("n", "Net", [5, double.NaN, 7]);
+        var line = Chart("line", [gap], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+        await Pick(line, 1, 0);
+        Assert.Single(picked);
+        await Pick(line, 2, 0);
+        Assert.Equal(new DashboardChartSelection("Mar", "n", 7), picked[^1]);
+    }
+
+    [Fact]
+    public void The_compact_drawing_has_no_selectable_marks_so_it_keeps_a_button_per_data_point()
+    {
+        var picked = new List<DashboardChartSelection>();
+        // Value labels, or bars with a line series, are the compact drawing that KlyChart cannot make.
+        var cut = Chart("bar", [Revenue, Previous], p => p.Add(x => x.ShowLabels, true).Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+
+        Assert.Empty(cut.FindAll("kly-chart"));
         var group = cut.Find("[data-slot=dashboard-chart-select]");
         Assert.Equal("group", group.GetAttribute("role"));
         Assert.Equal("Select a data point", group.GetAttribute("aria-label"));
@@ -187,27 +246,19 @@ public sealed class ChartTests : BunitContext
 
         buttons[1].Click();
         Assert.Equal(new DashboardChartSelection("Feb", "revenue", 20), Assert.Single(picked));
-    }
 
-    [Fact]
-    public void OnSelect_with_several_series_names_the_series_and_a_donut_gives_one_button_per_slice()
-    {
-        var picked = new List<DashboardChartSelection>();
-        var two = Chart("bar", [Revenue, new DashboardChartSeries("cost", "Cost", [1, 2, 3])], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+        var two = Chart("bar", [Revenue, Target], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
         Assert.Equal(6, two.FindAll("[data-slot=dashboard-chart-select-point]").Count);
-        Assert.Contains("Jan · Cost", two.FindAll("[data-slot=dashboard-chart-select-point]")[1].TextContent);
-
-        var donut = Chart("donut", [Revenue], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
-        var slices = donut.FindAll("[data-slot=dashboard-chart-select-point]");
-        Assert.Equal(3, slices.Count);
-        slices[2].Click();
-        Assert.Equal(new DashboardChartSelection("Mar", "revenue", 30), picked[^1]);
+        Assert.Contains("Jan · Target", two.FindAll("[data-slot=dashboard-chart-select-point]")[1].TextContent);
     }
 
     [Fact]
     public void Without_OnSelect_the_chart_has_no_selection_buttons()
     {
-        Assert.Empty(Chart("bar", [Revenue]).FindAll("[data-slot=dashboard-chart-select]"));
+        var cut = Chart("bar", [Revenue]);
+
+        Assert.Empty(cut.FindAll("[data-slot=dashboard-chart-select]"));
+        Assert.False(cut.Find("kly-chart").HasAttribute("data-selectable"));
     }
 
     [Fact]
