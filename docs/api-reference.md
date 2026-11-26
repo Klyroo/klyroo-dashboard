@@ -4,7 +4,7 @@
 
 ## Klyroo.Dashboard.Core
 
-Static classes and extensions (1) · Classes (4) · Records (14) · Interfaces (2) · Enums (8)
+Static classes and extensions (1) · Classes (4) · Records (16) · Interfaces (2) · Enums (8)
 
 ### Static classes and extensions
 
@@ -25,7 +25,8 @@ Number, delta, relative-time, comparison-range and CSV helpers. Numbers use the 
 | `static FormatCompact(double? value, CultureInfo? culture = null)` | `string` | Formats a number with the `K`, `M` and `B` suffixes and at most one decimal. The suffix is chosen after rounding, so `999,999` gives `1M`, not `1000K`. |
 | `static FormatCurrency(double? value, string currencySymbol = "€", CultureInfo? culture = null)` | `string` | Formats an amount with the currency symbol in front and at most two decimals. The symbol position does not follow the culture. |
 | `static FormatInvariant(double? value)` | `string?` | Writes a number as the cells of a `DashboardDataTable` carry it: in the invariant culture, without grouping and with every significant digit (`12600`, `-4.25`), so that it keeps full precision. `DashboardFormat.ExportCsv` writes it with a decimal comma for the cultures that use one. |
-| `static FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now = null)` | `string` | Describes how long ago something happened: `just now` under 45 seconds, then minutes, hours, `yesterday`, days under a week, and an ISO date (`yyyy-MM-dd`) beyond that. The text is English. |
+| `static FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now = null)` | `string` | Describes how long ago something happened: `just now` under 45 seconds, then minutes, hours, `yesterday`, days under a week, and an ISO date (`yyyy-MM-dd`) beyond that. The text is English: pass `DashboardRelativeTimeTexts` to the overload for another language. |
+| `static FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now, DashboardRelativeTimeTexts texts)` | `string` | Describes how long ago something happened like `DashboardFormat.FormatRelativeTime`, with the wording of `texts`. Past a week the text is still an ISO date. |
 | `static ResolveComparisonRange((DateTimeOffset, DateTimeOffset)? range, DashboardComparisonMode comparison)` | `(DateTimeOffset, DateTimeOffset)?` | Computes the comparison range of a date range. `DashboardComparisonMode.Previous` gives the range of the same number of days that ends the day before the start. `DashboardComparisonMode.Year` shifts both bounds back one year, clamping February 29. |
 | `static ResolveFileName(string? title, string extension = "csv")` | `string` | Turns a title into a file name: lowercase, accents removed, anything that is not a letter or digit collapsed into one hyphen. Falls back to `dashboard` when nothing is left. |
 
@@ -62,13 +63,16 @@ Central controller for an analytical dashboard: coordinates filters, views, stag
 | :--- | :--- | :--- |
 | `AddFilter(DashboardFilterControl filter)` | `DashboardFilterControl` | Adds a filter and forwards its changes, including changes of `DashboardFilterControl.Enabled` and `DashboardFilterControl.Items`, to `Changed`. |
 | `AddView(string key, string label, string? badge = null, bool enabled = true)` | `DashboardViewMeta` | Adds a view tab. The first enabled view added becomes the current one. Later changes of its `Badge` and `Enabled` raise `Changed`. |
+| `ApplyQuery(string? query, string? prefix = null)` | `bool` | Sets the filters from a URL query string, the inverse of `DashboardController.ToQuery`. The query describes every filter that is not headless and enabled: one that is not in it returns to its default values, so applying the query of a URL always gives the state of that URL. A value that does not fit its filter (a number that is not a number, a date that is not `yyyy-MM-dd`, a `DashboardFilterKind.Boolean` that is not `true` or `false`, a `DashboardFilterKind.Comparison` that is not a `DashboardComparisonMode` name, a text longer than 512 characters, an option that is not among the loaded `DashboardFilterControl.Items` of an `DashboardFilterKind.Options` or `DashboardFilterKind.Enum` filter) is ignored, so a hand-edited URL cannot put an unexpected value in a filter. A filter is only touched when its selection changes, so nothing is raised for a query that matches the current state, and applying the same query twice is the same as once. The method does not reload any resource: call `DashboardController.RefreshAsync` or `DashboardController.LoadAsync` afterwards, or let the subscribers of `ChangedEvent` do it. It uses no reflection. |
 | `static CombineStates(IEnumerable<DashboardResourceState> states)` | `DashboardResourceState` | Combines several states into one. Disabled states are ignored. No state gives `DashboardResourceState.Ready`, only disabled states give `DashboardResourceState.Disabled`, then any error wins, then any loading, then all idle gives `DashboardResourceState.Idle`, otherwise `DashboardResourceState.Ready`. |
 | `Dispose()` | `void` | Stops the `DashboardController.AutoRefresh` timer and disposes the registered resources that are disposable, which cancels their loads. Later calls to `DashboardController.RefreshAsync` do nothing. |
 | `FilterFingerprint()` | `string` | A text that changes when a filter value changes: the keys and values of the filters. `DashboardPersistence` stores it with the handed-over data and refuses the data when the next render starts from other filter values. |
 | `LoadAsync()` | `Task` | The first load of a page: like `DashboardController.RefreshAsync`, except that a resource whose data was handed over by an earlier render (`IDashboardPersistentSource.Restored`) keeps it instead of loading again. Call it once where the page loads its data, and `DashboardController.RefreshAsync` for every later reload. Without restored data, it is the same as `DashboardController.RefreshAsync`. |
+| `MergeQuery(string? existingQuery, string? prefix = null)` | `string` | Replaces the filters of this controller in an existing query string with `DashboardController.ToQuery` and keeps every other pair as it was, so a page can write its filters into a URL that also carries a search term or a page number. Headless filters are not the controller's: a pair with the key of one is kept. |
 | `RefreshAsync()` | `Task` | Loads all `DashboardQueryStage.Essential` resources in parallel, waits for them, then loads the `DashboardQueryStage.Background` resources and the already active `DashboardQueryStage.Deferred` ones in parallel. A resource still loading from an earlier call is cancelled and loaded again. After `DashboardController.Dispose` it does nothing. |
 | `RegisterResource<TData>(DashboardResource<TData> resource)` | `DashboardResource<TData>` | Registers a resource so that `DashboardController.RefreshAsync` loads it, its changes are forwarded to `Changed` and `DashboardController.Dispose` disposes it. |
 | `ResetFilters()` | `void` | Restores the default values of every enabled filter that is not headless. |
+| `ToQuery(string? prefix = null)` | `string` | Writes the filters that differ from their default values as a URL query string, without the leading `?`: `region=EMEA&region=APAC&period=2026-01-01&period=2026-01-31`. Each value is its own `key=value` pair, in the order of the filters and of their values, and every key and value is percent-encoded, so the same filters always give the same text. Filters at their default values, disabled filters and `DashboardFilterControl.Headless` filters are left out; a filter whose selection was cleared is written as `key=`. The method changes nothing, uses no reflection and no clock. |
 
 #### `DashboardFilterControl`
 
@@ -197,6 +201,22 @@ One horizontal bar entry in `KlyDashboardBars`.
 | `Selected` (init) | `bool` | Marks the row as selected (`data-selected`). |
 | `Tag` (init) | `string?` | A small monospaced tag next to the label. |
 | `Value` (init) | `double` | The value that sets the bar length. |
+
+#### `DashboardChartSelection`
+
+`Klyroo.Dashboard` · record
+
+The data point a user selected in a `KlyDashboardChart`, as `OnSelect` receives it.
+
+| Constructor | Description |
+| :--- | :--- |
+| `DashboardChartSelection(string Category, string Series, double Value)` | The data point a user selected in a `KlyDashboardChart`, as `OnSelect` receives it. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Category` (init) | `string` | The category (the label of the slice for a donut). |
+| `Series` (init) | `string` | The `DashboardChartSeries.Key` of the series. |
+| `Value` (init) | `double` | The value of the series in the category, as given to the chart. |
 
 #### `DashboardChartSeries`
 
@@ -340,6 +360,21 @@ An option item in a `DashboardFilterControl`.
 | `Icon` (init) | `string?` | The name of a Klyroo.UI icon (for example `globe` or `i-lucide-globe`) shown before the label in the option menu of the toolbar. |
 | `Label` (init) | `string` | The text shown to the user. |
 | `Value` (init) | `string` | The value stored in the selection. |
+
+#### `DashboardRelativeTimeTexts`
+
+`Klyroo.Dashboard` · record
+
+The words `DashboardFormat.FormatRelativeTime` uses. A new instance holds the English words.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `DaysAgo` (init) | `Func<int, string>` | A moment less than a week ago, given the number of days. |
+| `static English` | `DashboardRelativeTimeTexts` | The English words, the ones `DashboardFormat.FormatRelativeTime` uses. |
+| `HoursAgo` (init) | `Func<int, string>` | A moment less than 22 hours ago, given the number of hours (at least 1). |
+| `JustNow` (init) | `string` | A moment under 45 seconds ago. |
+| `MinutesAgo` (init) | `Func<int, string>` | A moment less than 45 minutes ago, given the number of minutes (at least 1). |
+| `Yesterday` (init) | `string` | A moment about a day ago. |
 
 #### `DashboardStatsItem`
 
@@ -579,7 +614,7 @@ Skeleton geometry kind rendered while a `KlyDashboardCard` is loading.
 
 ## Klyroo.Dashboard
 
-Components (13) · Static classes and extensions (1) · Classes (2)
+Components (13) · Static classes and extensions (2) · Classes (2) · Records (1)
 
 ### Components
 
@@ -619,8 +654,9 @@ Horizontal bars for a ranking, or a funnel with the conversion rate between step
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
 | `Items` | `IReadOnlyList<DashboardBarItem>?` | The bars, in display order. |
 | `Limit` | `int?` | The maximum number of bars shown. The table view and the CSV export hold the same bars. |
-| `Max` | `double?` | The value that fills a whole bar. Defaults to the largest item. Ignored by the funnel variant. |
+| `Max` | `double?` | The value that fills a whole bar. Defaults to the largest item. Ignored by the funnel variant. The scale always includes zero: a zero value has no bar and a negative value extends to the left of a zero line. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
+| `OnSelect` | `EventCallback<DashboardBarItem>` | Called with the bar when the user picks it. Each bar is then a button, so the choice works with the keyboard and with a screen reader, and `aria-pressed` follows `Selected`. Use it to drill down, for example by setting a filter of the `DashboardController`. |
 | `Source` | `IDashboardSource?` | The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read `Data` from it, so pass the data through the other parameters. Without a source the content renders immediately. |
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 6. |
 | `Subtitle` | `string?` | A secondary line under the title. |
@@ -640,8 +676,8 @@ The frame shared by every block: header with title and menu, loading skeleton, e
 | `Card` | `bool` | Whether the block draws its own surface (border, background and shadow; only the background in a `panels` grid). Defaults to `true`. |
 | `ChildContent` | `RenderFragment?` | The content of the block, rendered once the source is ready and not empty. |
 | `EmptyDescription` | `string?` | A line of text under the title of the empty state. |
-| `EmptyTitle` | `string?` | The title of the empty state. Defaults to `No data for this period`. |
-| `Expandable` | `bool` | Shows the Expand button in the menu, which enlarges the card over the page. Defaults to `true`. |
+| `EmptyTitle` | `string?` | The title of the empty state. Defaults to the `NoData` text of the locale (`No data for this period` in English). |
+| `Expandable` | `bool` | Shows the Expand button in the menu, which opens the content of the card in a modal dialog (`KlyModal` of Klyroo.UI: the page behind is inert, the focus stays in the dialog, Escape, the close button and a click on the backdrop close it, and the focus returns to the Expand button). Defaults to `true`. |
 | `Filters` | `IReadOnlyList<DashboardFilterControl>?` | Filters whose non-default selection is shown as removable chips under the header. |
 | `Footer` | `RenderFragment?` | Content placed in the footer, before the freshness text. |
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
@@ -675,17 +711,20 @@ A chart over categories without a charting dependency: grouped bars, lines, bars
 | `Categories` | `IReadOnlyList<string>?` | The labels of the horizontal axis, one per category, or the slices of a donut. |
 | `Format` | `DashboardFormatPreset` | How the values of labels, tooltips, totals and the table view are formatted. |
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
-| `Height` | `int` | The height of the plot area in pixels. Defaults to 220. |
+| `Height` | `int` | The height of the drawing in pixels at its natural width of 640. The drawing keeps its proportions and shrinks with the card, so it is shorter in a narrow one. Defaults to 220. |
+| `Horizontal` | `bool` | Draws the bars of a `bar` chart along the horizontal axis, with the categories on the vertical one. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
+| `OnSelect` | `EventCallback<DashboardChartSelection>` | Called with the category, the series key and the value when the user picks a data point. The chart then shows a group of buttons under the drawing, one per category and series (one per slice for a donut, comparison series left out), so the choice works with the keyboard and with a screen reader too: `KlyChart` has no selection event of its own, so the bars and slices themselves are not clickable. Use it to drill down, for example by setting a filter of the `DashboardController`. |
 | `Series` | `IReadOnlyList<DashboardChartSeries>?` | The data series, all drawn (a donut draws the first one that is not a comparison) and all in the table view. Each series takes the next chart color of Klyroo.UI (`--klyroo-chart-1` to `--klyroo-chart-6`, then neutral); comparison series are muted. |
-| `ShowLabels` | `bool` | Shows the formatted value above each bar. Lines and donuts show their values in tooltips. |
-| `ShowLegend` | `bool` | Shows the legend: the series, or the slices with their share for a donut. Defaults to `true`. |
+| `ShowLabels` | `bool` | Shows the formatted value above each bar (below a negative one). Lines, areas and donuts show their values in tooltips. It switches the chart to the compact drawing described at `KlyDashboardChart.Type`. |
+| `ShowLegend` | `bool` | Shows the legend: the series, or the slices with their value for a donut. Defaults to `true`. |
 | `Source` | `IDashboardSource?` | The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read `Data` from it, so pass the data through the other parameters. Without a source the content renders immediately. |
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 8. |
+| `Stacked` | `bool` | Stacks the series of a `bar` or `area` chart instead of drawing them side by side or over one another. Comparison series are stacked too, so leave them out of a stacked chart. |
 | `Subtitle` | `string?` | A secondary line under the title. |
 | `Title` | `string?` | The heading of the block. |
 | `Totals` | `string?` | `average` shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty. |
-| `Type` | `string` | The chart type: `bar` (the default) draws one bar per series in each category, side by side, and draws the series whose `Type` is `line` as lines over them; `line` draws every series as a line with a dot per category; `donut` draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. It also picks the loading skeleton. |
+| `Type` | `string` | The chart type: `bar` (the default) draws one bar per series in each category, side by side; `line` draws every series as a line; `area` draws every series as a line with the area under it filled; `donut` draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. The drawing is `KlyChart` of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a `bar` chart, a series whose `Type` is `line` is drawn as a line over the bars, but `KlyChart` cannot mix the two, so such a chart (and a chart with `KlyDashboardChart.ShowLabels`) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and `KlyDashboardChart.Stacked` and `KlyDashboardChart.Horizontal` do not apply. The type also picks the loading skeleton. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -789,6 +828,7 @@ A ranked list of rows with an optional value, percentage and delta.
 | `Items` | `IReadOnlyList<DashboardListItem>?` | The rows, in display order. |
 | `Limit` | `int?` | The maximum number of rows shown. The table view and the CSV export hold the same rows. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
+| `OnRowClick` | `EventCallback<DashboardListItem>` | Called with the row when the user picks it. The label of each row without an `Href` is then a button, so the choice works with the keyboard and with a screen reader, `aria-pressed` follows `Selected`, and a click anywhere on the row does the same for the pointer. A row with an `Href` keeps its link and does not raise this event. Use it to drill down, for example by setting a filter of the `DashboardController`. |
 | `Source` | `IDashboardSource?` | The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read `Data` from it, so pass the data through the other parameters. Without a source the content renders immediately. |
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 6. |
 | `Subtitle` | `string?` | A secondary line under the title. |
@@ -813,7 +853,9 @@ Page shell of a dashboard: a header with the title and a refresh button, a stick
 | `ShowRefresh` | `bool` | Shows the refresh button, which calls `DashboardController.RefreshAsync`. Defaults to `true`. |
 | `ShowTabs` | `bool` | Shows the view tabs when the controller has at least two enabled views. Defaults to `true`. |
 | `Sticky` | `bool` | Keeps the toolbar of tabs and filters at the top of the page while the body scrolls. Defaults to `true`. |
+| `SyncUrl` | `bool` | Keeps the filters in the URL: the page applies the query string of the current URL to the filters of `KlyDashboardPage.Dashboard` once (`DashboardController.ApplyQuery`, also in static SSR and in a prerender, from `NavigationManager.Uri`), writes every later change back with `DashboardController.MergeQuery` and a replacing navigation (no history entry per change, other query parameters kept), and applies the query again when a navigation to the same page changes it. Nothing is written in a static render, which cannot navigate. A parent initializes before this child, so a page that loads its data in `OnInitializedAsync` should also call `Dashboard.ApplyQuery` there, before `DashboardPersistence.Attach` and `LoadAsync`: the first load then uses the filters of the URL, and the fingerprint of the persisted data matches between the prerender and the interactive render. The application is idempotent, so doing it in both places is harmless. Defaults to `false`. |
 | `Title` | `string?` | The page heading. |
+| `UrlPrefix` | `string?` | Put before the key of every filter in the URL (`sales.`), so that two dashboards on one page can share a query string. Only used with `KlyDashboardPage.SyncUrl`. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -879,6 +921,7 @@ A table with typed columns (text, number, delta, percent, bar) and click-to-sort
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
 | `Limit` | `int?` | The maximum number of rows shown, applied after sorting. The CSV export holds the same rows. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
+| `OnRowClick` | `EventCallback<IReadOnlyDictionary<string, object?>>` | Called with the row (the dictionary from `KlyDashboardTable.Rows`) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the `DashboardController`. |
 | `Rows` | `IReadOnlyList<IReadOnlyDictionary<string, object?>>?` | The rows: one dictionary per row, holding the raw value of each column by key. Missing and `null` cells show the missing-value placeholder. |
 | `Sort` | `DashboardTableSort?` | The active sort. The table updates it itself when a header is clicked, and `KlyDashboardTable.SortChanged` reports the change. Numeric columns sort descending first, then ascending, then unsorted. Empty cells always come last. |
 | `SortChanged` | `EventCallback<DashboardTableSort?>` | Raised when the sort changes, with `null` when the sort is cleared. |
@@ -890,6 +933,29 @@ A table with typed columns (text, number, delta, percent, bar) and click-to-sort
 Also accepts the parameters of `KlyComponentBase`.
 
 ### Static classes and extensions
+
+#### `DashboardLocales`
+
+`Klyroo.Dashboard` · service
+
+The built-in texts of Klyroo.Dashboard, one set per locale of `KlyLocales.All` and keyed by the same codes. A component picks the set of its current `KlyLocale.Code` with `KlyLocales.ResolveCode`, so "pt-PT" gets "pt" and an unknown language gets English. Change a set with `KlyrooDashboardOptions.Texts`.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `static Ar` | `DashboardTexts` | العربية (ar). Needs review. |
+| `static De` | `DashboardTexts` | Deutsch (de). Needs review. |
+| `static En` | `DashboardTexts` | English. |
+| `static Es` | `DashboardTexts` | Español (es). Needs review. |
+| `static Fr` | `DashboardTexts` | Français (fr). Reviewed. |
+| `static It` | `DashboardTexts` | Italiano (it). Needs review. |
+| `static Ja` | `DashboardTexts` | 日本語 (ja). Needs review. |
+| `static Nl` | `DashboardTexts` | Nederlands (nl). Needs review. |
+| `static Pt` | `DashboardTexts` | Português (pt). Needs review. |
+| `static PtBr` | `DashboardTexts` | Português do Brasil (pt-BR). Needs review. |
+| `static ReviewedCodes` | `IReadOnlyList<string>` | The codes whose texts were reviewed by a native speaker. The other sets are drafts waiting for review. |
+| `static Ru` | `DashboardTexts` | Русский (ru). Needs review. |
+| `static Tables` | `IReadOnlyDictionary<string, DashboardTexts>` | Every set by locale code: the codes of `KlyLocales.All`. |
+| `static ZhCn` | `DashboardTexts` | 简体中文 (zh-Hans). Needs review. |
 
 #### `KlyrooDashboardServiceCollectionExtensions`
 
@@ -921,9 +987,88 @@ Hands the data the prerender of a page loaded to its interactive render, so the 
 
 `Klyroo.Dashboard` · class
 
-Options of Klyroo.Dashboard, set with `services.AddKlyrooDashboard(options => ...)`.
+Options of Klyroo.Dashboard, set with `services.AddKlyrooDashboard(options => ...)`: the hand-over of prerendered data and the built-in texts of each locale. It is an extension of `KlyrooOptions` (`KlyrooOptions.Extension``), so configure it in code shared by the server and the WebAssembly client.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `PersistMaxAge` (get, set) | `TimeSpan` | The oldest handed-over data `DashboardPersistence` restores (5 minutes by default), measured from when it was loaded. A prerender hands its data over within seconds, but .NET can also persist the state of an Interactive Server circuit when it pauses and give it back when the circuit resumes, possibly much later: older data is dropped and the resource loads again. |
 | `PersistMaxBytes` (get, set) | `int` | The largest data, in bytes as sent, that one resource hands from the prerender to the interactive render through `DashboardPersistence` (8 KB by default). The size counts the escaping and the two base64 encodings Blazor adds, so the JSON of the data itself is about a third of it. A resource over it is not handed over: the interactive render loads it again once. All the resources, and the other Klyroo libraries of the page (Klyroo.Table lists), also share `KlyrooOptions.PersistedStateMaxBytes` (28 KB as sent by default): the message that starts an Interactive Server circuit carries all of it, and SignalR refuses it past 32 KB. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `Texts(string localeCode, Func<DashboardTexts, DashboardTexts> change)` | `KlyrooDashboardOptions` | Changes the texts of a locale, like `KlyLocales.Extend` does for Klyroo.UI: `change` receives the set the locale resolves to and returns the one to use, usually `t => t with { ... }`. `localeCode` is a code of `KlyLocales.All` ("fr"), or the code of a locale you added ("en-AU", "tlh"): a locale without a set of its own starts from the set `KlyLocales.ResolveCode` picks for it, then its changes apply. The texts become read-only the first time a component resolves one. |
+
+### Records
+
+#### `DashboardTexts`
+
+`Klyroo.Dashboard` · record
+
+The built-in texts of the dashboard components: toolbar and card buttons, accessible names, empty and error states, column headers of the table view and the CSV export, and relative times. There is one set per locale of Klyroo.UI (`DashboardLocales`), and a component shows the set of its current locale, the one its `Messages` come from. Change a set with `KlyrooDashboardOptions.Texts` in `AddKlyrooDashboard(o => ...)`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `DashboardTexts()` | Creates the texts with their English defaults. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `ClearFilter` (init) | `Func<string, string>` | The accessible name of the button that clears a filter, given its label (`"Clear Region"`). |
+| `Collapse` (init) | `string` | The button that closes the enlarged block (`"Collapse"`). |
+| `ColumnAlert` (init) | `string` | The alert column of Alerts (`"Alert"`). |
+| `ColumnCategory` (init) | `string` | The first column of a chart table (`"Category"`). |
+| `ColumnChange` (init) | `string` | The change column of a Stat whose change is neither a percent nor points (`"Change"`). |
+| `ColumnChangePercent` (init) | `string` | The percent change column (`"Change (%)"`). |
+| `ColumnChangePoints` (init) | `string` | The change column of a Stat compared in points (`"Change (pts)"`). |
+| `ColumnDescription` (init) | `string` | The description column of List, Feed and Alerts (`"Description"`). |
+| `ColumnEvent` (init) | `string` | The event column of a Feed (`"Event"`). |
+| `ColumnGoal` (init) | `string` | The goal column of a Stat (`"Goal"`). |
+| `ColumnLabel` (init) | `string` | The name column of the table view of Bars, List, Stat, Stats and Gauge (`"Label"`). |
+| `ColumnMaximum` (init) | `string` | The maximum column of a Gauge (`"Maximum"`). |
+| `ColumnMinimum` (init) | `string` | The minimum column of a Gauge (`"Minimum"`). |
+| `ColumnPercent` (init) | `string` | The percent column of a List (`"Percent (%)"`). |
+| `ColumnPrevious` (init) | `string` | The previous value column of a Stat (`"Previous"`). |
+| `ColumnSeverity` (init) | `string` | The severity column of Alerts (`"Severity"`). |
+| `ColumnTarget` (init) | `string` | The target column of a Gauge (`"Target"`). |
+| `ColumnTime` (init) | `string` | The time column of a Feed (`"Time"`). |
+| `ColumnValue` (init) | `string` | The value column (`"Value"`). |
+| `Copy` (init) | `string` | The tooltip of the copy button of a Details row (`"Copy"`). |
+| `CopyValue` (init) | `Func<string, string>` | The accessible name of the copy button of a Details row, given the row label (`"Copy Order id"`). |
+| `DownloadCsv` (init) | `string` | The button that saves the block as a CSV file (`"Download CSV"`). |
+| `ErrorMessage` (init) | `string` | The text of the failed-load message when the resource gives no message of its own. |
+| `ErrorTitle` (init) | `string` | The title of the message shown when a resource failed to load (`"This data could not be loaded"`). |
+| `Expand` (init) | `string` | The button that enlarges the block in a dialog (`"Expand"`). |
+| `FilterFrom` (init) | `Func<string, string>` | The accessible name of the start box of a date range filter, given its label (`"Period from"`). |
+| `Filters` (init) | `string` | The accessible name of the filter toolbar (`"Filters"`). |
+| `FilterTo` (init) | `Func<string, string>` | The accessible name of the end box of a date range filter, given its label (`"Period to"`). |
+| `FunnelBase` (init) | `string` | The note of the first step of a funnel (`"base 100%"`). |
+| `FunnelStep` (init) | `Func<int, string>` | The note of a later step of a funnel, given its share of the previous step in percent (`"60% of the previous step"`). |
+| `Gauge` (init) | `string` | The accessible name of a Gauge without a title, and its label in the table view (`"Gauge"`). |
+| `Goal` (init) | `Func<string, string>` | The goal line of a Stat, given the formatted goal (`"Goal 1,000"`). |
+| `HideTable` (init) | `string` | The button that returns from the table view to the block (`"Hide table"`). |
+| `NoData` (init) | `string` | The title of an empty block (`"No data for this period"`). |
+| `NothingNeedsAttention` (init) | `string` | The title of an empty Alerts block (`"Nothing needs attention"`). |
+| `Refresh` (init) | `string` | The refresh button of the page (`"Refresh"`), also its accessible name. |
+| `Refreshing` (init) | `string` | The refresh button of the page while a load is running (`"Refreshing…"`). |
+| `RelativeDays` (init) | `Func<int, string>` | A moment less than a week ago, given the days (`"3 days ago"`). |
+| `RelativeHours` (init) | `Func<int, string>` | A moment less than 22 hours ago, given the hours (`"3 hr ago"`). |
+| `RelativeJustNow` (init) | `string` | A moment under 45 seconds ago (`"just now"`). |
+| `RelativeMinutes` (init) | `Func<int, string>` | A moment less than 45 minutes ago, given the minutes (`"5 min ago"`). |
+| `RelativeTime` | `DashboardRelativeTimeTexts` | The relative times as the `DashboardFormat.FormatRelativeTime` overload takes them. |
+| `RelativeYesterday` (init) | `string` | A moment about a day ago (`"yesterday"`). |
+| `RemoveFilter` (init) | `Func<string, string>` | The accessible name of the button that removes a filter chip of a card, given the filter label (`"Remove Region"`). |
+| `ResetFilters` (init) | `string` | The button that restores every filter (`"Reset"`). |
+| `Retry` (init) | `string` | The button that loads a failed resource again (`"Retry"`). |
+| `SearchFilter` (init) | `Func<string, string>` | The accessible name of the search box of a filter menu, given the filter label (`"Search Region"`). |
+| `SearchPlaceholder` (init) | `string` | The placeholder of the search box of a filter menu (`"Search…"`). |
+| `SelectPoint` (init) | `string` | The accessible name of the group of buttons that select a data point of a chart (`"Select a data point"`). |
+| `SeverityCritical` (init) | `string` | The badge of an error alert (`"Critical"`). |
+| `SeverityInfo` (init) | `string` | The badge of an informational alert (`"Info"`). |
+| `SeverityResolved` (init) | `string` | The badge of a resolved alert (`"Resolved"`). |
+| `SeverityWarning` (init) | `string` | The badge of a warning alert (`"Warning"`). |
+| `Target` (init) | `Func<string, string>` | The target line of a Gauge, given the formatted target (`"Target: 80%"`). |
+| `Today` (init) | `string` | The day heading of a Feed for the current day (`"Today"`). |
+| `Updated` (init) | `Func<string, string>` | The freshness line of the page and of the cards, given the relative time (`"Updated 5 min ago"`). |
+| `VersusPrevious` (init) | `Func<string, string>` | The caption of a Stat compared with a previous value, given the formatted value (`"vs 900 previous period"`). |
+| `ViewAsTable` (init) | `string` | The button that shows the block as a table (`"View as table"`). |
+| `Views` (init) | `string` | The accessible name of the view tabs (`"Views"`). |
+| `Yesterday` (init) | `string` | The day heading of a Feed for the previous day (`"Yesterday"`). |
