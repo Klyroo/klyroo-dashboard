@@ -740,7 +740,7 @@ How a `DashboardTableColumn` shows and sorts its values.
 
 | Value | Description |
 | :--- | :--- |
-| `Text` | The value as text. Strings sort ignoring case, other comparable values (a date) by value. |
+| `Text` | The value as text. A string is shown as it is; a date or a number is formatted with the culture of the page on screen, and written invariantly (ISO 8601 dates, `.` as the decimal mark) in the table view and the CSV export. Strings sort ignoring case, other comparable values (a date) by value, and values of different types (a column of `Object`) by their text. |
 | `Number` | A number formatted with the `DashboardTableColumn.Format` of the column, right-aligned, sorted by value. |
 | `Delta` | A percent change: `+12.5%`, green when positive and red when negative (reversed by `DashboardTableColumn.InvertDelta`). |
 | `Percent` | A percentage. |

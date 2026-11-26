@@ -1460,7 +1460,7 @@ public sealed record DashboardListItem(
 /// <summary>How a <see cref="DashboardTableColumn{TRow}"/> shows and sorts its values.</summary>
 public enum DashboardTableColumnKind
 {
-    /// <summary>The value as text. Strings sort ignoring case, other comparable values (a date) by value.</summary>
+    /// <summary>The value as text. A string is shown as it is; a date or a number is formatted with the culture of the page on screen, and written invariantly (ISO 8601 dates, <c>.</c> as the decimal mark) in the table view and the CSV export. Strings sort ignoring case, other comparable values (a date) by value, and values of different types (a column of <see cref="object"/>) by their text.</summary>
     Text,
     /// <summary>A number formatted with the <see cref="DashboardTableColumn{TRow}.Format"/> of the column, right-aligned, sorted by value.</summary>
     Number,
@@ -1556,8 +1556,11 @@ public abstract class DashboardTableColumn<TRow>
     // The value of a number column as a double, for the formatting, the scale of a bar and the delta.
     internal abstract double? Number(TRow row);
 
-    // The text of a value that is not formatted as a number.
-    internal abstract string? Display(TRow row);
+    // The text of a value that is not formatted as a number, as the page shows it: formatted with the culture of the page.
+    internal abstract string? Display(TRow row, CultureInfo culture);
+
+    // The same text for the table view and the CSV export: invariant, with ISO dates, like the numbers.
+    internal abstract string? DisplayInvariant(TRow row);
 
     // The order of two rows that both have a value.
     internal abstract int Compare(TRow left, TRow right);
@@ -1591,7 +1594,25 @@ internal sealed class TypedDashboardTableColumn<TRow, TValue>(
         _ => null,
     };
 
-    internal override string? Display(TRow row) => value(row)?.ToString();
+    internal override string? Display(TRow row, CultureInfo culture) => value(row) switch
+    {
+        null => null,
+        string text => text,
+        IFormattable formattable => formattable.ToString(null, culture),
+        var other => other.ToString(),
+    };
+
+    internal override string? DisplayInvariant(TRow row) => value(row) switch
+    {
+        null => null,
+        string text => text,
+        DateOnly day => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        DateTime stamp => stamp.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
+        DateTimeOffset moment => moment.ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture),
+        TimeOnly time => time.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+        var other => other.ToString(),
+    };
 
     internal override int Compare(TRow left, TRow right)
     {
@@ -1602,8 +1623,10 @@ internal sealed class TypedDashboardTableColumn<TRow, TValue>(
         var a = value(left);
         var b = value(right);
         if (a is string sa && b is string sb) return string.Compare(sa, sb, StringComparison.OrdinalIgnoreCase);
-        if (a is IComparable<TValue> || a is IComparable) return Comparer<TValue>.Default.Compare(a, b);
-        return string.Compare(a?.ToString(), b?.ToString(), StringComparison.OrdinalIgnoreCase);
+        // Values of one runtime type that know their order sort by it. With TValue = object the two values can be of different types, or of a type with no
+        // order, and then they sort by their text, so a mixed column never throws.
+        if (a is IComparable comparable && b is not null && a.GetType() == b.GetType()) return comparable.CompareTo(b);
+        return string.Compare(DisplayInvariant(left), DisplayInvariant(right), StringComparison.OrdinalIgnoreCase);
     }
 }
 

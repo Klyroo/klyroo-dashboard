@@ -193,7 +193,7 @@
                 return @<span>@DashboardFormat.Format(num, col.Format, FormatCulture)</span>;
             }
         }
-        return @<span>@col.Display(row)</span>;
+        return @<span>@col.Display(row, FormatCulture)</span>;
     }
 
     private (double Lo, double Hi) ColumnScale(string key)
@@ -224,7 +224,7 @@
             var dict = new Dictionary<string, string?>();
             foreach (var c in Columns ?? [])
             {
-                dict[c.Key] = c.Number(r) is { } d && c.IsNumeric ? DashboardFormat.FormatInvariant(d) : c.Display(r);
+                dict[c.Key] = c.Number(r) is { } d && c.IsNumeric ? DashboardFormat.FormatInvariant(d) : c.DisplayInvariant(r);
             }
             return (IReadOnlyDictionary<string, string?>)dict;
         }).ToList();
