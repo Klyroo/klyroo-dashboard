@@ -213,6 +213,17 @@ public sealed class ChartTests : BunitContext
     }
 
     [Fact]
+    public async Task A_keyboard_pick_names_no_series_so_the_first_non_comparison_series_with_a_value_stands_for_the_category()
+    {
+        var picked = new List<DashboardChartSelection>();
+        var cut = Chart("bar", [Previous, Revenue], p => p.Add(x => x.OnSelect, (DashboardChartSelection s) => picked.Add(s)));
+
+        await Pick(cut, 1, -1);
+
+        Assert.Equal(new DashboardChartSelection("Feb", "revenue", 20), Assert.Single(picked));
+    }
+
+    [Fact]
     public async Task A_donut_slice_is_picked_by_its_category_and_a_gap_or_a_stray_row_is_ignored()
     {
         var picked = new List<DashboardChartSelection>();
