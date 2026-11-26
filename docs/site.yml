@@ -18,8 +18,8 @@ packages:
 
 # The home page. headline is two lines, the second in the accent color; lead is the paragraph under it. Without them: the title and the tagline.
 headline: |
-  Dashboards that load
-  one resource at a time.
+  Dashboards that
+  load in stages.
 lead: >-
   Each query is a resource with its own state. The important ones load first, and every block shows its own loading, error and empty state, so one failing query leaves the rest of the page intact.
 
@@ -35,20 +35,28 @@ texture: chart-ticks
 demo:
   file: Program.cs
   language: csharp
-  focus: 11-12
+  focus: 18-20
   code: |
     var controller = new DashboardController("sales");
 
-    var revenue = controller.RegisterResource(new DashboardResource<double>(
-        "revenue", async _ => { await Task.Delay(50); return 48_500; }));
+    var revenue = controller.RegisterResource(
+        new DashboardResource<double>("revenue", async _ =>
+        {
+            await Task.Delay(50);
+            return 48_500;
+        }));
 
-    var regions = controller.RegisterResource(new DashboardResource<string[]>(
-        "regions", _ => Task.FromResult(new[] { "EMEA", "AMER" }), DashboardQueryStage.Background));
+    var regions = controller.RegisterResource(
+        new DashboardResource<string[]>(
+            "regions",
+            _ => Task.FromResult(new[] { "EMEA", "AMER" }),
+            DashboardQueryStage.Background));
 
     await controller.RefreshAsync();
 
-    Console.WriteLine(DashboardFormat.Format(revenue.Data, DashboardFormatPreset.Compact)); // 48.5K
-    Console.WriteLine(string.Join(", ", regions.Data!));                                      // EMEA, AMER
+    Console.WriteLine(DashboardFormat.Format(
+        revenue.Data, DashboardFormatPreset.Compact));
+    Console.WriteLine(string.Join(", ", regions.Data!));
   result:
     title: What it prints
     output: |
