@@ -491,12 +491,12 @@ Goal: let the user pick a bar, a row or a chart point and filter the rest of the
 }
 ```
 
-Every pick control is a real `<button>`, so it takes the focus, works with Enter and Space, and has an accessible name:
+Every pick control takes the focus, works with Enter and Space, and has an accessible name:
 
 - A bar of `KlyDashboardBars` becomes a button as a whole, with `aria-pressed` following `DashboardBarItem.Selected`.
 - In `KlyDashboardTable`, the first cell of each row holds a button, and a click anywhere on the row does the same for the pointer. The row passed to `OnRowClick` is the dictionary from `Rows`, whatever the sort.
 - In `KlyDashboardList`, the label of a row becomes a button, and a click on the row does the same. A row with an `Href` keeps its link and raises nothing.
-- `KlyDashboardChart` shows a group of buttons under the drawing, one per category and series (one per slice for a donut, comparison series left out). `KlyChart` of Klyroo.UI has no selection event, so the bars and slices themselves are not clickable, but its tooltip and arrow keys still explore them.
+- In `KlyDashboardChart` the bars, points and slices are the choice: a click on one, or Enter or Space on the one the arrow keys are on, raises `OnSelect` (it uses `KlyChart.OnSelect` of Klyroo.UI), the pointer turns into a hand over them and the keyboard hint says Enter selects. A pick of a comparison series stands for the first other series that has a value in that category, and a pick of a gap is ignored. A chart that uses the compact drawing (a bar chart with a `line` series, or with `ShowLabels`, which `KlyChart` cannot draw) has no selectable marks, so it keeps a group of buttons under the drawing instead, one per category and series (one per slice for a donut, comparison series left out).
 
 ## Translate or change the built-in texts
 
