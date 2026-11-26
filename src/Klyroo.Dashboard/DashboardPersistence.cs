@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
@@ -27,7 +26,7 @@ public sealed partial class DashboardPersistence
     private readonly KlyrooDashboardOptions _options;
     private readonly ILogger<DashboardPersistence>? _logger;
     private readonly HashSet<string> _attached = new(StringComparer.Ordinal);
-    private long _pageBytes;
+    private readonly KlyPersistedStateBudget _budget;
 
     /// <summary>Creates the service. Use the instance <c>AddKlyrooDashboard</c> registers rather than creating one.</summary>
     /// <param name="services">The services of the scope, where the persistent component state is looked up.</param>
@@ -37,6 +36,7 @@ public sealed partial class DashboardPersistence
         _state = services.GetService<PersistentComponentState>();
         _options = services.GetService<KlyrooDashboardOptions>() ?? new KlyrooDashboardOptions();
         _logger = services.GetService<ILogger<DashboardPersistence>>();
+        _budget = services.GetService<KlyPersistedStateBudget>() ?? new KlyPersistedStateBudget(services.GetService<KlyrooOptions>() ?? new KlyrooOptions());
     }
 
     /// <summary>
@@ -103,13 +103,13 @@ public sealed partial class DashboardPersistence
             {
                 if (source.ExportJson() is not { } json) continue;
                 var text = Format(source.UpdatedAt ?? DateTimeOffset.UtcNow, filters, json);
-                var bytes = SentBytes(text);
-                if (bytes > _options.PersistMaxBytes || _pageBytes + bytes > _options.PersistPageMaxBytes)
+                var bytes = KlyPersistedStateBudget.SentBytes(key, text);
+                // Within the limit of one resource, then within what the Klyroo libraries of the page have left of their shared budget.
+                if (bytes > _options.PersistMaxBytes || !_budget.TryReserve(bytes))
                 {
                     if (_logger is not null) LogTooLarge(_logger, dashboard.Key, source.Key, bytes);
                     continue;
                 }
-                _pageBytes += bytes;
                 Write(key, text);
             }
             catch (Exception e) when (e is not OutOfMemoryException)
@@ -136,26 +136,14 @@ public sealed partial class DashboardPersistence
         return (updatedAt, text.Substring(colon + 1, length), text[(colon + 1 + length)..]);
     }
 
-    // What the text weighs in the message that starts an Interactive Server circuit: Blazor writes it as a JSON string, which escapes quotes,
-    // '+' and non-ASCII characters, then base64-encodes the persisted state twice (the dictionary of bytes, then the protected payload).
-    private static int SentBytes(string text)
-    {
-        var buffer = new ArrayBufferWriter<byte>();
-        using (var writer = new Utf8JsonWriter(buffer))
-        {
-            writer.WriteStringValue(text);
-        }
-        return (int)Math.Min(int.MaxValue, (long)buffer.WrittenCount * 16 / 9 + 1);
-    }
-
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the data itself is read with the JsonTypeInfo of the app.")]
     private string? TryTake(string key) => _state!.TryTakeFromJson<string>(key, out var text) ? text : null;
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the data itself is written with the JsonTypeInfo of the app.")]
     private void Write(string key, string text) => _state!.PersistAsJson(key, text);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "The data of resource '{Resource}' of dashboard '{Dashboard}' (about {Bytes} bytes once sent) is over the persistence limits: the interactive render loads it again. See KlyrooDashboardOptions.PersistMaxBytes and PersistPageMaxBytes.")]
-    private static partial void LogTooLarge(ILogger logger, string dashboard, string resource, int bytes);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The data of resource '{Resource}' of dashboard '{Dashboard}' (about {Bytes} bytes once sent) is over KlyrooDashboardOptions.PersistMaxBytes or what is left of the budget the Klyroo libraries of the page share (KlyrooOptions.PersistedStateMaxBytes): the interactive render loads it again.")]
+    private static partial void LogTooLarge(ILogger logger, string dashboard, string resource, long bytes);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The data of resource '{Resource}' of dashboard '{Dashboard}' could not be written: the interactive render loads it again.")]
     private static partial void LogNotWritten(ILogger logger, string dashboard, string resource, Exception exception);

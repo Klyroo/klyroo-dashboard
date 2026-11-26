@@ -264,6 +264,24 @@ public sealed class DashboardPersistenceTests : BunitContext
     }
 
     [Fact]
+    public async Task The_budget_of_the_page_is_shared_with_the_other_Klyroo_libraries()
+    {
+        var state = this.AddBunitPersistentComponentState();
+        Services.AddKlyrooDashboard();
+        // A data list of the page already took almost all of the shared budget.
+        var budget = Services.GetRequiredService<Klyroo.UI.KlyPersistedStateBudget>();
+        Assert.True(budget.TryReserve(budget.MaxBytes - 50));
+        var controller = new DashboardController("orders");
+        controller.RegisterResource(Summary());
+        using var attached = Services.GetRequiredService<DashboardPersistence>().Attach(controller, RenderMode.InteractiveServer);
+        await controller.LoadAsync();
+
+        state.TriggerOnPersisting();
+
+        Assert.False(state.TryTake<string>("kly-dash:orders:summary", out _));
+    }
+
+    [Fact]
     public void Two_dashboards_with_one_key_cannot_be_attached_at_once()
     {
         this.AddBunitPersistentComponentState();

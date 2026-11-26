@@ -36,7 +36,7 @@ A card shows `Source.Error`, which is the message of the exception thrown by the
 
 **The queries run twice on a page**
 
-The page is prerendered and then rendered again when it becomes interactive, and each render loads the resources. Give the resources a `json` type info, attach the controller to `DashboardPersistence` and load with `LoadAsync`, as in [Hand the prerendered data to the interactive render](guides.md#hand-the-prerendered-data-to-the-interactive-render). If a resource still loads twice, its data is over `KlyrooDashboardOptions.PersistMaxBytes` or the page is over `PersistPageMaxBytes` (a warning in the server log names it), it was registered after `Attach`, `Attach` got no render mode, a filter value differs between the two renders, or its loader was still running when the prerender ended. You can also disable prerendering for the page.
+The page is prerendered and then rendered again when it becomes interactive, and each render loads the resources. Give the resources a `json` type info, attach the controller to `DashboardPersistence` and load with `LoadAsync`, as in [Hand the prerendered data to the interactive render](guides.md#hand-the-prerendered-data-to-the-interactive-render). If a resource still loads twice, its data is over `KlyrooDashboardOptions.PersistMaxBytes` or no longer fits in the budget the Klyroo libraries of the page share, `KlyrooOptions.PersistedStateMaxBytes` (a warning in the server log names it), it was registered after `Attach`, `Attach` got no render mode, a filter value differs between the two renders, or its loader was still running when the prerender ended. You can also disable prerendering for the page.
 
 **The block is unstyled or misaligned**
 
@@ -70,7 +70,7 @@ It calls `navigator.clipboard.writeText`, which needs an interactive render mode
 - **Cancellation.** A refresh cancels the token of the load it supersedes and ignores its result, but a loader that does not pass the token on keeps running until it finishes.
 - **Language.** The texts of the blocks and `FormatRelativeTime` are English.
 - **Number formats.** `DashboardFormat` uses the invariant culture unless you pass one.
-- **Persistence is opt-in and small.** Only resources with a `json` type info and a controller attached to `DashboardPersistence` hand their data from the prerender to the interactive render, at most 8 KB per resource and 12 KB per page by default, counted as sent, because an Interactive Server circuit receives it in one SignalR message. A larger resource loads again once.
+- **Persistence is opt-in and small.** Only resources with a `json` type info and a controller attached to `DashboardPersistence` hand their data from the prerender to the interactive render, at most 8 KB per resource by default, counted as sent, within the 28 KB per page every Klyroo library shares, because an Interactive Server circuit receives it in one SignalR message. A larger resource loads again once.
 - **NativeAOT.** Only `Klyroo.Dashboard.Core` declares it. See [Platforms](platforms.md#nativeaot-and-trimming).
 
 ## Questions
