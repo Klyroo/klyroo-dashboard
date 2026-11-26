@@ -67,5 +67,5 @@ dotnet publish -c Release -p:PublishAot=true
 ## Known limitations
 
 - The block texts follow the Klyroo.UI locale. Only English and French are reviewed. `Klyroo.Dashboard.Core` has no locale, so the default options of `Boolean` and `Comparison` filters and `DashboardFormat.FormatRelativeTime` without `DashboardRelativeTimeTexts` stay English.
-- The chart block has no axes or interactions, and a donut shows a single series.
+- The chart block has the features of `KlyChart` but no zoom, and a donut shows a single series. See the [FAQ](faq.md#known-limitations) for what the compact drawing of bar-and-line charts lacks.
 - More in the [FAQ](faq.md#known-limitations).

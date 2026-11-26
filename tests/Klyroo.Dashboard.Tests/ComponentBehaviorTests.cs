@@ -205,46 +205,6 @@ public sealed class ComponentBehaviorTests : BunitContext
     }
 
     [Fact]
-    public void Chart_draws_every_series_as_grouped_bars_or_lines_and_a_donut()
-    {
-        IReadOnlyList<string> categories = ["Jan", "Feb", "Mar"];
-        var revenue = new DashboardChartSeries("revenue", "Revenue", [10, 20, 30]);
-        var target = new DashboardChartSeries("target", "Target", [15, 15, 15], Type: "line");
-        var previous = new DashboardChartSeries("previous", "Previous", [8, 18, 25], IsComparison: true);
-
-        var bars = Render<KlyDashboardChart>(p => p
-            .Add(x => x.Categories, categories)
-            .Add(x => x.Series, [revenue, previous]));
-        Assert.Equal(6, bars.FindAll("[data-slot=dashboard-chart-bar]").Count);
-        Assert.Equal(2, bars.FindAll("[data-slot=dashboard-chart-column]")[0].Children.Length);
-
-        var combo = Render<KlyDashboardChart>(p => p
-            .Add(x => x.Categories, categories)
-            .Add(x => x.Series, [revenue, target]));
-        Assert.Equal(3, combo.FindAll("[data-slot=dashboard-chart-bar]").Count);
-        Assert.Equal("target", combo.Find("[data-slot=dashboard-chart-line]").GetAttribute("data-series"));
-
-        var lines = Render<KlyDashboardChart>(p => p
-            .Add(x => x.Type, "line")
-            .Add(x => x.Categories, categories)
-            .Add(x => x.Series, [revenue, previous]));
-        Assert.Empty(lines.FindAll("[data-slot=dashboard-chart-bar]"));
-        var polylines = lines.FindAll("[data-slot=dashboard-chart-line]");
-        Assert.Equal(2, polylines.Count);
-        Assert.Equal("16.667,66.667 50,33.333 83.333,0", polylines[0].GetAttribute("points"));
-        Assert.Equal("4 3", polylines[1].GetAttribute("stroke-dasharray"));
-        Assert.Contains("Revenue: Jan 10", lines.Find("[data-slot=dashboard-chart-plot]").GetAttribute("aria-label"));
-
-        var donut = Render<KlyDashboardChart>(p => p
-            .Add(x => x.Type, "donut")
-            .Add(x => x.Categories, categories)
-            .Add(x => x.Series, [previous, revenue]));
-        Assert.Equal(3, donut.FindAll("[data-slot=dashboard-chart-slice]").Count);
-        Assert.Equal("60", donut.Find("[data-slot=dashboard-chart-donut-total]").TextContent);
-        Assert.Contains("Mar 30 (50%)", donut.Find("[data-slot=dashboard-chart-donut]").GetAttribute("aria-label"));
-    }
-
-    [Fact]
     public void Chart_export_carries_every_series_as_raw_numbers()
     {
         var cut = Render<KlyDashboardChart>(p => p

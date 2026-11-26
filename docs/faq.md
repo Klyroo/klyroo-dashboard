@@ -48,7 +48,7 @@ Only `KlyDashboardPage` subscribes to the controller. A block placed outside a p
 
 **A parameter has no visible effect**
 
-String parameters such as `Variant`, `Type`, `Order`, `Emphasis`, `CompareMode` and the column `Type` fall back to their default when the value is unknown, so check the spelling. In a chart, a series `Type` only matters when the chart `Type` is `bar`.
+String parameters such as `Variant`, `Type`, `Order`, `Emphasis`, `CompareMode` and the column `Type` fall back to their default when the value is unknown, so check the spelling. In a chart, a series `Type` only matters when the chart `Type` is `bar`: a `line` series then makes the chart a bar-and-line chart, drawn without axes (see [Known limitations](#known-limitations)).
 
 **A filter does not appear in the toolbar**
 
@@ -64,7 +64,7 @@ It calls `navigator.clipboard.writeText`, which needs an interactive render mode
 
 ## Known limitations
 
-- **Chart.** The chart block draws grouped bars, lines and a donut with HTML and SVG and no charting dependency. It has no axes, gridlines, zoom or interactive tooltips beyond the browser's `title` text, negative values are drawn as zero, and a donut shows only the first series that is not a comparison. `IsComparison` series are left out of the totals. For more, use a charting library inside a `KlyDashboardCard`.
+- **Chart.** The chart block is drawn by `KlyChart` of Klyroo.Dashboard's Klyroo.UI dependency, so it has what `KlyChart` has: axes, gridlines, tooltips, keyboard exploration, stacked, area and horizontal charts. It has no zoom, and a donut shows only the first series that is not a comparison and no negative value. `KlyChart` draws one kind per chart and has no value labels, so a bar chart with a `line` series, and a chart with `ShowLabels`, use a compact drawing of the block's own: a zero baseline and negative values, but no axes, gridlines or tooltips, and `Stacked` and `Horizontal` do not apply. `KlyChart` has no selection event either, so `OnSelect` adds a group of buttons under the drawing instead of making the bars clickable. `IsComparison` series are left out of the totals and of the selection buttons. For zoom or brushing, use a charting library inside a `KlyDashboardCard`.
 - **Filters.** `Remote` filters are drawn like `Options`: the library does not fetch anything, so load the options and assign `Items` yourself, and the search box only filters the options already loaded. Text and number boxes apply their value when they lose focus or the user presses Enter.
 - **Gauge.** The `ring` variant shows `Target` as text only; the `bar` variant also draws a marker.
 - **Cancellation.** A refresh cancels the token of the load it supersedes and ignores its result, but a loader that does not pass the token on keeps running until it finishes.

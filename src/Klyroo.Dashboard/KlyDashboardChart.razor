@@ -4,18 +4,23 @@
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Categories is not { Count: > 0 } || Series is not { Count: > 0 })"
-                 Skeleton="@(ChartType == "donut" ? DashboardSkeletonKind.Donut : ChartType == "line" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
+                 Skeleton="@(ChartType == "donut" ? DashboardSkeletonKind.Donut : ChartType is "line" or "area" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
     <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@ChartType">
         @if (Categories is { Count: > 0 } && Series is { Count: > 0 })
         {
-            @if (ChartType == "donut")
+            @if (UsesCompactDrawing)
             {
-                @RenderDonut(Categories)
+                @RenderCompact(Categories, Series)
             }
             else
             {
-                @RenderCartesian(Categories, Series)
+                @RenderChart(Categories, Series)
+            }
+
+            @if (OnSelect.HasDelegate)
+            {
+                @RenderSelection(Categories, Series)
             }
 
             @if (!string.IsNullOrEmpty(Totals))
@@ -40,11 +45,10 @@
 </KlyDashboardCard>
 
 @code {
-    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
-
     // Series and slice colors: the chart tokens of Klyroo.UI (--klyroo-chart-1..6, which fall back to the semantic colors), then neutral.
     private static readonly string[] Palette = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "neutral"];
-    private static readonly double DonutCircumference = 2 * Math.PI * 40;
+
+    private DashboardTexts Texts => Options.Extension<KlyrooDashboardOptions>().ResolveTexts(CurrentLocale.Code);
 
     /// <summary>The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read <c>Data</c> from it, so pass the data through the other parameters. Without a source the content renders immediately.</summary>
     [Parameter] public IDashboardSource? Source { get; set; }
@@ -52,7 +56,7 @@
     [Parameter] public string? Title { get; set; }
     /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
-    /// <summary>The chart type: <c>bar</c> (the default) draws one bar per series in each category, side by side, and draws the series whose <c>Type</c> is <c>line</c> as lines over them; <c>line</c> draws every series as a line with a dot per category; <c>donut</c> draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. It also picks the loading skeleton.</summary>
+    /// <summary>The chart type: <c>bar</c> (the default) draws one bar per series in each category, side by side; <c>line</c> draws every series as a line; <c>area</c> draws every series as a line with the area under it filled; <c>donut</c> draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. The drawing is <c>KlyChart</c> of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a <c>bar</c> chart, a series whose <c>Type</c> is <c>line</c> is drawn as a line over the bars, but <c>KlyChart</c> cannot mix the two, so such a chart (and a chart with <see cref="ShowLabels"/>) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and <see cref="Stacked"/> and <see cref="Horizontal"/> do not apply. The type also picks the loading skeleton.</summary>
     [Parameter] public string Type { get; set; } = "bar";
     /// <summary>The labels of the horizontal axis, one per category, or the slices of a donut.</summary>
     [Parameter] public IReadOnlyList<string>? Categories { get; set; }
@@ -60,14 +64,20 @@
     [Parameter] public IReadOnlyList<DashboardChartSeries>? Series { get; set; }
     /// <summary>How the values of labels, tooltips, totals and the table view are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
-    /// <summary>The height of the plot area in pixels. Defaults to 220.</summary>
+    /// <summary>The height of the drawing in pixels at its natural width of 640. The drawing keeps its proportions and shrinks with the card, so it is shorter in a narrow one. Defaults to 220.</summary>
     [Parameter] public int Height { get; set; } = 220;
-    /// <summary>Shows the legend: the series, or the slices with their share for a donut. Defaults to <see langword="true"/>.</summary>
+    /// <summary>Shows the legend: the series, or the slices with their value for a donut. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ShowLegend { get; set; } = true;
-    /// <summary>Shows the formatted value above each bar. Lines and donuts show their values in tooltips.</summary>
+    /// <summary>Shows the formatted value above each bar (below a negative one). Lines, areas and donuts show their values in tooltips. It switches the chart to the compact drawing described at <see cref="Type"/>.</summary>
     [Parameter] public bool ShowLabels { get; set; }
     /// <summary><c>average</c> shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty.</summary>
     [Parameter] public string? Totals { get; set; }
+    /// <summary>Stacks the series of a <c>bar</c> or <c>area</c> chart instead of drawing them side by side or over one another. Comparison series are stacked too, so leave them out of a stacked chart.</summary>
+    [Parameter] public bool Stacked { get; set; }
+    /// <summary>Draws the bars of a <c>bar</c> chart along the horizontal axis, with the categories on the vertical one.</summary>
+    [Parameter] public bool Horizontal { get; set; }
+    /// <summary>Called with the category, the series key and the value when the user picks a data point. The chart then shows a group of buttons under the drawing, one per category and series (one per slice for a donut, comparison series left out), so the choice works with the keyboard and with a screen reader too: <c>KlyChart</c> has no selection event of its own, so the bars and slices themselves are not clickable. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    [Parameter] public EventCallback<DashboardChartSelection> OnSelect { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 8.</summary>
     [Parameter] public int Span { get; set; } = 8;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
@@ -79,16 +89,26 @@
 
     private string ChartType =>
         string.Equals(Type, "line", StringComparison.OrdinalIgnoreCase) ? "line"
+        : string.Equals(Type, "area", StringComparison.OrdinalIgnoreCase) ? "area"
         : string.Equals(Type, "donut", StringComparison.OrdinalIgnoreCase) ? "donut"
         : "bar";
 
-    private bool DrawsAsLine(DashboardChartSeries series) =>
-        ChartType == "line" || string.Equals(series.Type, "line", StringComparison.OrdinalIgnoreCase);
+    private static bool IsLineSeries(DashboardChartSeries series) =>
+        string.Equals(series.Type, "line", StringComparison.OrdinalIgnoreCase);
+
+    private bool DrawsAsLine(DashboardChartSeries series) => ChartType == "line" || IsLineSeries(series);
+
+    // KlyChart draws one kind per chart: bars with lines over them, and value labels above bars, keep the compact drawing.
+    private bool UsesCompactDrawing =>
+        ChartType == "bar" && Series is { Count: > 0 } && (ShowLabels || (Series.Any(IsLineSeries) && Series.Any(s => !IsLineSeries(s))));
 
     private static string ColorOf(int index) => Palette[index % Palette.Length];
 
-    private static double ValueAt(DashboardChartSeries series, int index) =>
-        index < series.Values.Count && double.IsFinite(series.Values[index]) ? series.Values[index] : 0;
+    // A value the list does not hold, or that is not a number, is a gap in the chart and an empty cell in the table, never a zero.
+    private static double? ValueOrNull(DashboardChartSeries series, int index) =>
+        index < series.Values.Count && double.IsFinite(series.Values[index]) ? series.Values[index] : null;
+
+    private string FormatValue(double value) => DashboardFormat.Format(value, Format, FormatCulture);
 
     private string Percent(double value) => DashboardFormat.Format(value, DashboardFormatPreset.Percent, FormatCulture);
 
@@ -96,15 +116,90 @@
         string.Join("; ", series.Select(s =>
             $"{s.Label}: " + string.Join(", ", categories.Select((c, i) => $"{c} {DashboardFormat.Format(i < s.Values.Count ? s.Values[i] : null, Format, FormatCulture)}"))));
 
-    private RenderFragment RenderCartesian(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
+    private RenderFragment RenderChart(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
+    {
+        var donut = ChartType == "donut";
+        var shown = donut ? series.Where(s => !s.IsComparison).Take(1).ToList() : series.ToList();
+        if (shown.Count == 0)
+        {
+            return;
+        }
+        // A bar chart whose series are all lines is a line chart.
+        var kind = ChartType switch
+        {
+            "line" => KlyChartType.Line,
+            "area" => KlyChartType.Area,
+            "donut" => KlyChartType.Donut,
+            _ => shown.All(IsLineSeries) ? KlyChartType.Line : KlyChartType.Bar,
+        };
+        var rows = Enumerable.Range(0, categories.Count).ToList();
+        var kinds = shown.Select(s => new KlyChartCategory<int>(s.Key, i => ValueOrNull(s, i)) { Label = s.Label }).ToList();
+        // A comparison series is muted, the others keep the color of their position in Series. A donut colors its slices.
+        var colors = donut
+            ? categories.Select((_, i) => new KlyColor(ColorOf(i))).ToList()
+            : shown.Select(s => s.IsComparison ? KlyColor.Neutral : new KlyColor(ColorOf(series.ToList().IndexOf(s)))).ToList();
+        var total = donut ? categories.Select((_, i) => Math.Max(0, ValueOrNull(shown[0], i) ?? 0)).Sum() : 0;
+
+        <div class="mx-auto flex w-full max-w-160 flex-col items-center" data-slot="dashboard-chart-canvas">
+            <KlyChart TItem="int" Data="rows" Index="@(i => categories[i])" Categories="kinds" Type="kind"
+                      Horizontal="@(Horizontal && kind == KlyChartType.Bar)"
+                      Stacked="@(Stacked && kind is KlyChartType.Bar or KlyChartType.Area)"
+                      Height="@(donut ? Math.Clamp(Height, 96, 240) : Height)" Width="@(donut ? Math.Clamp(Height, 96, 240) : 640)"
+                      Legend="ShowLegend" Format="FormatValue" Culture="FormatCulture" Colors="colors"
+                      Class="w-full" data-slot="dashboard-chart-plot">
+                <Center>
+                    @if (donut)
+                    {
+                        <div class="flex flex-col items-center justify-center text-center" data-slot="dashboard-chart-center">
+                            <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="dashboard-chart-donut-total">@FormatValue(total)</span>
+                            <span class="max-w-full truncate px-4 text-[11px] text-(--klyroo-text-muted)">@shown[0].Label</span>
+                        </div>
+                    }
+                </Center>
+            </KlyChart>
+        </div>
+    };
+
+    // One button per data point: the keyboard and a screen reader reach what the pointer reaches in the drawing.
+    private RenderFragment RenderSelection(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
+    {
+        var donut = ChartType == "donut";
+        var shown = series.Where(s => !s.IsComparison).Take(donut ? 1 : int.MaxValue).ToList();
+        <div class="flex flex-wrap gap-1.5 text-xs" role="group" aria-label="@Texts.SelectPoint" data-slot="dashboard-chart-select">
+            @for (var i = 0; i < categories.Count; i++)
+            {
+                var index = i;
+                foreach (var s in shown)
+                {
+                    var series1 = s;
+                    if (ValueOrNull(series1, index) is not { } value) continue;
+                    var category = categories[index];
+                    <button type="button"
+                            class="inline-flex items-center gap-1 rounded-(--klyroo-radius) bg-(--klyroo-bg-muted) px-2 py-1 text-(--klyroo-text) hover:text-(--klyroo-text-highlighted)"
+                            data-slot="dashboard-chart-select-point"
+                            data-category="@category" data-series="@series1.Key"
+                            @onclick="@(() => OnSelect.InvokeAsync(new DashboardChartSelection(category, series1.Key, value)))">
+                        <span>@(shown.Count > 1 ? $"{category} · {series1.Label}" : category)</span>
+                        <span class="font-semibold tabular-nums text-(--klyroo-text-highlighted)">@FormatValue(value)</span>
+                    </button>
+                }
+            }
+        </div>
+    };
+
+    // Bars and lines together, or bars with labels: a drawing of its own on a scale that includes zero.
+    private RenderFragment RenderCompact(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
     {
         var indexed = series.Select((s, i) => (Series: s, Color: ColorOf(i))).ToList();
         var bars = indexed.Where(x => !DrawsAsLine(x.Series)).ToList();
         var lines = indexed.Where(x => DrawsAsLine(x.Series)).ToList();
-        var maxVal = Math.Max(1.0, series.SelectMany(s => s.Values).Where(double.IsFinite).DefaultIfEmpty(1.0).Max());
+        var (lo, hi) = DashboardBarGeometry.Domain(series.SelectMany(s => s.Values));
         var count = categories.Count;
-        string X(int i) => ((i + 0.5) / count * 100.0).ToString("0.###", CultureInfo.InvariantCulture);
-        double Share(double v) => Math.Clamp(v / maxVal, 0, 1);
+        var hasNegative = lo < 0;
+        // Percent of the plot height from the top.
+        double Y(double v) => (hi - v) / (hi - lo) * 100.0;
+        var zeroY = Y(0);
+        string X(int i) => DashboardBarGeometry.Percent((i + 0.5) / count * 100.0);
 
         if (ShowLegend)
         {
@@ -129,32 +224,36 @@
 
         <div class="flex flex-col gap-1 pt-2" style="@($"height:{Height}px")" data-slot="dashboard-chart-canvas">
             <div class="relative min-h-0 flex-1" role="img" aria-label="@Describe(categories, series)" data-slot="dashboard-chart-plot">
-                <div class="absolute inset-x-0 bottom-0 @(ShowLabels && bars.Count > 0 ? "top-4" : "top-0")">
+                <div class="absolute inset-x-0 @(ShowLabels && bars.Count > 0 ? "top-4" : "top-0") @(ShowLabels && hasNegative ? "bottom-4" : "bottom-0")">
+                    <div class="absolute inset-x-0 border-t border-(--klyroo-border)" style="@($"top:{DashboardBarGeometry.Percent(zeroY)}%")" data-slot="dashboard-chart-baseline"></div>
                     @if (bars.Count > 0)
                     {
-                        <div class="flex h-full items-end">
+                        <div class="flex h-full">
                             @for (var i = 0; i < count; i++)
                             {
                                 var idx = i;
                                 var cat = categories[idx];
-                                <div class="flex h-full min-w-0 flex-1 items-end justify-center gap-0.5 px-1"
-                                     title="@($"{cat}: {string.Join(", ", bars.Select(b => $"{b.Series.Label} {DashboardFormat.Format(ValueAt(b.Series, idx), Format, FormatCulture)}"))}")"
+                                <div class="flex h-full min-w-0 flex-1 justify-center gap-0.5 px-1"
+                                     title="@($"{cat}: {string.Join(", ", bars.Select(b => $"{b.Series.Label} {DashboardFormat.Format(ValueOrNull(b.Series, idx), Format, FormatCulture)}"))}")"
                                      data-slot="dashboard-chart-column">
                                     @foreach (var (s, color) in bars)
                                     {
-                                        var val = ValueAt(s, idx);
-                                        var pct = Math.Clamp(val / maxVal * 100.0, 4, 100).ToString("0.#", CultureInfo.InvariantCulture);
-                                        <div class="relative min-w-0 max-w-12 flex-1 rounded-t-sm @(s.IsComparison ? "bg-(--klyroo-text-muted)/50" : "bg-(--kly-color)")"
-                                             data-color="@(s.IsComparison ? null : color)"
-                                             style="@($"height:{pct}%")"
-                                             data-slot="dashboard-chart-bar"
-                                             data-series="@s.Key">
-                                            @if (ShowLabels)
-                                            {
-                                                <span class="absolute inset-x-0 bottom-full whitespace-nowrap pb-0.5 text-center text-[10px] font-semibold tabular-nums text-(--klyroo-text-muted)">
-                                                    @DashboardFormat.Format(val, Format, FormatCulture)
-                                                </span>
-                                            }
+                                        var val = ValueOrNull(s, idx);
+                                        var top = val is { } v ? Y(Math.Max(v, 0)) : zeroY;
+                                        var height = val is { } w ? Math.Abs(Y(w) - zeroY) : 0;
+                                        <div class="relative min-w-0 max-w-12 flex-1">
+                                            <div class="absolute inset-x-0 rounded-sm @(s.IsComparison ? "bg-(--klyroo-text-muted)/50" : "bg-(--kly-color)")"
+                                                 data-color="@(s.IsComparison ? null : color)"
+                                                 style="@($"top:{DashboardBarGeometry.Percent(top)}%;height:{DashboardBarGeometry.Percent(height)}%")"
+                                                 data-slot="dashboard-chart-bar"
+                                                 data-series="@s.Key">
+                                                @if (ShowLabels && val is { } labelled)
+                                                {
+                                                    <span class="absolute inset-x-0 @(labelled < 0 ? "top-full pt-0.5" : "bottom-full pb-0.5") whitespace-nowrap text-center text-[10px] font-semibold tabular-nums text-(--klyroo-text-muted)">
+                                                        @FormatValue(labelled)
+                                                    </span>
+                                                }
+                                            </div>
                                         </div>
                                     }
                                 </div>
@@ -166,16 +265,33 @@
                         <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-slot="dashboard-chart-lines">
                             @foreach (var (s, color) in lines)
                             {
-                                var points = string.Join(' ', Enumerable.Range(0, count).Select(i =>
-                                    $"{X(i)},{(100.0 - Share(ValueAt(s, i)) * 100.0).ToString("0.###", CultureInfo.InvariantCulture)}"));
-                                <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                          vector-effect="non-scaling-stroke"
-                                          stroke-dasharray="@(s.IsComparison ? "4 3" : null)"
-                                          class="@(s.IsComparison ? "text-(--klyroo-text-muted)" : "text-(--kly-color)")"
-                                          data-color="@(s.IsComparison ? null : color)"
-                                          points="@points"
-                                          data-slot="dashboard-chart-line"
-                                          data-series="@s.Key" />
+                                // A gap in the data breaks the line instead of drawing a zero.
+                                var segments = new List<string>();
+                                var run = new List<string>();
+                                for (var i = 0; i < count; i++)
+                                {
+                                    if (ValueOrNull(s, i) is { } point)
+                                    {
+                                        run.Add($"{X(i)},{DashboardBarGeometry.Percent(Y(point))}");
+                                    }
+                                    else if (run.Count > 0)
+                                    {
+                                        segments.Add(string.Join(' ', run));
+                                        run.Clear();
+                                    }
+                                }
+                                if (run.Count > 0) segments.Add(string.Join(' ', run));
+                                @foreach (var points in segments)
+                                {
+                                    <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                              vector-effect="non-scaling-stroke"
+                                              stroke-dasharray="@(s.IsComparison ? "4 3" : null)"
+                                              class="@(s.IsComparison ? "text-(--klyroo-text-muted)" : "text-(--kly-color)")"
+                                              data-color="@(s.IsComparison ? null : color)"
+                                              points="@points"
+                                              data-slot="dashboard-chart-line"
+                                              data-series="@s.Key" />
+                                }
                             }
                         </svg>
                         @foreach (var (s, color) in lines)
@@ -183,11 +299,11 @@
                             @for (var i = 0; i < count; i++)
                             {
                                 var idx = i;
-                                var val = ValueAt(s, idx);
+                                if (ValueOrNull(s, idx) is not { } val) continue;
                                 <span class="absolute size-2 rounded-full border-2 border-(--klyroo-bg) @(s.IsComparison ? "bg-(--klyroo-text-muted)" : "bg-(--kly-color)")"
                                       data-color="@(s.IsComparison ? null : color)"
-                                      style="@($"left:calc({X(idx)}% - 4px);bottom:calc({(Share(val) * 100.0).ToString("0.###", CultureInfo.InvariantCulture)}% - 4px)")"
-                                      title="@($"{categories[idx]} · {s.Label}: {DashboardFormat.Format(val, Format, FormatCulture)}")"
+                                      style="@($"left:calc({X(idx)}% - 4px);top:calc({DashboardBarGeometry.Percent(Y(val))}% - 4px)")"
+                                      title="@($"{categories[idx]} · {s.Label}: {FormatValue(val)}")"
                                       data-slot="dashboard-chart-point"
                                       data-series="@s.Key"></span>
                             }
@@ -201,62 +317,6 @@
                     <span class="min-w-0 flex-1 truncate px-1 text-center text-[11px] text-(--klyroo-text-muted)" data-slot="dashboard-chart-label">@cat</span>
                 }
             </div>
-        </div>
-    };
-
-    private RenderFragment RenderDonut(IReadOnlyList<string> categories) => __builder =>
-    {
-        var series = Series?.FirstOrDefault(s => !s.IsComparison);
-        if (series is null)
-        {
-            return;
-        }
-        var values = categories.Select((_, i) => Math.Max(0, ValueAt(series, i))).ToList();
-        var total = values.Sum();
-        var size = Math.Clamp(Height, 96, 240);
-        var offset = 0.0;
-        var describe = $"{series.Label}: " + string.Join(", ", categories.Select((c, i) =>
-            $"{c} {DashboardFormat.Format(values[i], Format, FormatCulture)} ({Percent(total > 0 ? values[i] / total * 100.0 : 0)})"));
-
-        <div class="flex flex-wrap items-center justify-center gap-6 pt-2" data-slot="dashboard-chart-canvas">
-            <div class="relative shrink-0" style="@($"width:{size}px;height:{size}px")">
-                <svg viewBox="0 0 100 100" class="size-full -rotate-90" role="img" aria-label="@describe" data-slot="dashboard-chart-donut">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="16" class="text-(--klyroo-bg-muted)" />
-                    @for (var i = 0; i < categories.Count; i++)
-                    {
-                        var idx = i;
-                        if (total <= 0 || values[idx] <= 0) continue;
-                        var length = values[idx] / total * DonutCircumference;
-                        var dash = $"{length.ToString("0.###", CultureInfo.InvariantCulture)} {(DonutCircumference - length).ToString("0.###", CultureInfo.InvariantCulture)}";
-                        var dashOffset = (-offset).ToString("0.###", CultureInfo.InvariantCulture);
-                        offset += length;
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="16"
-                                stroke-dasharray="@dash" stroke-dashoffset="@dashOffset"
-                                class="text-(--kly-color)" data-color="@ColorOf(idx)"
-                                data-slot="dashboard-chart-slice" data-category="@categories[idx]">
-                            <title>@($"{categories[idx]}: {DashboardFormat.Format(values[idx], Format, FormatCulture)} ({Percent(values[idx] / total * 100.0)})")</title>
-                        </circle>
-                    }
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-center" aria-hidden="true">
-                    <span class="text-xl font-bold tabular-nums text-(--klyroo-text-highlighted)" data-slot="dashboard-chart-donut-total">@DashboardFormat.Format(total, Format, FormatCulture)</span>
-                    <span class="max-w-full truncate px-4 text-[11px] text-(--klyroo-text-muted)">@series.Label</span>
-                </div>
-            </div>
-            @if (ShowLegend)
-            {
-                <div class="flex min-w-0 flex-col gap-1.5 text-xs" data-slot="dashboard-chart-legend">
-                    @for (var i = 0; i < categories.Count; i++)
-                    {
-                        var idx = i;
-                        <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item" data-category="@categories[idx]">
-                            <span class="inline-block size-2.5 shrink-0 rounded-full bg-(--kly-color)" data-color="@ColorOf(idx)"></span>
-                            <span class="truncate text-(--klyroo-text-muted)">@categories[idx]</span>
-                            <span class="ms-auto ps-2 font-semibold tabular-nums text-(--klyroo-text-highlighted)">@Percent(total > 0 ? values[idx] / total * 100.0 : 0)</span>
-                        </span>
-                    }
-                </div>
-            }
         </div>
     };
 

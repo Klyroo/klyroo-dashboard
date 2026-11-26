@@ -1507,3 +1507,9 @@ public sealed record DashboardChartSeries(
     IReadOnlyList<double> Values,
     string Type = "bar",
     bool IsComparison = false);
+
+/// <summary>The data point a user selected in a <c>KlyDashboardChart</c>, as <c>OnSelect</c> receives it.</summary>
+/// <param name="Category">The category (the label of the slice for a donut).</param>
+/// <param name="Series">The <see cref="DashboardChartSeries.Key"/> of the series.</param>
+/// <param name="Value">The value of the series in the category, as given to the chart.</param>
+public sealed record DashboardChartSelection(string Category, string Series, double Value);

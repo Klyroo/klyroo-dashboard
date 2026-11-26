@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Added
 
+- `KlyDashboardChart` is drawn by `KlyChart` of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a data table for screen readers, and a scale that includes zero. New parameters: `Type="area"`, `Stacked`, `Horizontal` and `OnSelect`. `OnSelect` receives a `DashboardChartSelection` (category, series key, value) and shows a group of buttons under the drawing, so the choice works with the keyboard. A bar chart with a `line` series and a chart with `ShowLabels` keep a compact drawing of the block's own, because `KlyChart` draws one kind per chart and has no value labels.
 - The built-in texts follow the Klyroo.UI locale, as in Klyroo.Display: the new `DashboardTexts` record holds every button, accessible name, empty and error state, table column header and relative time, `DashboardLocales` has one set per locale of Klyroo.UI (English and French reviewed, the other ten drafts), and `KlyrooDashboardOptions.Texts(code, change)` changes a set in `AddKlyrooDashboard`. `KlyrooDashboardOptions` is now stored as an extension of `KlyrooOptions`, and the container resolves that same instance.
 - `DashboardFormat.FormatRelativeTime(value, now, DashboardRelativeTimeTexts)` writes the relative time with the words you give it. The overload without them stays English.
 - Download CSV saves the file in the browser through `_content/Klyroo.Dashboard/klyroo-dashboard.js` when `KlyDashboardCard.OnCsvExported` has no handler, so the button works on the ready-made blocks.
@@ -27,6 +28,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- A chart value of zero or below no longer looks positive: the old drawing clamped every bar to at least 4% of the height and drew a negative value as a zero, a missing value as a zero, and a line from a baseline that ignored the sign. Bars start at zero, negative values go below it, a missing or non-finite value is a gap, and a donut leaves out zero and negative values. The totals keep negative values.
 - In a `;`-delimited CSV (decimal-comma cultures), numbers are written with a decimal comma, so the spreadsheet reads them as numbers.
 - Setting `DashboardController.AutoRefresh` after the controller is disposed does nothing instead of throwing, and a refresh that throws no longer stops the timer. Intervals above `MaxAutoRefreshSeconds` (one day) are refused.
 - A text, number or date filter box shows the restored default after it is cleared, and a gauge with a `NaN` value renders empty.
