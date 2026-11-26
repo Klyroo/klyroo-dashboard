@@ -24,6 +24,9 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- In a `;`-delimited CSV (decimal-comma cultures), numbers are written with a decimal comma, so the spreadsheet reads them as numbers.
+- Setting `DashboardController.AutoRefresh` after the controller is disposed does nothing instead of throwing, and a refresh that throws no longer stops the timer. Intervals above `MaxAutoRefreshSeconds` (one day) are refused.
+- A text, number or date filter box shows the restored default after it is cleared, and a gauge with a `NaN` value renders empty.
 - `DashboardFormat.ExportCsv` wrote numeric cells unquoted even when they contained the delimiter, so a formatted `1,234.5` split into two columns. Such cells are now quoted.
 - `DashboardFormat.ExportCsv` wrote cells starting with `=`, `+`, `-`, `@`, a tab or a carriage return as they were, so a spreadsheet could run them as formulas. They now get a leading apostrophe. The header line also ends with `\r\n` like the data lines, instead of the platform newline.
 - Table views and CSV exports held the formatted text of numbers (`12.6K`, `+14.2%`) and every item even when `Limit` hid some. They now hold raw invariant numbers and only the rows the block shows, in `KlyDashboardTable`, `KlyDashboardList` and `KlyDashboardBars`.

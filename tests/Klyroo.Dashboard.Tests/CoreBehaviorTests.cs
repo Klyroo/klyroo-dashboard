@@ -27,6 +27,17 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ExportCsv_writes_a_decimal_comma_for_semicolon_cultures()
+    {
+        var table = new DashboardDataTable(
+            [new("label", "Label"), new("val", "Value", Numeric: true)],
+            [new Dictionary<string, string?> { ["label"] = "Rate", ["val"] = "4.25" }]);
+
+        Assert.EndsWith("\"Rate\";4,25\r\n", DashboardFormat.ExportCsv(table, CultureInfo.GetCultureInfo("fr-FR")));
+        Assert.EndsWith("\"Rate\",4.25\r\n", DashboardFormat.ExportCsv(table, CultureInfo.GetCultureInfo("en-US")));
+    }
+
+    [Fact]
     public void ExportCsv_neutralizes_formulas_and_ends_the_header_with_crlf()
     {
         var table = new DashboardDataTable(
@@ -259,7 +270,9 @@ public sealed class CoreBehaviorTests
         var second = clock.Timers[1];
         controller.Dispose();
         await second.Disposed.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        Assert.Throws<ObjectDisposedException>(() => controller.AutoRefresh = 5);
+        // Setting it after Dispose (a page that is left during its first load) does nothing.
+        controller.AutoRefresh = 5;
+        Assert.Equal(0, controller.AutoRefresh);
     }
 
     private sealed class ManualTimeProvider : TimeProvider

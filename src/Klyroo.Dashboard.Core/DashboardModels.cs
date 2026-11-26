@@ -312,6 +312,12 @@ public sealed class DashboardResource<TData> : IDashboardSource, IDisposable
         var previous = _load;
         _load = load;
         Cancel(previous);
+        // A continuation of the old load that ran inline in Cancel may have settled the resource (SetData, SetError).
+        if (!IsCurrent(load))
+        {
+            load.Dispose();
+            return;
+        }
 
         var wasReady = State == DashboardResourceState.Ready;
         Refreshing = wasReady;
@@ -762,19 +768,18 @@ public sealed class DashboardController : IDisposable
     /// <summary>The registered resources, in the order they were registered.</summary>
     public IReadOnlyList<IDashboardSource> Resources => _resources;
 
-    /// <summary>Seconds between two automatic calls to <see cref="RefreshAsync"/>, or 0 (the default) for none. A positive value starts a timer and 0 or a negative value stops it. A tick waits for the refresh it started to finish, so refreshes started by the timer never overlap. The timer resumes on the synchronization context that set the value, if any, and stops when the controller is disposed.</summary>
-    /// <exception cref="ObjectDisposedException">The controller is disposed and the value is positive.</exception>
+    /// <summary>Seconds between two automatic calls to <see cref="RefreshAsync"/>, or 0 (the default) for none. A positive value starts a timer and 0 or a negative value stops it. A tick waits for the refresh it started to finish, so refreshes started by the timer never overlap. The timer resumes on the synchronization context that set the value, if any, and stops when the controller is disposed. Setting it on a disposed controller does nothing. A refresh that throws does not stop the timer.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The value is larger than <see cref="MaxAutoRefreshSeconds"/>.</exception>
     public int AutoRefresh
     {
         get => _autoRefresh;
         set
         {
             var seconds = Math.Max(0, value);
-            if (seconds > 0)
-            {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-            }
-            if (seconds == _autoRefresh) return;
+            // A page can set it after it was disposed, for example when the user leaves during the first load: do nothing.
+            if (_disposed) return;
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(seconds, MaxAutoRefreshSeconds, nameof(value));
+            if (seconds == _autoRefresh && _autoRefreshLoop is not null) return;
             _autoRefresh = seconds;
             StopAutoRefresh();
             if (seconds > 0)
@@ -898,11 +903,15 @@ public sealed class DashboardController : IDisposable
         if (_disposed) return;
         _disposed = true;
         StopAutoRefresh();
+        _autoRefresh = 0;
         foreach (var resource in _resources)
         {
             (resource as IDisposable)?.Dispose();
         }
     }
+
+    /// <summary>The largest <see cref="AutoRefresh"/> interval, one day in seconds.</summary>
+    public const int MaxAutoRefreshSeconds = 86_400;
 
     private async Task RunAutoRefreshAsync(TimeSpan interval, CancellationTokenSource loop)
     {
@@ -912,7 +921,14 @@ public sealed class DashboardController : IDisposable
         {
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                await RefreshAsync();
+                try
+                {
+                    await RefreshAsync();
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // A failing source or Changed subscriber must not stop the timer; the next tick tries again.
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -921,6 +937,7 @@ public sealed class DashboardController : IDisposable
         }
         finally
         {
+            if (ReferenceEquals(_autoRefreshLoop, loop)) _autoRefreshLoop = null;
             loop.Dispose();
         }
     }
@@ -1051,7 +1068,7 @@ public static class DashboardFormat
         return rounded.ToString("0.#", c) + suffixes[tier];
     }
 
-    /// <summary>Writes a number as the cells of a <see cref="DashboardDataTable"/> carry it: in the invariant culture, without grouping and with every significant digit (<c>12600</c>, <c>-4.25</c>), so that a spreadsheet can read it back exactly.</summary>
+    /// <summary>Writes a number as the cells of a <see cref="DashboardDataTable"/> carry it: in the invariant culture, without grouping and with every significant digit (<c>12600</c>, <c>-4.25</c>), so that it keeps full precision. <see cref="ExportCsv"/> writes it with a decimal comma for the cultures that use one.</summary>
     /// <param name="value">The number to write.</param>
     /// <returns>The text, or <see langword="null"/> for a <see langword="null"/>, <c>NaN</c> or infinite value (an empty cell).</returns>
     public static string? FormatInvariant(double? value)
@@ -1143,7 +1160,7 @@ public static class DashboardFormat
         return string.IsNullOrEmpty(slug) ? $"dashboard.{extension}" : $"{slug}.{extension}";
     }
 
-    /// <summary>Serializes a table to CSV. The text starts with a UTF-8 byte order mark, uses <c>;</c> as delimiter when the culture has a comma as decimal separator and <c>,</c> otherwise, and ends every line, the header included, with <c>\r\n</c>. Headers and text cells are quoted. A cell of a numeric column that reads as a number is written as it is, unless it contains the delimiter, a quote or a line break, in which case it is quoted too. Any other cell that starts with <c>=</c>, <c>+</c>, <c>-</c>, <c>@</c>, a tab or a carriage return gets a leading apostrophe, so that a spreadsheet does not run it as a formula.</summary>
+    /// <summary>Serializes a table to CSV. The text starts with a UTF-8 byte order mark, uses <c>;</c> as delimiter when the culture has a comma as decimal separator and <c>,</c> otherwise, and ends every line, the header included, with <c>\r\n</c>. Headers and text cells are quoted. A cell of a numeric column that reads as a number is written bare, with a decimal comma instead of the invariant point when the delimiter is <c>;</c>, unless it contains the delimiter, a quote or a line break, in which case it is quoted too. Any other cell that starts with <c>=</c>, <c>+</c>, <c>-</c>, <c>@</c>, a tab or a carriage return gets a leading apostrophe, so that a spreadsheet does not run it as a formula.</summary>
     /// <param name="table">The table to export.</param>
     /// <param name="culture">The culture that picks the delimiter and, with the invariant culture, decides whether a numeric cell reads as a number. The invariant culture when <see langword="null"/>.</param>
     /// <returns>The CSV text.</returns>
@@ -1169,7 +1186,9 @@ public static class DashboardFormat
                 }
                 else if (col.Numeric && IsNumber(val, c))
                 {
-                    cells.Add(NeedsQuoting(val, delimiter) ? QuoteCsv(val) : val);
+                    // A spreadsheet that reads ';' files (decimal-comma cultures) reads "4,25" as a number and "4.25" as text.
+                    var number = delimiter == ';' && InvariantPlainNumber(val) ? val.Replace('.', ',') : val;
+                    cells.Add(NeedsQuoting(number, delimiter) ? QuoteCsv(number) : number);
                 }
                 else
                 {
@@ -1180,6 +1199,11 @@ public static class DashboardFormat
         }
         return sb.ToString();
     }
+
+    private static bool InvariantPlainNumber(string text) =>
+        text.Length > 0 && text.AsSpan().TrimStart('-').Length > 0
+        && text.AsSpan().TrimStart('-').IndexOfAnyExcept("0123456789.") < 0
+        && text.Count(ch => ch == '.') <= 1;
 
     private static bool IsNumber(string text, CultureInfo culture) =>
         double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out _)

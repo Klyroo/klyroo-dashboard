@@ -20,11 +20,11 @@ Number, delta, relative-time, comparison-range and CSV helpers. Numbers use the 
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `static ExportCsv(DashboardDataTable table, CultureInfo? culture = null)` | `string` | Serializes a table to CSV. The text starts with a UTF-8 byte order mark, uses `;` as delimiter when the culture has a comma as decimal separator and `,` otherwise, and ends every line, the header included, with `\r\n`. Headers and text cells are quoted. A cell of a numeric column that reads as a number is written as it is, unless it contains the delimiter, a quote or a line break, in which case it is quoted too. Any other cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe, so that a spreadsheet does not run it as a formula. |
+| `static ExportCsv(DashboardDataTable table, CultureInfo? culture = null)` | `string` | Serializes a table to CSV. The text starts with a UTF-8 byte order mark, uses `;` as delimiter when the culture has a comma as decimal separator and `,` otherwise, and ends every line, the header included, with `\r\n`. Headers and text cells are quoted. A cell of a numeric column that reads as a number is written bare, with a decimal comma instead of the invariant point when the delimiter is `;`, unless it contains the delimiter, a quote or a line break, in which case it is quoted too. Any other cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe, so that a spreadsheet does not run it as a formula. |
 | `static Format(double? value, DashboardFormatPreset preset = Number, CultureInfo? culture = null)` | `string` | Formats a number with a preset. A `null`, `NaN` or infinite value gives `DashboardFormat.MissingValue`. |
 | `static FormatCompact(double? value, CultureInfo? culture = null)` | `string` | Formats a number with the `K`, `M` and `B` suffixes and at most one decimal. The suffix is chosen after rounding, so `999,999` gives `1M`, not `1000K`. |
 | `static FormatCurrency(double? value, string currencySymbol = "€", CultureInfo? culture = null)` | `string` | Formats an amount with the currency symbol in front and at most two decimals. The symbol position does not follow the culture. |
-| `static FormatInvariant(double? value)` | `string?` | Writes a number as the cells of a `DashboardDataTable` carry it: in the invariant culture, without grouping and with every significant digit (`12600`, `-4.25`), so that a spreadsheet can read it back exactly. |
+| `static FormatInvariant(double? value)` | `string?` | Writes a number as the cells of a `DashboardDataTable` carry it: in the invariant culture, without grouping and with every significant digit (`12600`, `-4.25`), so that it keeps full precision. `DashboardFormat.ExportCsv` writes it with a decimal comma for the cultures that use one. |
 | `static FormatRelativeTime(DateTimeOffset? value, DateTimeOffset? now = null)` | `string` | Describes how long ago something happened: `just now` under 45 seconds, then minutes, hours, `yesterday`, days under a week, and an ISO date (`yyyy-MM-dd`) beyond that. The text is English. |
 | `static ResolveComparisonRange((DateTimeOffset, DateTimeOffset)? range, DashboardComparisonMode comparison)` | `(DateTimeOffset, DateTimeOffset)?` | Computes the comparison range of a date range. `DashboardComparisonMode.Previous` gives the range of the same number of days that ends the day before the start. `DashboardComparisonMode.Year` shifts both bounds back one year, clamping February 29. |
 | `static ResolveFileName(string? title, string extension = "csv")` | `string` | Turns a title into a file name: lowercase, accents removed, anything that is not a letter or digit collapsed into one hyphen. Falls back to `dashboard` when nothing is left. |
@@ -41,9 +41,13 @@ Central controller for an analytical dashboard: coordinates filters, views, stag
 | :--- | :--- |
 | `DashboardController(string key = "dashboard", TimeProvider? timeProvider = null)` | Creates a controller. |
 
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `const MaxAutoRefreshSeconds = 86400` | `int` | The largest `DashboardController.AutoRefresh` interval, one day in seconds. |
+
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `AutoRefresh` (get, set) | `int` | Seconds between two automatic calls to `DashboardController.RefreshAsync`, or 0 (the default) for none. A positive value starts a timer and 0 or a negative value stops it. A tick waits for the refresh it started to finish, so refreshes started by the timer never overlap. The timer resumes on the synchronization context that set the value, if any, and stops when the controller is disposed. |
+| `AutoRefresh` (get, set) | `int` | Seconds between two automatic calls to `DashboardController.RefreshAsync`, or 0 (the default) for none. A positive value starts a timer and 0 or a negative value stops it. A tick waits for the refresh it started to finish, so refreshes started by the timer never overlap. The timer resumes on the synchronization context that set the value, if any, and stops when the controller is disposed. Setting it on a disposed controller does nothing. A refresh that throws does not stop the timer. |
 | `Controls` | `IReadOnlyList<DashboardFilterControl>` | The filters, in the order they were added. |
 | `CurrentView` (get, set) | `string?` | The key of the view being shown. Setting a key that is unknown or disabled is ignored. Setting a valid key marks the view as opened and raises `Changed`. The first enabled view added becomes current, and when the current view is disabled the next enabled one takes its place. |
 | `Filtered` | `bool` | `true` when at least one filter differs from its default values. |
@@ -424,8 +428,8 @@ Common interface implemented by dashboard queries and derived resources.
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `ActivateAsync()` | `Task` | Marks the source active and loads it if it has never loaded. |
-| `RefreshAsync()` | `Task` | Reloads the source. |
+| `ActivateAsync()` | `Task` | Marks the source active and loads it if it has never loaded, or if it was disabled and is enabled again. |
+| `RefreshAsync()` | `Task` | Reloads the source. A load still running from an earlier call is cancelled and its result ignored. |
 
 ### Enums
 
@@ -733,7 +737,7 @@ Also accepts the parameters of `KlyComponentBase`.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `Share` | `double` | The filled fraction of the ring, from 0 to 1: `(Value - Min) / (Max - Min)`, clamped. 0 when `KlyDashboardGauge.Value` is `null` or `KlyDashboardGauge.Max` is not above `KlyDashboardGauge.Min`. |
+| `Share` | `double` | The filled fraction of the ring, from 0 to 1: `(Value - Min) / (Max - Min)`, clamped. 0 when `KlyDashboardGauge.Value` is `null`, NaN or infinite, or `KlyDashboardGauge.Max` is not above `KlyDashboardGauge.Min`. |
 
 #### `KlyDashboardGrid`
 

@@ -70,7 +70,6 @@ It calls `navigator.clipboard.writeText`, which needs an interactive render mode
 - **Cancellation.** A refresh cancels the token of the load it supersedes and ignores its result, but a loader that does not pass the token on keeps running until it finishes.
 - **Language.** The texts of the blocks and `FormatRelativeTime` are English.
 - **Number formats.** `DashboardFormat` uses the invariant culture unless you pass one.
-- **CSV.** The ready-made blocks write numbers with a dot as decimal separator (`1234.5`), also in the `;`-delimited files made for cultures with a decimal comma, so a spreadsheet set to such a culture may read them as text.
 - **Persistence.** Resources do not persist their data across prerendering. `PersistentComponentState` only serializes with reflection-based JSON (`PersistAsJson` requires unreferenced code), which the trimmable packages cannot use without user-supplied serialization, and the library does not own the moment your page loads its data. Persist the data in your page instead (see Troubleshooting).
 - **NativeAOT.** Only `Klyroo.Dashboard.Core` declares it. See [Platforms](platforms.md#nativeaot-and-trimming).
 

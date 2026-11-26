@@ -276,6 +276,33 @@ public sealed class ComponentBehaviorTests : BunitContext
     }
 
     [Fact]
+    public void A_card_loads_its_disabled_essential_source_once_it_is_enabled()
+    {
+        var enabled = false;
+        var source = new DashboardResource<int>("kpis", _ => Task.FromResult(3), enabled: () => enabled);
+        var cut = Render<KlyDashboardCard>(p => p
+            .Add(x => x.Source, source)
+            .AddChildContent("<p data-slot=\"loaded\">ok</p>"));
+        Assert.Equal(DashboardResourceState.Disabled, source.State);
+
+        enabled = true;
+        cut.Render();
+
+        cut.WaitForAssertion(() => Assert.Equal(DashboardResourceState.Ready, source.State));
+        Assert.NotNull(cut.Find("[data-slot=loaded]"));
+    }
+
+    [Fact]
+    public void A_gauge_with_a_NaN_value_draws_an_empty_bar()
+    {
+        var cut = Render<KlyDashboardGauge>(p => p
+            .Add(x => x.Value, double.NaN)
+            .Add(x => x.Variant, "bar"));
+
+        Assert.DoesNotContain("NaN", cut.Markup);
+    }
+
+    [Fact]
     public void A_card_loads_its_disabled_source_once_it_is_enabled()
     {
         var enabled = false;

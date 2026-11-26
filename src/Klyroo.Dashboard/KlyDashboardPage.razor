@@ -90,12 +90,13 @@
                                     <label class="@pillClass" data-slot="dashboard-filter-field">
                                         <span class="text-(--klyroo-text-muted)">@filter.Label:</span>
                                         <input type="@(filter.Kind == DashboardFilterKind.Number ? "number" : filter.Kind == DashboardFilterKind.Date ? "date" : "text")"
-                                               value="@(filter.Value ?? "")"
+                                               @bind:get="filter.Value ?? string.Empty"
+                                               @bind:set="@(v => SetInputValue(filter, v))"
+                                               @bind:event="onchange"
                                                placeholder="@(filter.Kind == DashboardFilterKind.Date ? null : filter.Placeholder)"
                                                step="@(filter.Kind == DashboardFilterKind.Number ? "any" : null)"
                                                class="@($"h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text) {(filter.Kind == DashboardFilterKind.String ? "w-32" : filter.Kind == DashboardFilterKind.Number ? "w-20" : "")}")"
-                                               data-slot="dashboard-filter-input"
-                                               @onchange="@(e => SetInputValue(filter, e.Value?.ToString()))" />
+                                               data-slot="dashboard-filter-input" />
                                     </label>
                                     @RenderInlinePresets(filter)
                                     break;
@@ -105,21 +106,25 @@
                                     var end = RangeBound(filter, 1);
                                     <div class="@pillClass" role="group" aria-label="@filter.Label" data-slot="dashboard-filter-field">
                                         <span class="text-(--klyroo-text-muted)" aria-hidden="true">@filter.Label:</span>
-                                        <input type="date"
-                                               value="@start"
+                                        @* An expression type keeps @bind on string values; a literal "date" would bind a DateTime. *@
+                                        <input type="@DateInputType"
+                                               @bind:get="start"
+                                               @bind:set="@(v => SetRangeBound(filter, 0, v))"
+                                               @bind:event="onchange"
                                                max="@(string.IsNullOrEmpty(end) ? null : end)"
                                                aria-label="@($"{filter.Label} from")"
                                                class="h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text)"
-                                               data-slot="dashboard-filter-start"
-                                               @onchange="@(e => SetRangeBound(filter, 0, e.Value?.ToString()))" />
+                                               data-slot="dashboard-filter-start" />
                                         <span class="text-(--klyroo-text-muted)" aria-hidden="true">–</span>
-                                        <input type="date"
-                                               value="@end"
+                                        @* An expression type keeps @bind on string values; a literal "date" would bind a DateTime. *@
+                                        <input type="@DateInputType"
+                                               @bind:get="end"
+                                               @bind:set="@(v => SetRangeBound(filter, 1, v))"
+                                               @bind:event="onchange"
                                                min="@(string.IsNullOrEmpty(start) ? null : start)"
                                                aria-label="@($"{filter.Label} to")"
                                                class="h-7 min-w-0 border-0 bg-transparent p-0 text-xs font-semibold text-(--klyroo-text)"
-                                               data-slot="dashboard-filter-end"
-                                               @onchange="@(e => SetRangeBound(filter, 1, e.Value?.ToString()))" />
+                                               data-slot="dashboard-filter-end" />
                                     </div>
                                     @RenderInlinePresets(filter)
                                     break;
@@ -308,6 +313,8 @@
 
     private static string RangeBound(DashboardFilterControl filter, int index) =>
         filter.Values.Count > index ? filter.Values[index] : "";
+
+    private const string DateInputType = "date";
 
     private static void SetRangeBound(DashboardFilterControl filter, int index, string? value)
     {

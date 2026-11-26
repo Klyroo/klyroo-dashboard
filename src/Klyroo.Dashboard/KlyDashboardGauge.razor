@@ -9,7 +9,7 @@
          aria-label="@(Title ?? "Gauge")"
          aria-valuemin="@Min.ToString("0.##", CultureInfo.InvariantCulture)"
          aria-valuemax="@Max.ToString("0.##", CultureInfo.InvariantCulture)"
-         aria-valuenow="@(Value?.ToString("0.##", CultureInfo.InvariantCulture) ?? "0")"
+         aria-valuenow="@(FiniteValue?.ToString("0.##", CultureInfo.InvariantCulture) ?? "0")"
          aria-valuetext="@FormattedValue"
          data-slot="dashboard-gauge"
          data-variant="@(IsBar ? "bar" : "ring")">
@@ -97,14 +97,14 @@
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
-    /// <summary>The filled fraction of the ring, from 0 to 1: <c>(Value - Min) / (Max - Min)</c>, clamped. 0 when <see cref="Value"/> is <see langword="null"/> or <see cref="Max"/> is not above <see cref="Min"/>.</summary>
+    /// <summary>The filled fraction of the ring, from 0 to 1: <c>(Value - Min) / (Max - Min)</c>, clamped. 0 when <see cref="Value"/> is <see langword="null"/>, NaN or infinite, or <see cref="Max"/> is not above <see cref="Min"/>.</summary>
     public double Share
     {
         get
         {
             var span = Max - Min;
-            if (span <= 0 || Value is null) return 0;
-            return Math.Clamp((Value.Value - Min) / span, 0, 1);
+            if (span <= 0 || Value is not { } value || !double.IsFinite(value)) return 0;
+            return Math.Clamp((value - Min) / span, 0, 1);
         }
     }
 
@@ -121,7 +121,10 @@
     }
 
     private double DashOffset => 263.89 * (1.0 - Share);
-    private string FormattedValue => DashboardFormat.Format(Value, Format, FormatCulture);
+    // NaN or infinity reads as no value, so nothing renders "NaN".
+    private double? FiniteValue => Value is { } v && double.IsFinite(v) ? v : null;
+
+    private string FormattedValue => DashboardFormat.Format(FiniteValue, Format, FormatCulture);
 
     private DashboardDataTable BuildDataTable()
     {
@@ -135,7 +138,7 @@
         var row = new Dictionary<string, string?>
         {
             ["label"] = Title ?? "Gauge",
-            ["value"] = DashboardFormat.FormatInvariant(Value),
+            ["value"] = DashboardFormat.FormatInvariant(FiniteValue),
             ["min"] = DashboardFormat.FormatInvariant(Min),
             ["max"] = DashboardFormat.FormatInvariant(Max),
         };
