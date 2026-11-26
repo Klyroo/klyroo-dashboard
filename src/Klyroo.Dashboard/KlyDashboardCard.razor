@@ -62,6 +62,7 @@
                         {
                             <button type="button"
                                     class="inline-flex h-7 items-center rounded-(--klyroo-radius) px-2 text-xs font-medium text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text)"
+                                    aria-haspopup="dialog"
                                     aria-expanded="@(_expanded ? "true" : "false")"
                                     data-slot="dashboard-card-expand"
                                     @onclick="@(() => _expanded = !_expanded)">
@@ -97,130 +98,14 @@
 
         @* Phase body *@
         <div class="flex flex-1 flex-col justify-between gap-3 p-4" data-slot="dashboard-card-body">
-            @switch (Phase)
+            @if (_expanded)
             {
-                case DashboardBlockPhase.Idle:
-                case DashboardBlockPhase.Loading:
-                    <div class="flex flex-col gap-2.5" data-slot="dashboard-skeleton" data-kind="@Skeleton.ToString().ToLowerInvariant()">
-                        @if (Skeleton == DashboardSkeletonKind.Stat)
-                        {
-                            <KlySkeleton Class="h-8 w-28" />
-                            <KlySkeleton Class="h-4 w-20" />
-                        }
-                        else if (Skeleton == DashboardSkeletonKind.Bars || Skeleton == DashboardSkeletonKind.Lines)
-                        {
-                            <div class="flex h-32 items-end gap-2">
-                                <KlySkeleton Class="h-1/2 flex-1" />
-                                <KlySkeleton Class="h-3/4 flex-1" />
-                                <KlySkeleton Class="h-2/3 flex-1" />
-                                <KlySkeleton Class="h-full flex-1" />
-                            </div>
-                        }
-                        else if (Skeleton == DashboardSkeletonKind.Paired)
-                        {
-                            <div class="flex h-32 items-end gap-4">
-                                <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
-                                    <KlySkeleton Class="h-2/3 flex-1" />
-                                    <KlySkeleton Class="h-1/2 flex-1" />
-                                </div>
-                                <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
-                                    <KlySkeleton Class="h-full flex-1" />
-                                    <KlySkeleton Class="h-3/4 flex-1" />
-                                </div>
-                                <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
-                                    <KlySkeleton Class="h-1/2 flex-1" />
-                                    <KlySkeleton Class="h-2/3 flex-1" />
-                                </div>
-                            </div>
-                        }
-                        else if (Skeleton == DashboardSkeletonKind.Stack)
-                        {
-                            <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
-                                <KlySkeleton Class="h-full w-1/2" />
-                                <KlySkeleton Class="h-full w-1/4" />
-                                <KlySkeleton Class="h-full w-1/6" />
-                            </div>
-                            <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
-                                <KlySkeleton Class="h-full w-2/5" />
-                                <KlySkeleton Class="h-full w-1/3" />
-                                <KlySkeleton Class="h-full w-1/5" />
-                            </div>
-                            <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
-                                <KlySkeleton Class="h-full w-1/3" />
-                                <KlySkeleton Class="h-full w-1/3" />
-                                <KlySkeleton Class="h-full w-1/4" />
-                            </div>
-                        }
-                        else
-                        {
-                            <KlySkeleton Class="h-4 w-3/4" />
-                            <KlySkeleton Class="h-4 w-full" />
-                            <KlySkeleton Class="h-4 w-2/3" />
-                        }
-                    </div>
-                    break;
-
-                case DashboardBlockPhase.Error:
-                    <div class="flex flex-col items-start gap-2 rounded-(--klyroo-radius) border border-(--klyroo-error)/30 bg-(--klyroo-error)/10 p-3 text-xs"
-                         role="alert" data-slot="dashboard-error">
-                        <p class="m-0 font-semibold text-(--klyroo-error-text)">@Texts.ErrorTitle</p>
-                        <p class="m-0 text-(--klyroo-text-muted)">@(Source?.Error ?? Texts.ErrorMessage)</p>
-                        @if (Source is not null)
-                        {
-                            <button type="button"
-                                    class="rounded-(--klyroo-radius) bg-(--klyroo-bg) px-2.5 py-1 font-semibold text-(--klyroo-text-highlighted) shadow-2xs hover:bg-(--klyroo-bg-muted)"
-                                    data-slot="dashboard-retry"
-                                    @onclick="Source.RefreshAsync">
-                                @Texts.Retry
-                            </button>
-                        }
-                    </div>
-                    break;
-
-                case DashboardBlockPhase.Empty:
-                    <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--klyroo-text-muted)" data-slot="dashboard-empty">
-                        <p class="m-0 font-semibold text-(--klyroo-text-highlighted)">@(EmptyTitle ?? Texts.NoData)</p>
-                        @if (!string.IsNullOrEmpty(EmptyDescription))
-                        {
-                            <p class="m-0">@EmptyDescription</p>
-                        }
-                    </div>
-                    break;
-
-                case DashboardBlockPhase.Content:
-                    @if (_showingTable && Tabulate is not null)
-                    {
-                        var table = Tabulate();
-                        <div class="overflow-x-auto" data-slot="dashboard-data-table">
-                            <table class="min-w-full text-xs">
-                                <thead class="border-b border-(--klyroo-border) font-semibold text-(--klyroo-text-muted)">
-                                    <tr>
-                                        @foreach (var col in table.Columns)
-                                        {
-                                            <th scope="col" class="px-2.5 py-1.5 @(col.Numeric ? "text-end" : "text-start")">@col.Label</th>
-                                        }
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-(--klyroo-border)">
-                                    @foreach (var row in table.Rows)
-                                    {
-                                        <tr>
-                                            @foreach (var col in table.Columns)
-                                            {
-                                                row.TryGetValue(col.Key, out var val);
-                                                <td class="px-2.5 py-1.5 @(col.Numeric ? "text-end tabular-nums" : "text-start")">@(val ?? DashboardFormat.MissingValue)</td>
-                                            }
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        @ChildContent
-                    }
-                    break;
+                @* The content is in the dialog while it is open: it is drawn in one place only. *@
+                <div class="min-h-24" data-slot="dashboard-card-expanded"></div>
+            }
+            else
+            {
+                @PhaseBody
             }
 
             @if (Footer is not null || (EffectiveFreshness && Phase == DashboardBlockPhase.Content && Source?.UpdatedAt is not null))
@@ -239,6 +124,19 @@
                 </footer>
             }
         </div>
+        @if (EffectiveMenu && Expandable)
+        {
+            @* Always rendered, so closing it returns the focus to the Expand button that opened it. *@
+            <KlyModal Open="_expanded" OpenChanged="OnExpandedChanged" Title="@Title" Description="@Subtitle"
+                      AriaLabel="@Texts.Expand" Size="KlySize.Xl" Ui="ExpandedUi" data-slot="dashboard-card-dialog">
+                <Body>
+                    @if (_expanded)
+                    {
+                        @PhaseBody
+                    }
+                </Body>
+            </KlyModal>
+        }
     </section>
 }
 
@@ -274,7 +172,7 @@
     [Parameter] public bool? Freshness { get; set; }
     /// <summary>Shows the View as table button in the menu. It needs <see cref="Tabulate"/>. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool ViewAsTable { get; set; } = true;
-    /// <summary>Shows the Expand button in the menu, which enlarges the card over the page. Defaults to <see langword="true"/>.</summary>
+    /// <summary>Shows the Expand button in the menu, which opens the content of the card in a modal dialog (<c>KlyModal</c> of Klyroo.UI: the page behind is inert, the focus stays in the dialog, Escape, the close button and a click on the backdrop close it, and the focus returns to the Expand button). Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Expandable { get; set; } = true;
     /// <summary>Returns the content of the block as a table. It enables the View as table and Download CSV buttons.</summary>
     [Parameter] public Func<DashboardDataTable>? Tabulate { get; set; }
@@ -288,6 +186,144 @@
     [Parameter] public RenderFragment? Footer { get; set; }
     /// <summary>The content of the block, rendered once the source is ready and not empty.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private static readonly ModalUi ExpandedUi = new() { Content = "max-w-6xl" };
+
+    private Task OnExpandedChanged(bool open)
+    {
+        _expanded = open;
+        return Task.CompletedTask;
+    }
+
+    // The body of the card: the skeleton, the error, the empty state, the table view or the content.
+    private RenderFragment PhaseBody =>
+        @<text>
+    @switch (Phase)
+    {
+        case DashboardBlockPhase.Idle:
+        case DashboardBlockPhase.Loading:
+            <div class="flex flex-col gap-2.5" data-slot="dashboard-skeleton" data-kind="@Skeleton.ToString().ToLowerInvariant()">
+                @if (Skeleton == DashboardSkeletonKind.Stat)
+                {
+                    <KlySkeleton Class="h-8 w-28" />
+                    <KlySkeleton Class="h-4 w-20" />
+                }
+                else if (Skeleton == DashboardSkeletonKind.Bars || Skeleton == DashboardSkeletonKind.Lines)
+                {
+                    <div class="flex h-32 items-end gap-2">
+                        <KlySkeleton Class="h-1/2 flex-1" />
+                        <KlySkeleton Class="h-3/4 flex-1" />
+                        <KlySkeleton Class="h-2/3 flex-1" />
+                        <KlySkeleton Class="h-full flex-1" />
+                    </div>
+                }
+                else if (Skeleton == DashboardSkeletonKind.Paired)
+                {
+                    <div class="flex h-32 items-end gap-4">
+                        <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
+                            <KlySkeleton Class="h-2/3 flex-1" />
+                            <KlySkeleton Class="h-1/2 flex-1" />
+                        </div>
+                        <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
+                            <KlySkeleton Class="h-full flex-1" />
+                            <KlySkeleton Class="h-3/4 flex-1" />
+                        </div>
+                        <div class="flex h-full flex-1 items-end gap-1" data-slot="dashboard-skeleton-pair">
+                            <KlySkeleton Class="h-1/2 flex-1" />
+                            <KlySkeleton Class="h-2/3 flex-1" />
+                        </div>
+                    </div>
+                }
+                else if (Skeleton == DashboardSkeletonKind.Stack)
+                {
+                    <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
+                        <KlySkeleton Class="h-full w-1/2" />
+                        <KlySkeleton Class="h-full w-1/4" />
+                        <KlySkeleton Class="h-full w-1/6" />
+                    </div>
+                    <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
+                        <KlySkeleton Class="h-full w-2/5" />
+                        <KlySkeleton Class="h-full w-1/3" />
+                        <KlySkeleton Class="h-full w-1/5" />
+                    </div>
+                    <div class="flex h-4 w-full gap-px" data-slot="dashboard-skeleton-stack">
+                        <KlySkeleton Class="h-full w-1/3" />
+                        <KlySkeleton Class="h-full w-1/3" />
+                        <KlySkeleton Class="h-full w-1/4" />
+                    </div>
+                }
+                else
+                {
+                    <KlySkeleton Class="h-4 w-3/4" />
+                    <KlySkeleton Class="h-4 w-full" />
+                    <KlySkeleton Class="h-4 w-2/3" />
+                }
+            </div>
+            break;
+
+        case DashboardBlockPhase.Error:
+            <div class="flex flex-col items-start gap-2 rounded-(--klyroo-radius) border border-(--klyroo-error)/30 bg-(--klyroo-error)/10 p-3 text-xs"
+                 role="alert" data-slot="dashboard-error">
+                <p class="m-0 font-semibold text-(--klyroo-error-text)">@Texts.ErrorTitle</p>
+                <p class="m-0 text-(--klyroo-text-muted)">@(Source?.Error ?? Texts.ErrorMessage)</p>
+                @if (Source is not null)
+                {
+                    <button type="button"
+                            class="rounded-(--klyroo-radius) bg-(--klyroo-bg) px-2.5 py-1 font-semibold text-(--klyroo-text-highlighted) shadow-2xs hover:bg-(--klyroo-bg-muted)"
+                            data-slot="dashboard-retry"
+                            @onclick="Source.RefreshAsync">
+                        @Texts.Retry
+                    </button>
+                }
+            </div>
+            break;
+
+        case DashboardBlockPhase.Empty:
+            <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--klyroo-text-muted)" data-slot="dashboard-empty">
+                <p class="m-0 font-semibold text-(--klyroo-text-highlighted)">@(EmptyTitle ?? Texts.NoData)</p>
+                @if (!string.IsNullOrEmpty(EmptyDescription))
+                {
+                    <p class="m-0">@EmptyDescription</p>
+                }
+            </div>
+            break;
+
+        case DashboardBlockPhase.Content:
+            @if (_showingTable && Tabulate is not null)
+            {
+                var table = Tabulate();
+                <div class="overflow-x-auto" data-slot="dashboard-data-table">
+                    <table class="min-w-full text-xs">
+                        <thead class="border-b border-(--klyroo-border) font-semibold text-(--klyroo-text-muted)">
+                            <tr>
+                                @foreach (var col in table.Columns)
+                                {
+                                    <th scope="col" class="px-2.5 py-1.5 @(col.Numeric ? "text-end" : "text-start")">@col.Label</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-(--klyroo-border)">
+                            @foreach (var row in table.Rows)
+                            {
+                                <tr>
+                                    @foreach (var col in table.Columns)
+                                    {
+                                        row.TryGetValue(col.Key, out var val);
+                                        <td class="px-2.5 py-1.5 @(col.Numeric ? "text-end tabular-nums" : "text-start")">@(val ?? DashboardFormat.MissingValue)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                @ChildContent
+            }
+            break;
+    }
+        </text>;
 
     private bool EffectiveMenu => Menu ?? ParentGrid?.Menu ?? false;
     private bool EffectiveFreshness => Freshness ?? ParentGrid?.Freshness ?? false;
@@ -325,8 +361,7 @@
             var surface = !Card ? ""
                 : isPanel ? "bg-(--klyroo-bg)"
                 : "rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg) shadow-2xs";
-            var expandCls = _expanded ? "fixed inset-4 z-50 overflow-auto shadow-2xl" : "relative flex min-w-0 flex-col overflow-hidden";
-            return $"{expandCls} {surface} {Class}".Trim();
+            return $"relative flex min-w-0 flex-col overflow-hidden {surface} {Class}".Trim();
         }
     }
 

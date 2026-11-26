@@ -82,7 +82,7 @@ Without a `Source` the card shows its content (or the empty state) immediately. 
 
 The source drives the state only. A block does not read `Data` from it: you pass the values through the block parameters. That costs a little repetition (`Source="_summary" Value="_summary.Data?.Orders"`) and buys flexibility: one source can feed several blocks, and a block can show data from anywhere.
 
-Blocks sit on a grid of 12 columns by default (`KlyDashboardGrid.Columns`) and take a `Span`, clamped between 1 and the column count. The grid's `Variant` is `cards` (separate cards) or `panels` (one bordered panel with dividers). The grid also supplies the defaults of `Menu` (table, CSV and expand buttons) and `Freshness` (an `Updated ... ago` footer) to the blocks inside it.
+Blocks sit on a grid of 12 columns by default (`KlyDashboardGrid.Columns`) and take a `Span`, clamped between 1 and the column count. The grid's `Variant` is `cards` (separate cards) or `panels` (one bordered panel with dividers). The grid also supplies the defaults of `Menu` (table, CSV and expand buttons) and `Freshness` (an `Updated ... ago` footer) to the blocks inside it. The expand button opens the block in a modal dialog (`KlyModal` of Klyroo.UI), so it is not drawn over the page by CSS: the page behind is inert, the focus stays in the dialog, Escape, the close button and a click on the backdrop close it, and the focus returns to the button. The block is drawn once, in the dialog while it is open.
 
 Several parameters are strings rather than enums: `Variant`, `Type`, `Order`, `Emphasis`, `CompareMode`, `Totals` and the column `Type`. This keeps markup short, but an unknown value is silently treated as the default, so check spelling when something does not change.
 
