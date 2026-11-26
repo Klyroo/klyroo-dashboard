@@ -840,7 +840,7 @@ public static class DashboardFormat
         return string.IsNullOrEmpty(slug) ? $"dashboard.{extension}" : $"{slug}.{extension}";
     }
 
-    /// <summary>Serializes a table to CSV. The text starts with a UTF-8 byte order mark and uses <c>;</c> as delimiter when the culture has a comma as decimal separator, <c>,</c> otherwise. Headers and non-numeric cells are quoted. Cells of numeric columns are written as they are, so they must not contain the delimiter.</summary>
+    /// <summary>Serializes a table to CSV. The text starts with a UTF-8 byte order mark and uses <c>;</c> as delimiter when the culture has a comma as decimal separator, <c>,</c> otherwise. Headers and non-numeric cells are quoted. Cells of numeric columns are written as they are unless they contain the delimiter, a quote or a line break, in which case they are quoted too.</summary>
     /// <param name="table">The table to export.</param>
     /// <param name="culture">The culture that picks the delimiter. The invariant culture when <see langword="null"/>.</param>
     /// <returns>The CSV text.</returns>
@@ -860,12 +860,15 @@ public static class DashboardFormat
             foreach (var col in table.Columns)
             {
                 row.TryGetValue(col.Key, out var val);
-                cells.Add(val is null ? "" : col.Numeric ? val : QuoteCsv(val));
+                cells.Add(val is null ? "" : col.Numeric && !NeedsQuoting(val, delimiter) ? val : QuoteCsv(val));
             }
             sb.Append(string.Join(delimiter, cells)).Append("\r\n");
         }
         return sb.ToString();
     }
+
+    private static bool NeedsQuoting(string text, char delimiter) =>
+        text.Contains(delimiter) || text.AsSpan().IndexOfAny('"', '\r', '\n') >= 0;
 
     private static string QuoteCsv(string text) =>
         $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";

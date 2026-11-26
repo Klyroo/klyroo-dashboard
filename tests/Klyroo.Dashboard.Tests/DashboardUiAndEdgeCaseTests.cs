@@ -50,6 +50,20 @@ public sealed class DashboardUiAndEdgeCaseTests : BunitContext
     }
 
     [Fact]
+    public void DashboardFormat_ExportCsv_quotes_numeric_cells_that_contain_the_delimiter()
+    {
+        var table = new DashboardDataTable(
+            [new("label", "Label"), new("val", "Value", Numeric: true)],
+            [new Dictionary<string, string?> { ["label"] = "Revenue", ["val"] = "1,234.5" }]);
+
+        var enCsv = DashboardFormat.ExportCsv(table, CultureInfo.GetCultureInfo("en-US"));
+        Assert.EndsWith("\"Revenue\",\"1,234.5\"\r\n", enCsv);
+
+        var frCsv = DashboardFormat.ExportCsv(table, CultureInfo.GetCultureInfo("fr-FR"));
+        Assert.EndsWith("\"Revenue\";1,234.5\r\n", frCsv);
+    }
+
+    [Fact]
     public void DashboardFormat_ResolveComparisonRange_handles_None_Previous_and_Year()
     {
         var range = (new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 3, 31, 0, 0, 0, TimeSpan.Zero));

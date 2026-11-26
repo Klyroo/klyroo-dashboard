@@ -20,7 +20,7 @@ Number, delta, relative-time, comparison-range and CSV helpers. Numbers use the 
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `static ExportCsv(DashboardDataTable table, CultureInfo? culture = null)` | `string` | Serializes a table to CSV. The text starts with a UTF-8 byte order mark and uses `;` as delimiter when the culture has a comma as decimal separator, `,` otherwise. Headers and non-numeric cells are quoted. Cells of numeric columns are written as they are, so they must not contain the delimiter. |
+| `static ExportCsv(DashboardDataTable table, CultureInfo? culture = null)` | `string` | Serializes a table to CSV. The text starts with a UTF-8 byte order mark and uses `;` as delimiter when the culture has a comma as decimal separator, `,` otherwise. Headers and non-numeric cells are quoted. Cells of numeric columns are written as they are unless they contain the delimiter, a quote or a line break, in which case they are quoted too. |
 | `static Format(double? value, DashboardFormatPreset preset = Number, CultureInfo? culture = null)` | `string` | Formats a number with a preset. A `null`, `NaN` or infinite value gives `DashboardFormat.MissingValue`. |
 | `static FormatCompact(double? value, CultureInfo? culture = null)` | `string` | Formats a number with the `K`, `M` and `B` suffixes and at most one decimal. |
 | `static FormatCurrency(double? value, string currencySymbol = "€", CultureInfo? culture = null)` | `string` | Formats an amount with the currency symbol in front and at most two decimals. The symbol position does not follow the culture. |

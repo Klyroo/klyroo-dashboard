@@ -30,10 +30,6 @@ They only render when the controller has at least two enabled views and `ShowTab
 
 The button passes the CSV text to `KlyDashboardCard.OnCsvExported`, and only `KlyDashboardCard` has that parameter. The ready-made blocks (`KlyDashboardStats`, `KlyDashboardTable` and the others) do not expose it, so their button has no handler. Build the block on `KlyDashboardCard` as shown in [Export a block to CSV](guides.md#export-a-block-to-csv). Even then the card does not start a download: your handler receives the text and saves it.
 
-**Numbers shift into the wrong column in an exported CSV**
-
-`DashboardFormat.ExportCsv` quotes headers and text cells but writes the cells of `Numeric` columns as they are. A value formatted with group separators, such as `1,234.5`, contains the delimiter when the delimiter is a comma. Put unformatted numbers in `Numeric` columns, or leave the column non-numeric so it is quoted.
-
 **The Error message shows an internal exception text**
 
 A card shows `Source.Error`, which is the message of the exception thrown by the loader. Catch exceptions in the loader and throw one whose message is safe for users, as in [Handle failures and skip queries that cannot run](guides.md#handle-failures-and-skip-queries-that-cannot-run).

@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Fixed
+
+- `DashboardFormat.ExportCsv` wrote numeric cells unquoted even when they contained the delimiter, so a formatted `1,234.5` split into two columns. Such cells are now quoted.
+
 ## [0.1.0-preview.1] - 2026-11-24
 
 ### Added

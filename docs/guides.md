@@ -291,7 +291,7 @@ The download itself is plain browser code. Add it once, for example in `App.razo
 </script>
 ```
 
-Three details of the CSV matter. The text starts with a UTF-8 byte order mark so spreadsheets read accents correctly. Headers and text cells are quoted, but cells of a `Numeric` column are written as they are, so put numbers without group separators in them: a formatted `1,234.5` in a comma-delimited file splits into two columns. And the delimiter is `;` when the culture uses a decimal comma and `,` otherwise. The card uses the Klyroo.UI format culture for that choice. If you need to control it, skip the menu button and call `DashboardFormat.ExportCsv(table, culture)` yourself.
+Three details of the CSV matter. The text starts with a UTF-8 byte order mark so spreadsheets read accents correctly. Headers and text cells are quoted, and cells of a `Numeric` column are written bare so spreadsheets read them as numbers, unless they contain the delimiter, as a formatted `1,234.5` does in a comma-delimited file, in which case they are quoted. And the delimiter is `;` when the culture uses a decimal comma and `,` otherwise. The card uses the Klyroo.UI format culture for that choice. If you need to control it, skip the menu button and call `DashboardFormat.ExportCsv(table, culture)` yourself.
 
 ## Refresh on a timer
 
