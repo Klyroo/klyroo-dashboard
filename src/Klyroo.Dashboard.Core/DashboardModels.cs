@@ -828,7 +828,7 @@ public sealed class DashboardViewMeta
 /// (<c>DashboardQueryStage.Essential</c>, <c>DashboardQueryStage.Background</c>, <c>DashboardQueryStage.Deferred</c>)
 /// and refresh. It has no UI dependency. Dispose it with the page that owns it: that stops <see cref="AutoRefresh"/> and cancels the loads in progress.
 /// </summary>
-public sealed class DashboardController : IDisposable
+public sealed partial class DashboardController : IDisposable
 {
     private readonly List<DashboardFilterControl> _controls = [];
     private readonly List<DashboardViewMeta> _views = [];

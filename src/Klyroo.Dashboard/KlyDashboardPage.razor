@@ -1,6 +1,8 @@
 @namespace Klyroo.Dashboard
 @inherits KlyComponentBase
 @implements IDisposable
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager Nav
 
 <div class="@RootClass" data-slot="dashboard-page" @attributes="AdditionalAttributes">
     @* Page header *@
@@ -253,6 +255,18 @@
     [Parameter] public bool ShowFilters { get; set; } = true;
     /// <summary>Draws each enabled filter whose <c>Kind</c> is <c>Custom</c> in the toolbar. It receives the filter: show its selection from <c>Values</c> and change it with <c>Value</c>, <c>SetValues</c> or <c>Reset</c>. Without it the toolbar leaves those filters out.</summary>
     [Parameter] public RenderFragment<DashboardFilterControl>? CustomFilter { get; set; }
+    /// <summary>
+    /// Keeps the filters in the URL: the page applies the query string of the current URL to the filters of <see cref="Dashboard"/> once (<c>DashboardController.ApplyQuery</c>,
+    /// also in static SSR and in a prerender, from <c>NavigationManager.Uri</c>), writes every later change back with <c>DashboardController.MergeQuery</c> and a
+    /// replacing navigation (no history entry per change, other query parameters kept), and applies the query again when a navigation to the same page changes it.
+    /// Nothing is written in a static render, which cannot navigate. A parent initializes before this child, so a page that loads its data in <c>OnInitializedAsync</c>
+    /// should also call <c>Dashboard.ApplyQuery</c> there, before <c>DashboardPersistence.Attach</c> and <c>LoadAsync</c>: the first load then uses the filters of the URL, and the
+    /// fingerprint of the persisted data matches between the prerender and the interactive render. The application is idempotent, so doing it in both places is harmless.
+    /// Defaults to <see langword="false"/>.
+    /// </summary>
+    [Parameter] public bool SyncUrl { get; set; }
+    /// <summary>Put before the key of every filter in the URL (<c>sales.</c>), so that two dashboards on one page can share a query string. Only used with <see cref="SyncUrl"/>.</summary>
+    [Parameter] public string? UrlPrefix { get; set; }
     /// <summary>Keeps the toolbar of tabs and filters at the top of the page while the body scrolls. Defaults to <see langword="true"/>.</summary>
     [Parameter] public bool Sticky { get; set; } = true;
     /// <summary>Content placed before the refresh button, for example your own buttons.</summary>
@@ -261,6 +275,10 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private DashboardController? _subscribed;
+    private DashboardController? _urlApplied;
+    private string? _urlPath;
+    private bool _locationSubscribed;
+    private readonly HashSet<string> _written = new(StringComparer.Ordinal);
 
     private IReadOnlyList<DashboardFilterControl> VisibleControls =>
         Dashboard?.Controls.Where(c => c.Enabled && !c.Headless && (c.Kind != DashboardFilterKind.Custom || CustomFilter is not null)).ToList() ?? [];
@@ -270,6 +288,19 @@
 
     protected override void OnParametersSet()
     {
+        // Before the page subscribes: the filters of the URL are the starting state, not a change to write back.
+        if (SyncUrl && Dashboard is not null && !ReferenceEquals(_urlApplied, Dashboard))
+        {
+            _urlApplied = Dashboard;
+            var uri = new Uri(Nav.Uri);
+            _urlPath = uri.GetLeftPart(UriPartial.Path);
+            Dashboard.ApplyQuery(uri.Query, UrlPrefix);
+        }
+        if (SyncUrl && !_locationSubscribed)
+        {
+            _locationSubscribed = true;
+            Nav.LocationChanged += OnLocationChanged;
+        }
         if (!ReferenceEquals(_subscribed, Dashboard))
         {
             if (_subscribed is not null) _subscribed.Changed -= OnDashboardChanged;
@@ -278,7 +309,35 @@
         }
     }
 
-    private void OnDashboardChanged() => _ = InvokeAsync(StateHasChanged);
+    private void OnDashboardChanged() => _ = InvokeAsync(() =>
+    {
+        WriteUrl();
+        StateHasChanged();
+    });
+
+    // A static render cannot navigate; the URL is only written once the page is interactive. The replacement keeps one history entry
+    // for the page however many filters the user changes, and a URL that already holds the state is left alone.
+    private void WriteUrl()
+    {
+        if (!SyncUrl || Dashboard is null || !ReferenceEquals(_urlApplied, Dashboard) || !RendererInfo.IsInteractive) return;
+        var uri = new Uri(Nav.Uri);
+        var merged = Dashboard.MergeQuery(uri.Query, UrlPrefix);
+        if (string.Equals(merged, uri.Query.TrimStart('?'), StringComparison.Ordinal)) return;
+        var target = uri.GetLeftPart(UriPartial.Path) + (merged.Length > 0 ? "?" + merged : "") + uri.Fragment;
+        _written.Add(new Uri(target).AbsoluteUri);
+        Nav.NavigateTo(target, forceLoad: false, replace: true);
+    }
+
+    // A navigation to this page with another query (a link with ?region=EMEA) sets the filters. The ones this page wrote itself are
+    // skipped, since a late event for an older write would undo a newer change, and so is any navigation to another page.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!SyncUrl || Dashboard is null) return;
+        var uri = new Uri(e.Location);
+        if (_written.Remove(uri.AbsoluteUri)) return;
+        if (!string.Equals(uri.GetLeftPart(UriPartial.Path), _urlPath, StringComparison.Ordinal)) return;
+        _ = InvokeAsync(() => Dashboard.ApplyQuery(uri.Query, UrlPrefix));
+    }
 
     private void ToggleFilterMenu(DashboardFilterControl target)
     {
@@ -365,9 +424,13 @@
         }
     }
 
-    /// <summary>Unsubscribes the page from the controller.</summary>
+    /// <summary>Unsubscribes the page from the controller and from the navigation events.</summary>
     public void Dispose()
     {
+        if (_locationSubscribed)
+        {
+            Nav.LocationChanged -= OnLocationChanged;
+        }
         if (_subscribed is not null)
         {
             _subscribed.Changed -= OnDashboardChanged;

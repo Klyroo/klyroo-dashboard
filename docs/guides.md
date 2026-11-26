@@ -12,6 +12,7 @@ Task-oriented recipes. They assume the setup from [Getting started](getting-star
 - [Export a block to CSV](#export-a-block-to-csv)
 - [Refresh on a timer](#refresh-on-a-timer)
 - [Hand the prerendered data to the interactive render](#hand-the-prerendered-data-to-the-interactive-render)
+- [Keep the filters in the URL](#keep-the-filters-in-the-url)
 - [Drill down from a block](#drill-down-from-a-block)
 - [Translate or change the built-in texts](#translate-or-change-the-built-in-texts)
 - [Test a dashboard](#test-a-dashboard)
@@ -413,8 +414,60 @@ A few rules:
 - A resource whose custom JSON converter throws is simply not handed over: the error is logged and the other resources, and the other libraries of the page, keep their state.
 - Each dashboard of a page needs its own controller key. Two controllers with one key attached at once throw.
 - A .NET MAUI Blazor Hybrid app has no prerender: `Attach` does nothing there, and `LoadAsync` is `RefreshAsync`.
+- Filters that come from the URL are applied before `Attach`: see [Keep the filters in the URL](#keep-the-filters-in-the-url).
 
 `IDashboardPersistentSource` (`ExportJson`, `RestoreJson`) is the contract behind it, in `Klyroo.Dashboard.Core`, so any other host can hand data between two runs the same way.
+
+## Keep the filters in the URL
+
+Goal: a dashboard whose filters can be bookmarked, shared and survive a reload, including in a prerendered or static page.
+
+`DashboardController.ToQuery()` writes the filters that differ from their defaults as a query string (`region=EMEA&region=APAC&period=2026-01-01&period=2026-01-31`) and `ApplyQuery(query)` reads one back. Both are pure and deterministic: a filter is written as one `key=value` pair per value, in the order of the filters and of their values, percent-encoded, and the controller touches nothing else. Filters at their default values, disabled filters and headless filters are left out of the query and cannot be set from it. `ApplyQuery` is strict: a value that does not fit its filter (a number that is not a number, a date that is not `yyyy-MM-dd`, a boolean that is not `true` or `false`, an option that is not among the loaded options, a text over 512 characters) is ignored, and a filter that is not in the URL returns to its default, so the URL always gives the same state. A filter is only touched when its selection changes, so applying the query of the current state raises nothing.
+
+Add `SyncUrl` to `KlyDashboardPage` to do both for you: the page applies the query of the current URL to the filters (also in static SSR and in a prerender, from `NavigationManager`), writes every change back with a replacing navigation, so the history does not fill with one entry per filter, keeps the other parameters of the URL (`MergeQuery`), and applies the query again when a link navigates to the same page with another one. Nothing is written in a static render, which cannot navigate.
+
+```razor
+@page "/sales"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject NavigationManager Nav
+@inject DashboardPersistence Persistence
+
+<KlyDashboardPage Dashboard="_dashboard" Title="Sales" SyncUrl="true">
+    ...
+</KlyDashboardPage>
+
+@code {
+    private readonly DashboardController _dashboard = new("sales");
+    private IDisposable? _persistence;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var region = _dashboard.AddFilter(new DashboardFilterControl("region", "Region", items: [new("EMEA", "EMEA"), new("APAC", "APAC")]));
+        _dashboard.RegisterResource(new DashboardResource<Summary>(
+            "summary", ct => Sales.GetSummaryAsync(region.Value, ct), json: SalesJson.Default.Summary));
+
+        _dashboard.ApplyQuery(new Uri(Nav.Uri).Query);                       // 1. the URL sets the filters
+        _persistence = Persistence.Attach(_dashboard, AssignedRenderMode);   // 2. the fingerprint is read now
+        await _dashboard.LoadAsync();                                        // 3. the first load uses them
+        region.ChangedEvent += () => _ = _dashboard.RefreshAsync();          // 4. only then, reload on a change
+    }
+
+    public void Dispose()
+    {
+        _persistence?.Dispose();
+        _dashboard.Dispose();
+    }
+}
+```
+
+**The order matters.** A parent initializes before its children, so `KlyDashboardPage` applies the URL after your `OnInitializedAsync` has already loaded the data. Apply the query yourself, as in step 1, and `SyncUrl` then finds nothing to change (applying is idempotent). Do it before:
+
+- `DashboardPersistence.Attach`, which stores `FilterFingerprint()` with the handed-over data. If the prerender loaded with the filters of the URL and the interactive render started from the defaults, the fingerprints differ, the data is refused and every resource loads again. Both renders read the same URL, so applying it first makes them match.
+- `LoadAsync`, so the first load uses the filters of the URL and not the defaults.
+- Your `ChangedEvent` subscriptions, otherwise applying the URL starts a refresh of its own.
+
+Two dashboards on one page share one query string: give each page a `UrlPrefix` (`SyncUrl="true" UrlPrefix="sales."`) and pass the same prefix to `ToQuery`, `ApplyQuery` and `MergeQuery`.
 
 ## Drill down from a block
 
