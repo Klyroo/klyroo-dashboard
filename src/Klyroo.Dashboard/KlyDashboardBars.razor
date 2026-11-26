@@ -6,7 +6,7 @@
                  IsEmpty="@(Items is not { Count: > 0 })"
                  Skeleton="@(IsFunnel ? DashboardSkeletonKind.Funnel : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
-    <div class="flex flex-col gap-2.5" data-slot="dashboard-bars" data-variant="@Variant">
+    <div class="flex flex-col gap-2.5" data-slot="dashboard-bars" data-variant="@Variant.ToString().ToLowerInvariant()">
         @if (Items is { Count: > 0 })
         {
             var visible = Limit is > 0 ? Items.Take(Limit.Value).ToList() : Items;
@@ -44,10 +44,10 @@
     [Parameter] public double? Max { get; set; }
     /// <summary>The maximum number of bars shown. The table view and the CSV export hold the same bars.</summary>
     [Parameter] public int? Limit { get; set; }
-    /// <summary><c>bars</c> (the default), or <c>funnel</c>: every bar is scaled to the first one and shows its share of the previous step.</summary>
-    [Parameter] public string Variant { get; set; } = "bars";
-    /// <summary><c>all</c> (the default) colors every bar. <c>first</c> colors the first bar and mutes the others.</summary>
-    [Parameter] public string Emphasis { get; set; } = "all";
+    /// <summary><see cref="DashboardBarsVariant.Bars"/> (the default), or <see cref="DashboardBarsVariant.Funnel"/>: every bar is scaled to the first one and shows its share of the previous step.</summary>
+    [Parameter] public DashboardBarsVariant Variant { get; set; } = DashboardBarsVariant.Bars;
+    /// <summary><see cref="DashboardBarsEmphasis.All"/> (the default) colors every bar. <see cref="DashboardBarsEmphasis.First"/> colors the first bar and mutes the others.</summary>
+    [Parameter] public DashboardBarsEmphasis Emphasis { get; set; } = DashboardBarsEmphasis.All;
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 6.</summary>
     [Parameter] public int Span { get; set; } = 6;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
@@ -60,7 +60,7 @@
     /// <summary>Called with the bar when the user picks it. Each bar is then a button, so the choice works with the keyboard and with a screen reader, and <c>aria-pressed</c> follows <c>Selected</c>. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
     [Parameter] public EventCallback<DashboardBarItem> OnSelect { get; set; }
 
-    private bool IsFunnel => string.Equals(Variant, "funnel", StringComparison.OrdinalIgnoreCase);
+    private bool IsFunnel => Variant == DashboardBarsVariant.Funnel;
 
     // The row is a button when OnSelect is handled, so the keyboard reaches it; its content is spans, which a button may hold.
     private RenderFragment RenderRow(DashboardBarItem item, int idx, double lo, double hi, string? funnelNote) => __builder =>
@@ -87,7 +87,7 @@
                 </span>
             </span>
             <span class="relative block h-2 w-full overflow-hidden rounded-full bg-(--klyroo-bg-muted)">
-                <span class="absolute inset-y-0 rounded-full @(Emphasis == "first" && idx > 0 ? "bg-(--klyroo-text-muted)/50" : "bg-(--klyroo-primary)")"
+                <span class="absolute inset-y-0 rounded-full @(Emphasis == DashboardBarsEmphasis.First && idx > 0 ? "bg-(--klyroo-text-muted)/50" : "bg-(--klyroo-primary)")"
                       style="@($"left:{DashboardBarGeometry.Percent(left)}%;width:{DashboardBarGeometry.Percent(width)}%")"
                       data-slot="dashboard-bar-fill"></span>
                 @if (lo < 0)

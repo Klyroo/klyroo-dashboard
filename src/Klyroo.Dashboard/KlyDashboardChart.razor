@@ -4,9 +4,9 @@
 
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Categories is not { Count: > 0 } || Series is not { Count: > 0 })"
-                 Skeleton="@(ChartType == "donut" ? DashboardSkeletonKind.Donut : ChartType is "line" or "area" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
+                 Skeleton="@(Type == DashboardChartType.Donut ? DashboardSkeletonKind.Donut : Type is DashboardChartType.Line or DashboardChartType.Area ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
-    <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@ChartType">
+    <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@TypeName">
         @if (Categories is { Count: > 0 } && Series is { Count: > 0 })
         {
             @if (UsesCompactDrawing)
@@ -24,14 +24,14 @@
                 @RenderSelection(Categories, Series)
             }
 
-            @if (!string.IsNullOrEmpty(Totals))
+            @if (Totals != DashboardChartTotals.None)
             {
                 <div class="flex flex-wrap items-center justify-between gap-3 border-t border-(--klyroo-border) pt-2 text-xs" data-slot="dashboard-chart-totals">
                     @foreach (var s in Series.Where(s => !s.IsComparison))
                     {
                         // A NaN or infinite value is a gap: it is in neither the sum nor the average.
                         var finite = s.Values.Where(double.IsFinite).ToList();
-                        double? totalVal = string.Equals(Totals, "average", StringComparison.OrdinalIgnoreCase)
+                        double? totalVal = Totals == DashboardChartTotals.Average
                             ? (finite.Count > 0 ? finite.Average() : null)
                             : finite.Sum();
                         <div class="flex items-baseline gap-1.5" data-slot="dashboard-chart-total">
@@ -59,8 +59,8 @@
     [Parameter] public string? Title { get; set; }
     /// <summary>A secondary line under the title.</summary>
     [Parameter] public string? Subtitle { get; set; }
-    /// <summary>The chart type: <c>bar</c> (the default) draws one bar per series in each category, side by side; <c>line</c> draws every series as a line; <c>area</c> draws every series as a line with the area under it filled; <c>donut</c> draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. The drawing is <c>KlyChart</c> of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a <c>bar</c> chart, a series whose <c>Type</c> is <c>line</c> is drawn as a line over the bars, but <c>KlyChart</c> cannot mix the two, so such a chart (and a chart with <see cref="ShowLabels"/>) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and <see cref="Stacked"/> and <see cref="Horizontal"/> do not apply. The type also picks the loading skeleton.</summary>
-    [Parameter] public string Type { get; set; } = "bar";
+    /// <summary>The chart type: <see cref="DashboardChartType.Bar"/> (the default) draws one bar per series in each category, side by side; <see cref="DashboardChartType.Line"/> draws every series as a line; <see cref="DashboardChartType.Area"/> draws every series as a line with the area under it filled; <see cref="DashboardChartType.Donut"/> draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. The drawing is <c>KlyChart</c> of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a bar chart, a series whose <c>Type</c> is <see cref="DashboardChartSeriesType.Line"/> is drawn as a line over the bars, but <c>KlyChart</c> cannot mix the two, so such a chart (and a chart with <see cref="ShowLabels"/>) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and <see cref="Stacked"/> and <see cref="Horizontal"/> do not apply. The type also picks the loading skeleton.</summary>
+    [Parameter] public DashboardChartType Type { get; set; } = DashboardChartType.Bar;
     /// <summary>The labels of the horizontal axis, one per category, or the slices of a donut.</summary>
     [Parameter] public IReadOnlyList<string>? Categories { get; set; }
     /// <summary>The data series, all drawn (a donut draws the first one that is not a comparison) and all in the table view. Each series takes the next chart color of Klyroo.UI (<c>--klyroo-chart-1</c> to <c>--klyroo-chart-6</c>, then neutral); comparison series are muted.</summary>
@@ -73,8 +73,8 @@
     [Parameter] public bool ShowLegend { get; set; } = true;
     /// <summary>Shows the formatted value above each bar (below a negative one). Lines, areas and donuts show their values in tooltips. It switches the chart to the compact drawing described at <see cref="Type"/>.</summary>
     [Parameter] public bool ShowLabels { get; set; }
-    /// <summary><c>average</c> shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty.</summary>
-    [Parameter] public string? Totals { get; set; }
+    /// <summary>The totals row: <see cref="DashboardChartTotals.Average"/> shows the average of each series, <see cref="DashboardChartTotals.Sum"/> the sum. Comparison series are left out. <see cref="DashboardChartTotals.None"/>, the default, shows nothing.</summary>
+    [Parameter] public DashboardChartTotals Totals { get; set; } = DashboardChartTotals.None;
     /// <summary>Stacks the series of a <c>bar</c> or <c>area</c> chart instead of drawing them side by side or over one another. Comparison series are stacked too, so leave them out of a stacked chart.</summary>
     [Parameter] public bool Stacked { get; set; }
     /// <summary>Draws the bars of a <c>bar</c> chart along the horizontal axis, with the categories on the vertical one.</summary>
@@ -90,20 +90,17 @@
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
 
-    private string ChartType =>
-        string.Equals(Type, "line", StringComparison.OrdinalIgnoreCase) ? "line"
-        : string.Equals(Type, "area", StringComparison.OrdinalIgnoreCase) ? "area"
-        : string.Equals(Type, "donut", StringComparison.OrdinalIgnoreCase) ? "donut"
-        : "bar";
+    // The value of data-type: bar, line, area or donut.
+    private string TypeName => Type.ToString().ToLowerInvariant();
 
     private static bool IsLineSeries(DashboardChartSeries series) =>
-        string.Equals(series.Type, "line", StringComparison.OrdinalIgnoreCase);
+        series.Type == DashboardChartSeriesType.Line;
 
-    private bool DrawsAsLine(DashboardChartSeries series) => ChartType == "line" || IsLineSeries(series);
+    private bool DrawsAsLine(DashboardChartSeries series) => Type == DashboardChartType.Line || IsLineSeries(series);
 
     // KlyChart draws one kind per chart: bars with lines over them, and value labels above bars, keep the compact drawing.
     private bool UsesCompactDrawing =>
-        ChartType == "bar" && Series is { Count: > 0 } && (ShowLabels || (Series.Any(IsLineSeries) && Series.Any(s => !IsLineSeries(s))));
+        Type == DashboardChartType.Bar && Series is { Count: > 0 } && (ShowLabels || (Series.Any(IsLineSeries) && Series.Any(s => !IsLineSeries(s))));
 
     private static string ColorOf(int index) => Palette[index % Palette.Length];
 
@@ -122,18 +119,18 @@
 
     private RenderFragment RenderChart(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
     {
-        var donut = ChartType == "donut";
+        var donut = Type == DashboardChartType.Donut;
         var shown = donut ? series.Where(s => !s.IsComparison).Take(1).ToList() : series.ToList();
         if (shown.Count == 0)
         {
             return;
         }
         // A bar chart whose series are all lines is a line chart.
-        var kind = ChartType switch
+        var kind = Type switch
         {
-            "line" => KlyChartType.Line,
-            "area" => KlyChartType.Area,
-            "donut" => KlyChartType.Donut,
+            DashboardChartType.Line => KlyChartType.Line,
+            DashboardChartType.Area => KlyChartType.Area,
+            DashboardChartType.Donut => KlyChartType.Donut,
             _ => shown.All(IsLineSeries) ? KlyChartType.Line : KlyChartType.Bar,
         };
         var rows = Enumerable.Range(0, categories.Count).ToList();
@@ -184,7 +181,7 @@
     // One button per data point of the compact drawing: the keyboard and a screen reader reach what the pointer reaches in the drawing.
     private RenderFragment RenderSelection(IReadOnlyList<string> categories, IReadOnlyList<DashboardChartSeries> series) => __builder =>
     {
-        var donut = ChartType == "donut";
+        var donut = Type == DashboardChartType.Donut;
         var shown = series.Where(s => !s.IsComparison).Take(donut ? 1 : int.MaxValue).ToList();
         <div class="flex flex-wrap gap-1.5 text-xs" role="group" aria-label="@Texts.SelectPoint" data-slot="dashboard-chart-select">
             @for (var i = 0; i < categories.Count; i++)

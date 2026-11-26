@@ -1638,17 +1638,113 @@ public sealed record DashboardFeedItem(
     string? Description = null,
     string? AvatarText = null);
 
+/// <summary>How one <see cref="DashboardChartSeries"/> is drawn in a <see cref="DashboardChartType.Bar"/> chart.</summary>
+public enum DashboardChartSeriesType
+{
+    /// <summary>Bars, side by side with the other bar series of each category.</summary>
+    Bar,
+    /// <summary>A line. In a bar chart it is drawn over the bars.</summary>
+    Line,
+}
+
+/// <summary>The drawing of a <c>KlyDashboardChart</c>.</summary>
+public enum DashboardChartType
+{
+    /// <summary>One bar per series in each category, side by side.</summary>
+    Bar,
+    /// <summary>Every series as a line.</summary>
+    Line,
+    /// <summary>Every series as a line with the area under it filled.</summary>
+    Area,
+    /// <summary>The first series that is not a comparison as a ring of slices, one per category, with the total in the middle.</summary>
+    Donut,
+}
+
+/// <summary>The totals row under a <c>KlyDashboardChart</c>.</summary>
+public enum DashboardChartTotals
+{
+    /// <summary>No totals row.</summary>
+    None,
+    /// <summary>The sum of each series. Comparison series are left out.</summary>
+    Sum,
+    /// <summary>The average of each series. Comparison series are left out.</summary>
+    Average,
+}
+
+/// <summary>The layout of a <c>KlyDashboardStats</c> block.</summary>
+public enum DashboardStatsVariant
+{
+    /// <summary>The metrics side by side with no frame.</summary>
+    Plain,
+    /// <summary>Each metric in a bordered tile.</summary>
+    Tiles,
+}
+
+/// <summary>How <c>KlyDashboardStat</c> computes the delta from its previous value.</summary>
+public enum DashboardCompareMode
+{
+    /// <summary>The percent change from the previous value. Nothing is shown when the previous value is zero.</summary>
+    Change,
+    /// <summary>The raw difference, multiplied by 100 for the <see cref="DashboardFormatPreset.Ratio"/> format.</summary>
+    Difference,
+}
+
+/// <summary>The layout of a <c>KlyDashboardGrid</c>.</summary>
+public enum DashboardGridVariant
+{
+    /// <summary>Separate cards with a gap.</summary>
+    Cards,
+    /// <summary>The cards joined into one bordered panel with thin dividers.</summary>
+    Panels,
+}
+
+/// <summary>The drawing of a <c>KlyDashboardGauge</c>.</summary>
+public enum DashboardGaugeVariant
+{
+    /// <summary>A circular gauge with the value in the middle.</summary>
+    Ring,
+    /// <summary>A horizontal meter with the value above it, the minimum and maximum under it and a marker at the target.</summary>
+    Bar,
+}
+
+/// <summary>The layout of a <c>KlyDashboardBars</c> block.</summary>
+public enum DashboardBarsVariant
+{
+    /// <summary>One bar per item.</summary>
+    Bars,
+    /// <summary>A funnel: every bar is scaled to the first one and shows its share of the previous step.</summary>
+    Funnel,
+}
+
+/// <summary>Which bars of <c>KlyDashboardBars</c> are colored.</summary>
+public enum DashboardBarsEmphasis
+{
+    /// <summary>Every bar is colored.</summary>
+    All,
+    /// <summary>The first bar is colored and the others are muted.</summary>
+    First,
+}
+
+/// <summary>The order of the alerts of <c>KlyDashboardAlerts</c>.</summary>
+public enum DashboardAlertOrder
+{
+    /// <summary>Errors first and successes last.</summary>
+    Severity,
+    /// <summary>The order of the items.</summary>
+    AsGiven,
+}
+
 /// <summary>One series definition for <c>KlyDashboardChart</c>.</summary>
 /// <param name="Key">Identifier of the series, used as the column key in the table view and in the CSV export.</param>
 /// <param name="Label">The name in the legend.</param>
 /// <param name="Values">One value per category.</param>
-/// <param name="Type"><c>bar</c> (the default) or <c>line</c>. In a chart whose <c>Type</c> is <c>bar</c>, a <c>line</c> series is drawn as a line over the bars. A <c>line</c> chart draws every series as a line and a <c>donut</c> chart draws the first series that is not a comparison, so this value only matters in bar charts.</param>
+/// <param name="Type">How the series is drawn. In a chart whose type is <see cref="DashboardChartType.Bar"/>, a <see cref="DashboardChartSeriesType.Line"/> series is drawn as a line over the bars. A <see cref="DashboardChartType.Line"/> chart draws every series as a line and a <see cref="DashboardChartType.Donut"/> chart draws the first series that is not a comparison, so this value only matters in bar charts.</param>
 /// <param name="IsComparison">Marks a comparison series: drawn in a muted color (dashed when it is a line), dashed in the legend, and left out of the totals and of a donut.</param>
 public sealed record DashboardChartSeries(
     string Key,
     string Label,
     IReadOnlyList<double> Values,
-    string Type = "bar",
+    DashboardChartSeriesType Type = DashboardChartSeriesType.Bar,
     bool IsComparison = false);
 
 /// <summary>The data point a user selected in a <c>KlyDashboardChart</c>, as <c>OnSelect</c> receives it.</summary>

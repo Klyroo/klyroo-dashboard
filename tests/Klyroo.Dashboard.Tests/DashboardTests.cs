@@ -137,7 +137,7 @@ public sealed class DashboardTests : BunitContext
         // Funnel bars with step conversion rate and table toggle
         var funnel = Render<KlyDashboardBars>(p => p
             .Add(x => x.Title, "Signup Funnel")
-            .Add(x => x.Variant, "funnel")
+            .Add(x => x.Variant, DashboardBarsVariant.Funnel)
             .Add(x => x.Menu, true)
             .Add(x => x.Items, [
                 new DashboardBarItem("Visited", 1000),

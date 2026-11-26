@@ -93,8 +93,8 @@
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
     /// <summary>A line of text under the value inside the ring, or next to the value in the <c>bar</c> variant.</summary>
     [Parameter] public string? Caption { get; set; }
-    /// <summary><c>ring</c> (the default) draws a circular gauge with the value in the middle. <c>bar</c> draws a horizontal meter with the value above it, the minimum and maximum under it and a marker at <see cref="Target"/>. Any other value, such as the former default <c>arc</c>, draws the ring. The variant drawn is exposed as <c>data-variant</c>.</summary>
-    [Parameter] public string Variant { get; set; } = "ring";
+    /// <summary><see cref="DashboardGaugeVariant.Ring"/> (the default) draws a circular gauge with the value in the middle. <see cref="DashboardGaugeVariant.Bar"/> draws a horizontal meter with the value above it, the minimum and maximum under it and a marker at <see cref="Target"/>. The variant drawn is exposed as <c>data-variant</c>.</summary>
+    [Parameter] public DashboardGaugeVariant Variant { get; set; } = DashboardGaugeVariant.Ring;
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 4.</summary>
     [Parameter] public int Span { get; set; } = 4;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>
@@ -115,7 +115,7 @@
         }
     }
 
-    private bool IsBar => string.Equals(Variant, "bar", StringComparison.OrdinalIgnoreCase);
+    private bool IsBar => Variant == DashboardGaugeVariant.Bar;
 
     private double? TargetShare
     {

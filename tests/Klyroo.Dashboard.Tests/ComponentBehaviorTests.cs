@@ -172,7 +172,7 @@ public sealed class ComponentBehaviorTests : BunitContext
     public void Gauge_bar_variant_draws_a_horizontal_meter_with_a_target_marker()
     {
         var bar = Render<KlyDashboardGauge>(p => p
-            .Add(x => x.Variant, "bar")
+            .Add(x => x.Variant, DashboardGaugeVariant.Bar)
             .Add(x => x.Value, 75)
             .Add(x => x.Target, 90));
 
@@ -257,7 +257,7 @@ public sealed class ComponentBehaviorTests : BunitContext
     {
         var cut = Render<KlyDashboardGauge>(p => p
             .Add(x => x.Value, double.NaN)
-            .Add(x => x.Variant, "bar"));
+            .Add(x => x.Variant, DashboardGaugeVariant.Bar));
 
         Assert.DoesNotContain("NaN", cut.Markup);
     }

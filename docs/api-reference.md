@@ -4,7 +4,7 @@
 
 ## Klyroo.Dashboard.Core
 
-Static classes and extensions (2) · Classes (5) · Records (15) · Interfaces (2) · Enums (9)
+Static classes and extensions (2) · Classes (5) · Records (15) · Interfaces (2) · Enums (19)
 
 ### Static classes and extensions
 
@@ -252,14 +252,14 @@ One series definition for `KlyDashboardChart`.
 
 | Constructor | Description |
 | :--- | :--- |
-| `DashboardChartSeries(string Key, string Label, IReadOnlyList<double> Values, string Type = "bar", bool IsComparison = false)` | One series definition for `KlyDashboardChart`. |
+| `DashboardChartSeries(string Key, string Label, IReadOnlyList<double> Values, DashboardChartSeriesType Type = Bar, bool IsComparison = false)` | One series definition for `KlyDashboardChart`. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `IsComparison` (init) | `bool` | Marks a comparison series: drawn in a muted color (dashed when it is a line), dashed in the legend, and left out of the totals and of a donut. |
 | `Key` (init) | `string` | Identifier of the series, used as the column key in the table view and in the CSV export. |
 | `Label` (init) | `string` | The name in the legend. |
-| `Type` (init) | `string` | `bar` (the default) or `line`. In a chart whose `Type` is `bar`, a `line` series is drawn as a line over the bars. A `line` chart draws every series as a line and a `donut` chart draws the first series that is not a comparison, so this value only matters in bar charts. |
+| `Type` (init) | `DashboardChartSeriesType` | How the series is drawn. In a chart whose type is `DashboardChartType.Bar`, a `DashboardChartSeriesType.Line` series is drawn as a line over the bars. A `DashboardChartType.Line` chart draws every series as a line and a `DashboardChartType.Donut` chart draws the first series that is not a comparison, so this value only matters in bar charts. |
 | `Values` (init) | `IReadOnlyList<double>` | One value per category. |
 
 #### `DashboardDataColumn`
@@ -495,6 +495,17 @@ Common interface implemented by dashboard queries and derived resources.
 
 ### Enums
 
+#### `DashboardAlertOrder`
+
+`Klyroo.Dashboard` · enum
+
+The order of the alerts of `KlyDashboardAlerts`.
+
+| Value | Description |
+| :--- | :--- |
+| `Severity` | Errors first and successes last. |
+| `AsGiven` | The order of the items. |
+
 #### `DashboardAlertSeverity`
 
 `Klyroo.Dashboard` · enum
@@ -507,6 +518,28 @@ Alert severity level for `KlyDashboardAlerts`.
 | `Warning` | Something that needs attention. Shown with the label `Warning`. |
 | `Info` | Information. Shown with the label `Info`. |
 | `Success` | A resolved condition. Shown with the label `Resolved` and sorted last. |
+
+#### `DashboardBarsEmphasis`
+
+`Klyroo.Dashboard` · enum
+
+Which bars of `KlyDashboardBars` are colored.
+
+| Value | Description |
+| :--- | :--- |
+| `All` | Every bar is colored. |
+| `First` | The first bar is colored and the others are muted. |
+
+#### `DashboardBarsVariant`
+
+`Klyroo.Dashboard` · enum
+
+The layout of a `KlyDashboardBars` block.
+
+| Value | Description |
+| :--- | :--- |
+| `Bars` | One bar per item. |
+| `Funnel` | A funnel: every bar is scaled to the first one and shows its share of the previous step. |
 
 #### `DashboardBlockPhase`
 
@@ -521,6 +554,53 @@ Block rendering phase determined by `KlyDashboardCard`.
 | `Error` | The source failed. The card shows the error message and a retry button. |
 | `Empty` | The source is ready, or there is no source, but the block has nothing to show. |
 | `Content` | The block content is rendered. |
+
+#### `DashboardChartSeriesType`
+
+`Klyroo.Dashboard` · enum
+
+How one `DashboardChartSeries` is drawn in a `DashboardChartType.Bar` chart.
+
+| Value | Description |
+| :--- | :--- |
+| `Bar` | Bars, side by side with the other bar series of each category. |
+| `Line` | A line. In a bar chart it is drawn over the bars. |
+
+#### `DashboardChartTotals`
+
+`Klyroo.Dashboard` · enum
+
+The totals row under a `KlyDashboardChart`.
+
+| Value | Description |
+| :--- | :--- |
+| `None` | No totals row. |
+| `Sum` | The sum of each series. Comparison series are left out. |
+| `Average` | The average of each series. Comparison series are left out. |
+
+#### `DashboardChartType`
+
+`Klyroo.Dashboard` · enum
+
+The drawing of a `KlyDashboardChart`.
+
+| Value | Description |
+| :--- | :--- |
+| `Bar` | One bar per series in each category, side by side. |
+| `Line` | Every series as a line. |
+| `Area` | Every series as a line with the area under it filled. |
+| `Donut` | The first series that is not a comparison as a ring of slices, one per category, with the total in the middle. |
+
+#### `DashboardCompareMode`
+
+`Klyroo.Dashboard` · enum
+
+How `KlyDashboardStat` computes the delta from its previous value.
+
+| Value | Description |
+| :--- | :--- |
+| `Change` | The percent change from the previous value. Nothing is shown when the previous value is zero. |
+| `Difference` | The raw difference, multiplied by 100 for the `DashboardFormatPreset.Ratio` format. |
 
 #### `DashboardComparisonMode`
 
@@ -571,6 +651,28 @@ Preset number formats supported by `DashboardFormat`.
 | `Points` | A signed difference in percentage points (`+2.1 pts`, `+1 pt`). |
 | `Signed` | A grouped number with a plus sign when positive (`+1,200`). |
 
+#### `DashboardGaugeVariant`
+
+`Klyroo.Dashboard` · enum
+
+The drawing of a `KlyDashboardGauge`.
+
+| Value | Description |
+| :--- | :--- |
+| `Ring` | A circular gauge with the value in the middle. |
+| `Bar` | A horizontal meter with the value above it, the minimum and maximum under it and a marker at the target. |
+
+#### `DashboardGridVariant`
+
+`Klyroo.Dashboard` · enum
+
+The layout of a `KlyDashboardGrid`.
+
+| Value | Description |
+| :--- | :--- |
+| `Cards` | Separate cards with a gap. |
+| `Panels` | The cards joined into one bordered panel with thin dividers. |
+
 #### `DashboardQueryStage`
 
 `Klyroo.Dashboard` · enum
@@ -619,6 +721,17 @@ Skeleton geometry kind rendered while a `KlyDashboardCard` is loading.
 | `Lines` | Same shape as `DashboardSkeletonKind.Bars`, used by `KlyDashboardChart` when `Type` is `line`. |
 | `Donut` | A donut chart, used by `KlyDashboardChart` when `Type` is `donut`. Rendered as three lines. |
 
+#### `DashboardStatsVariant`
+
+`Klyroo.Dashboard` · enum
+
+The layout of a `KlyDashboardStats` block.
+
+| Value | Description |
+| :--- | :--- |
+| `Plain` | The metrics side by side with no frame. |
+| `Tiles` | Each metric in a bordered tile. |
+
 #### `DashboardTableColumnKind`
 
 `Klyroo.Dashboard` · enum
@@ -653,7 +766,7 @@ A list of alerts ordered by severity, each with an optional value and an action 
 | `Limit` | `int?` | The maximum number of alerts shown, applied after ordering. The table view and the CSV export hold the same alerts. |
 | `Menu` | `bool?` | Shows the View as table, Download CSV and Expand buttons in the header once the content is displayed. Download CSV saves the block's table as a CSV file named after the title. When `null`, the value of the enclosing `KlyDashboardGrid.Menu` applies, or `false` outside a grid. |
 | `OnAction` | `EventCallback<DashboardAlertItem>` | Called with the alert when the user clicks its action. An alert with an `ActionLabel` and no `ActionHref` renders its action as a button only when this has a handler; without one the action is left out. An alert with an `ActionHref` always renders a link. |
-| `Order` | `string` | `severity` (the default) puts errors first and successes last. Any other value keeps the order of `KlyDashboardAlerts.Items`. |
+| `Order` | `DashboardAlertOrder` | `DashboardAlertOrder.Severity` (the default) puts errors first and successes last. `DashboardAlertOrder.AsGiven` keeps the order of `KlyDashboardAlerts.Items`. |
 | `Source` | `IDashboardSource?` | The resource whose state drives the block: a skeleton while it loads, an error message with a retry button, then the content. The block does not read `Data` from it, so pass the data through the other parameters. Without a source the content renders immediately. |
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 6. |
 | `Subtitle` | `string?` | A secondary line under the title. |
@@ -670,7 +783,7 @@ Horizontal bars for a ranking, or a funnel with the conversion rate between step
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Card` | `bool` | Whether the block draws its own surface (border, background and shadow; only the background in a `panels` grid). Defaults to `true`. |
-| `Emphasis` | `string` | `all` (the default) colors every bar. `first` colors the first bar and mutes the others. |
+| `Emphasis` | `DashboardBarsEmphasis` | `DashboardBarsEmphasis.All` (the default) colors every bar. `DashboardBarsEmphasis.First` colors the first bar and mutes the others. |
 | `Format` | `DashboardFormatPreset` | How the values are formatted, unless an item supplies its own `Meta` text. |
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
 | `Items` | `IReadOnlyList<DashboardBarItem>?` | The bars, in display order. |
@@ -682,7 +795,7 @@ Horizontal bars for a ranking, or a funnel with the conversion rate between step
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 6. |
 | `Subtitle` | `string?` | A secondary line under the title. |
 | `Title` | `string?` | The heading of the block. |
-| `Variant` | `string` | `bars` (the default), or `funnel`: every bar is scaled to the first one and shows its share of the previous step. |
+| `Variant` | `DashboardBarsVariant` | `DashboardBarsVariant.Bars` (the default), or `DashboardBarsVariant.Funnel`: every bar is scaled to the first one and shows its share of the previous step. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -744,8 +857,8 @@ A chart over categories without a charting dependency: grouped bars, lines, bars
 | `Stacked` | `bool` | Stacks the series of a `bar` or `area` chart instead of drawing them side by side or over one another. Comparison series are stacked too, so leave them out of a stacked chart. |
 | `Subtitle` | `string?` | A secondary line under the title. |
 | `Title` | `string?` | The heading of the block. |
-| `Totals` | `string?` | `average` shows the average of each series, any other non-empty value shows the sum. Comparison series are left out. Nothing is shown when empty. |
-| `Type` | `string` | The chart type: `bar` (the default) draws one bar per series in each category, side by side; `line` draws every series as a line; `area` draws every series as a line with the area under it filled; `donut` draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. Any other value draws bars. The drawing is `KlyChart` of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a `bar` chart, a series whose `Type` is `line` is drawn as a line over the bars, but `KlyChart` cannot mix the two, so such a chart (and a chart with `KlyDashboardChart.ShowLabels`) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and `KlyDashboardChart.Stacked` and `KlyDashboardChart.Horizontal` do not apply. The type also picks the loading skeleton. |
+| `Totals` | `DashboardChartTotals` | The totals row: `DashboardChartTotals.Average` shows the average of each series, `DashboardChartTotals.Sum` the sum. Comparison series are left out. `DashboardChartTotals.None`, the default, shows nothing. |
+| `Type` | `DashboardChartType` | The chart type: `DashboardChartType.Bar` (the default) draws one bar per series in each category, side by side; `DashboardChartType.Line` draws every series as a line; `DashboardChartType.Area` draws every series as a line with the area under it filled; `DashboardChartType.Donut` draws the first series that is not a comparison as a ring of slices, one per category, with the total in the middle. The drawing is `KlyChart` of Klyroo.UI: value and category axes, gridlines, a tooltip that follows the pointer and the arrow keys, a bar or a line that starts at zero (a zero value has no bar, a negative value goes below the axis), and a data table for screen readers. In a bar chart, a series whose `Type` is `DashboardChartSeriesType.Line` is drawn as a line over the bars, but `KlyChart` cannot mix the two, so such a chart (and a chart with `KlyDashboardChart.ShowLabels`) uses a compact drawing of its own: bars and lines from a zero baseline, without axes or gridlines, and `KlyDashboardChart.Stacked` and `KlyDashboardChart.Horizontal` do not apply. The type also picks the loading skeleton. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -811,7 +924,7 @@ A gauge that shows a value between a minimum and a maximum, as a ring or a horiz
 | `Target` | `double?` | A target shown as text under the gauge, and as a marker on the bar of the `bar` variant. |
 | `Title` | `string?` | The heading of the block. |
 | `Value` | `double?` | The current value. |
-| `Variant` | `string` | `ring` (the default) draws a circular gauge with the value in the middle. `bar` draws a horizontal meter with the value above it, the minimum and maximum under it and a marker at `KlyDashboardGauge.Target`. Any other value, such as the former default `arc`, draws the ring. The variant drawn is exposed as `data-variant`. |
+| `Variant` | `DashboardGaugeVariant` | `DashboardGaugeVariant.Ring` (the default) draws a circular gauge with the value in the middle. `DashboardGaugeVariant.Bar` draws a horizontal meter with the value above it, the minimum and maximum under it and a marker at `KlyDashboardGauge.Target`. The variant drawn is exposed as `data-variant`. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -831,7 +944,7 @@ A grid of equal columns (12 by default, see `Columns`) that places blocks by the
 | `Columns` | `int` | The number of equal columns of the grid, at least 1. Defaults to 12. A block's `Span` is clamped to it, so with `Columns="3"` a block of the default span 12 fills one row and `Span="1"` takes a third. |
 | `Freshness` | `bool` | The default of `Freshness` for the blocks inside the grid. Defaults to `false`. |
 | `Menu` | `bool` | The default of `Menu` for the blocks inside the grid. Defaults to `false`. |
-| `Variant` | `string` | `cards` (the default) draws separate cards with a gap. `panels` joins the cards into one bordered panel with thin dividers. |
+| `Variant` | `DashboardGridVariant` | `DashboardGridVariant.Cards` (the default) draws separate cards with a gap. `DashboardGridVariant.Panels` joins the cards into one bordered panel with thin dividers. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -891,9 +1004,9 @@ A single metric with an optional delta, sparkline, goal bar and status pill.
 | `Caption` | `string?` | A line of text under the value. Replaces the default `vs ... previous period` caption. |
 | `Card` | `bool` | Whether the block draws its own surface (border, background and shadow; only the background in a `panels` grid). Defaults to `true`. |
 | `Compare` | `double?` | The previous value. When `KlyDashboardStat.Delta` is not set, the delta is computed from it, and the default caption names it. |
-| `CompareMode` | `string` | `change` (the default) computes the percent change from `KlyDashboardStat.Compare` and shows nothing when `KlyDashboardStat.Compare` is zero. `difference` uses the raw difference, multiplied by 100 for the `Ratio` format. |
+| `CompareMode` | `DashboardCompareMode` | `DashboardCompareMode.Change` (the default) computes the percent change from `KlyDashboardStat.Compare` and shows nothing when `KlyDashboardStat.Compare` is zero. `DashboardCompareMode.Difference` uses the raw difference, multiplied by 100 for the `Ratio` format. |
 | `Delta` | `double?` | The change to display, in percent. It takes precedence over `KlyDashboardStat.Compare`. |
-| `DeltaFormat` | `DashboardFormatPreset?` | How the delta is formatted. Defaults to `Delta`, or to `Points` or `Signed` when `KlyDashboardStat.CompareMode` is `difference`. |
+| `DeltaFormat` | `DashboardFormatPreset?` | How the delta is formatted. Defaults to `Delta`, or to `Points` or `Signed` when `KlyDashboardStat.CompareMode` is `DashboardCompareMode.Difference`. |
 | `Format` | `DashboardFormatPreset` | How `KlyDashboardStat.Value`, `KlyDashboardStat.Compare` and `KlyDashboardStat.Goal` are formatted. |
 | `Freshness` | `bool?` | Shows an `Updated` footer built from `Source.UpdatedAt`. When `null`, the value of the enclosing `KlyDashboardGrid.Freshness` applies, or `false` outside a grid. |
 | `Goal` | `double?` | A target that adds a progress bar and a percentage. It must be greater than 0. |
@@ -925,7 +1038,7 @@ Several metrics side by side, each with an optional delta, progress bar and stat
 | `Span` | `int` | Width of the block in columns of the grid, clamped between 1 and the `Columns` of the enclosing `KlyDashboardGrid` (12 outside a grid). Defaults to 12. |
 | `Subtitle` | `string?` | A secondary line under the title. |
 | `Title` | `string?` | The heading of the block. |
-| `Variant` | `string` | `plain` (the default) or `tiles`, which puts each metric in a bordered tile. |
+| `Variant` | `DashboardStatsVariant` | `DashboardStatsVariant.Plain` (the default) or `DashboardStatsVariant.Tiles`, which puts each metric in a bordered tile. |
 
 Also accepts the parameters of `KlyComponentBase`.
 

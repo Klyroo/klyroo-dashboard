@@ -48,7 +48,7 @@ Only `KlyDashboardPage` subscribes to the controller. A block placed outside a p
 
 **A parameter has no visible effect**
 
-String parameters such as `Variant`, `Type`, `Order`, `Emphasis`, `CompareMode` and the column `Type` fall back to their default when the value is unknown, so check the spelling. In a chart, a series `Type` only matters when the chart `Type` is `bar`: a `line` series then makes the chart a bar-and-line chart, drawn without axes (see [Known limitations](#known-limitations)).
+`Variant`, `Type`, `Order`, `Emphasis`, `CompareMode`, `Totals` and the column kind are enums (`DashboardBarsVariant.Funnel`, `DashboardChartType.Donut`), so an unknown value does not compile. In a chart, a series `Type` only matters when the chart `Type` is `DashboardChartType.Bar`: a `DashboardChartSeriesType.Line` series then makes the chart a bar-and-line chart, drawn without axes (see [Known limitations](#known-limitations)).
 
 **A filter does not appear in the toolbar**
 
@@ -66,7 +66,7 @@ It calls `navigator.clipboard.writeText`, which needs an interactive render mode
 
 - **Chart.** The chart block is drawn by `KlyChart` of Klyroo.Dashboard's Klyroo.UI dependency, so it has what `KlyChart` has: axes, gridlines, tooltips, keyboard exploration, stacked, area and horizontal charts. It has no zoom, and a donut shows only the first series that is not a comparison and no negative value. `KlyChart` draws one kind per chart and has no value labels, so a bar chart with a `line` series, and a chart with `ShowLabels`, use a compact drawing of the block's own: a zero baseline and negative values, but no axes, gridlines or tooltips, and `Stacked` and `Horizontal` do not apply. `OnSelect` makes the bars, points and slices of a `KlyChart` drawing selectable (click, or Enter and Space on the row the arrow keys are on); the compact drawing has no selectable marks, so it keeps a group of buttons under the drawing. `IsComparison` series are left out of the totals and of the compact drawing's buttons, but a pick on one in a `KlyChart` drawing is reported as that series. For zoom or brushing, use a charting library inside a `KlyDashboardCard`.
 - **Filters.** `Remote` filters are drawn like `Options`: the library does not fetch anything, so load the options and assign `Items` yourself, and the search box only filters the options already loaded. Text and number boxes apply their value when they lose focus or the user presses Enter.
-- **Gauge.** The `ring` variant shows `Target` as text only; the `bar` variant also draws a marker.
+- **Gauge.** The `DashboardGaugeVariant.Ring` variant shows `Target` as text only; `DashboardGaugeVariant.Bar` also draws a marker.
 - **Cancellation.** A refresh cancels the token of the load it supersedes and ignores its result, but a loader that does not pass the token on keeps running until it finishes.
 - **Language.** The block texts come in the 12 locales of Klyroo.UI; only English and French are reviewed, the others are drafts. Text you pass in (titles, labels, filter options, the default `Yes`/`No` options of a `Boolean` filter and the options of a `Comparison` filter, which `Klyroo.Dashboard.Core` creates without a locale) is never translated, and `DashboardFormat.FormatRelativeTime` is English unless you pass `DashboardRelativeTimeTexts`.
 - **Number formats.** `DashboardFormat` uses the invariant culture unless you pass one.

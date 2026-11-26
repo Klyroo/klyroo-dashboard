@@ -357,7 +357,7 @@
     {
         get
         {
-            var isPanel = string.Equals(ParentGrid?.Variant, "panels", StringComparison.OrdinalIgnoreCase);
+            var isPanel = ParentGrid?.Variant == DashboardGridVariant.Panels;
             var surface = !Card ? ""
                 : isPanel ? "bg-(--klyroo-bg)"
                 : "rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg) shadow-2xs";

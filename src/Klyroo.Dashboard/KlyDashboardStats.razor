@@ -5,12 +5,12 @@
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Stats"
                  Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-slot="dashboard-stats" data-variant="@Variant">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-slot="dashboard-stats" data-variant="@Variant.ToString().ToLowerInvariant()">
         @if (Items is not null)
         {
             @foreach (var item in Items)
             {
-                <div class="flex flex-col gap-1 @(string.Equals(Variant, "tiles", StringComparison.OrdinalIgnoreCase) ? "rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg-muted) p-3" : "")"
+                <div class="flex flex-col gap-1 @(Variant == DashboardStatsVariant.Tiles ? "rounded-(--klyroo-radius) border border-(--klyroo-border) bg-(--klyroo-bg-muted) p-3" : "")"
                      data-slot="dashboard-stats-item" data-key="@item.Key">
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-medium text-(--klyroo-text-muted)">@item.Label</span>
@@ -62,8 +62,8 @@
     [Parameter] public string? Subtitle { get; set; }
     /// <summary>The metrics, laid out in a grid of up to four columns.</summary>
     [Parameter] public IReadOnlyList<DashboardStatsItem>? Items { get; set; }
-    /// <summary><c>plain</c> (the default) or <c>tiles</c>, which puts each metric in a bordered tile.</summary>
-    [Parameter] public string Variant { get; set; } = "plain";
+    /// <summary><see cref="DashboardStatsVariant.Plain"/> (the default) or <see cref="DashboardStatsVariant.Tiles"/>, which puts each metric in a bordered tile.</summary>
+    [Parameter] public DashboardStatsVariant Variant { get; set; } = DashboardStatsVariant.Plain;
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 12.</summary>
     [Parameter] public int Span { get; set; } = 12;
     /// <summary>Whether the block draws its own surface (border, background and shadow; only the background in a <c>panels</c> grid). Defaults to <see langword="true"/>.</summary>

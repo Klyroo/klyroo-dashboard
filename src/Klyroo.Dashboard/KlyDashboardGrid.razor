@@ -1,7 +1,7 @@
 @namespace Klyroo.Dashboard
 @inherits KlyComponentBase
 
-<div class="@RootClass" style="@GridStyle" data-slot="dashboard-grid" data-variant="@Variant" data-columns="@EffectiveColumns" @attributes="AdditionalAttributes">
+<div class="@RootClass" style="@GridStyle" data-slot="dashboard-grid" data-variant="@Variant.ToString().ToLowerInvariant()" data-columns="@EffectiveColumns" @attributes="AdditionalAttributes">
     <CascadingValue Value="this" IsFixed="false">
         @ChildContent
     </CascadingValue>
@@ -10,8 +10,8 @@
 @code {
     /// <summary>The number of equal columns of the grid, at least 1. Defaults to 12. A block's <c>Span</c> is clamped to it, so with <c>Columns="3"</c> a block of the default span 12 fills one row and <c>Span="1"</c> takes a third.</summary>
     [Parameter] public int Columns { get; set; } = 12;
-    /// <summary><c>cards</c> (the default) draws separate cards with a gap. <c>panels</c> joins the cards into one bordered panel with thin dividers.</summary>
-    [Parameter] public string Variant { get; set; } = "cards";
+    /// <summary><see cref="DashboardGridVariant.Cards"/> (the default) draws separate cards with a gap. <see cref="DashboardGridVariant.Panels"/> joins the cards into one bordered panel with thin dividers.</summary>
+    [Parameter] public DashboardGridVariant Variant { get; set; } = DashboardGridVariant.Cards;
     /// <summary>The default of <c>Menu</c> for the blocks inside the grid. Defaults to <see langword="false"/>.</summary>
     [Parameter] public bool Menu { get; set; }
     /// <summary>The default of <c>Freshness</c> for the blocks inside the grid. Defaults to <see langword="false"/>.</summary>
@@ -28,7 +28,7 @@
     {
         get
         {
-            var isPanels = string.Equals(Variant, "panels", StringComparison.OrdinalIgnoreCase);
+            var isPanels = Variant == DashboardGridVariant.Panels;
             var baseCls = isPanels
                 ? "grid gap-px overflow-hidden rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-border)"
                 : "grid gap-4";

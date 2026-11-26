@@ -72,7 +72,7 @@ public sealed class ZeroAndNegativeTests : BunitContext
     [Fact]
     public void A_funnel_step_of_zero_has_no_bar()
     {
-        var cut = Render<KlyDashboardBars>(p => p.Add(x => x.Variant, "funnel").Add(x => x.Items, [new DashboardBarItem("Visits", 200), new DashboardBarItem("Paid", 0)]));
+        var cut = Render<KlyDashboardBars>(p => p.Add(x => x.Variant, DashboardBarsVariant.Funnel).Add(x => x.Items, [new DashboardBarItem("Visits", 200), new DashboardBarItem("Paid", 0)]));
         var fills = cut.FindAll("[data-slot=dashboard-bar-fill]");
         Assert.Equal("100%", Style(fills[0], "width"));
         Assert.Equal("0%", Style(fills[1], "width"));
@@ -113,7 +113,7 @@ public sealed class ZeroAndNegativeTests : BunitContext
         var half = Render<KlyDashboardGauge>(p => p.Add(x => x.Value, 50.0));
         Assert.Single(half.FindAll("[data-slot=gauge-ring-fill]"));
 
-        var bar = Render<KlyDashboardGauge>(p => p.Add(x => x.Variant, "bar").Add(x => x.Value, 0.0));
+        var bar = Render<KlyDashboardGauge>(p => p.Add(x => x.Variant, DashboardGaugeVariant.Bar).Add(x => x.Value, 0.0));
         Assert.Equal("width:0%", bar.Find("[data-slot=gauge-bar-fill]").GetAttribute("style"));
     }
 

@@ -245,7 +245,7 @@ For the display, give the stat the previous value and it computes the delta and 
                   Format="DashboardFormatPreset.Compact" />
 ```
 
-By default the delta is the percent change, `+15.5%` for 48,500 against 42,000. For a metric that is already a ratio, set `CompareMode="difference"` and the delta becomes a difference in points: 0.032 against 0.030 with `Format="DashboardFormatPreset.Ratio"` shows `+0.2 pts`. Set `InvertDelta` when a decrease is good news, as for churn, so the badge turns green when the value falls. A `Delta` you pass explicitly takes precedence over `Compare`.
+By default the delta is the percent change, `+15.5%` for 48,500 against 42,000. For a metric that is already a ratio, set `CompareMode="DashboardCompareMode.Difference"` and the delta becomes a difference in points: 0.032 against 0.030 with `Format="DashboardFormatPreset.Ratio"` shows `+0.2 pts`. Set `InvertDelta` when a decrease is good news, as for churn, so the badge turns green when the value falls. A `Delta` you pass explicitly takes precedence over `Compare`.
 
 ## Show a sortable table
 

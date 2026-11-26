@@ -83,14 +83,14 @@
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
     /// <summary>The change to display, in percent. It takes precedence over <see cref="Compare"/>.</summary>
     [Parameter] public double? Delta { get; set; }
-    /// <summary>How the delta is formatted. Defaults to <c>Delta</c>, or to <c>Points</c> or <c>Signed</c> when <see cref="CompareMode"/> is <c>difference</c>.</summary>
+    /// <summary>How the delta is formatted. Defaults to <c>Delta</c>, or to <c>Points</c> or <c>Signed</c> when <see cref="CompareMode"/> is <see cref="DashboardCompareMode.Difference"/>.</summary>
     [Parameter] public DashboardFormatPreset? DeltaFormat { get; set; }
     /// <summary>When set, a negative delta is shown as good news (for churn, cost or latency).</summary>
     [Parameter] public bool InvertDelta { get; set; }
     /// <summary>The previous value. When <see cref="Delta"/> is not set, the delta is computed from it, and the default caption names it.</summary>
     [Parameter] public double? Compare { get; set; }
-    /// <summary><c>change</c> (the default) computes the percent change from <see cref="Compare"/> and shows nothing when <see cref="Compare"/> is zero. <c>difference</c> uses the raw difference, multiplied by 100 for the <c>Ratio</c> format.</summary>
-    [Parameter] public string CompareMode { get; set; } = "change";
+    /// <summary><see cref="DashboardCompareMode.Change"/> (the default) computes the percent change from <see cref="Compare"/> and shows nothing when <see cref="Compare"/> is zero. <see cref="DashboardCompareMode.Difference"/> uses the raw difference, multiplied by 100 for the <c>Ratio</c> format.</summary>
+    [Parameter] public DashboardCompareMode CompareMode { get; set; } = DashboardCompareMode.Change;
     /// <summary>A line of text under the value. Replaces the default <c>vs ... previous period</c> caption.</summary>
     [Parameter] public string? Caption { get; set; }
     /// <summary>Points of a sparkline. It needs at least two values.</summary>
@@ -115,7 +115,7 @@
             if (Delta.HasValue) return Delta;
             if (Value is { } cur && Compare is { } prev)
             {
-                if (string.Equals(CompareMode, "difference", StringComparison.OrdinalIgnoreCase))
+                if (CompareMode == DashboardCompareMode.Difference)
                 {
                     var scale = Format == DashboardFormatPreset.Ratio ? 100.0 : 1.0;
                     return (cur - prev) * scale;
@@ -130,7 +130,7 @@
     }
 
     private DashboardFormatPreset EffectiveDeltaFormat =>
-        DeltaFormat ?? (string.Equals(CompareMode, "difference", StringComparison.OrdinalIgnoreCase)
+        DeltaFormat ?? (CompareMode == DashboardCompareMode.Difference
             ? (Format is DashboardFormatPreset.Percent or DashboardFormatPreset.Ratio ? DashboardFormatPreset.Points : DashboardFormatPreset.Signed)
             : DashboardFormatPreset.Delta);
 

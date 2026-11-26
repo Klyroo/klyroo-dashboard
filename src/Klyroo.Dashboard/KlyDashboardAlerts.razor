@@ -65,8 +65,8 @@
     [Parameter] public string? Subtitle { get; set; }
     /// <summary>The alerts to display.</summary>
     [Parameter] public IReadOnlyList<DashboardAlertItem>? Items { get; set; }
-    /// <summary><c>severity</c> (the default) puts errors first and successes last. Any other value keeps the order of <see cref="Items"/>.</summary>
-    [Parameter] public string Order { get; set; } = "severity";
+    /// <summary><see cref="DashboardAlertOrder.Severity"/> (the default) puts errors first and successes last. <see cref="DashboardAlertOrder.AsGiven"/> keeps the order of <see cref="Items"/>.</summary>
+    [Parameter] public DashboardAlertOrder Order { get; set; } = DashboardAlertOrder.Severity;
     /// <summary>The maximum number of alerts shown, applied after ordering. The table view and the CSV export hold the same alerts.</summary>
     [Parameter] public int? Limit { get; set; }
     /// <summary>Called with the alert when the user clicks its action. An alert with an <c>ActionLabel</c> and no <c>ActionHref</c> renders its action as a button only when this has a handler; without one the action is left out. An alert with an <c>ActionHref</c> always renders a link.</summary>
@@ -112,7 +112,7 @@
         get
         {
             if (Items is not { Count: > 0 }) return [];
-            var sorted = string.Equals(Order, "severity", StringComparison.OrdinalIgnoreCase)
+            var sorted = Order == DashboardAlertOrder.Severity
                 ? Items.OrderBy(i => (int)i.Severity).ToList()
                 : Items.ToList();
             return Limit is > 0 ? sorted.Take(Limit.Value).ToList() : sorted;
