@@ -10,8 +10,12 @@
             var visible = Limit is > 0 ? Items.Take(Limit.Value).ToList() : Items;
             @foreach (var item in visible)
             {
-                <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
-                     data-slot="dashboard-list-row" data-selected="@(item.Selected ? "true" : null)">
+                var current = item;
+                var clickable = OnRowClick.HasDelegate;
+                @* The whole row takes a click of the pointer; the button on its label is what the keyboard and a screen reader reach. *@
+                <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0 @(clickable ? "cursor-pointer hover:bg-(--klyroo-bg-muted)/50" : null)"
+                     data-slot="dashboard-list-row" data-selected="@(item.Selected ? "true" : null)"
+                     @onclick="RowClick(current)">
                     <div class="flex min-w-0 items-center gap-2.5">
                         @if (!string.IsNullOrEmpty(item.LeadingText))
                         {
@@ -22,6 +26,15 @@
                             @if (!string.IsNullOrEmpty(item.Href))
                             {
                                 <a href="@item.Href" class="truncate text-xs font-semibold text-(--klyroo-text-highlighted) hover:underline">@item.Label</a>
+                            }
+                            else if (clickable)
+                            {
+                                <button type="button"
+                                        class="truncate rounded-(--klyroo-radius) text-start text-xs font-semibold text-(--klyroo-text-highlighted) hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
+                                        aria-pressed="@(item.Selected ? "true" : "false")"
+                                        data-slot="dashboard-list-row-button"
+                                        @onclick="@(() => OnRowClick.InvokeAsync(current))"
+                                        @onclick:stopPropagation="true">@item.Label</button>
                             }
                             else
                             {
@@ -71,6 +84,8 @@
     [Parameter] public IReadOnlyList<DashboardListItem>? Items { get; set; }
     /// <summary>How the row values are formatted.</summary>
     [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    /// <summary>Called with the row when the user picks it. The label of each row without an <c>Href</c> is then a button, so the choice works with the keyboard and with a screen reader, <c>aria-pressed</c> follows <c>Selected</c>, and a click anywhere on the row does the same for the pointer. A row with an <c>Href</c> keeps its link and does not raise this event. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    [Parameter] public EventCallback<DashboardListItem> OnRowClick { get; set; }
     /// <summary>The maximum number of rows shown. The table view and the CSV export hold the same rows.</summary>
     [Parameter] public int? Limit { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 6.</summary>
@@ -81,6 +96,10 @@
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
+
+    // Without a handler, or on a row with a link, the row gets no click binding at all.
+    private EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> RowClick(DashboardListItem item) =>
+        OnRowClick.HasDelegate && string.IsNullOrEmpty(item.Href) ? EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => OnRowClick.InvokeAsync(item)) : default;
 
     private DashboardDataTable BuildDataTable()
     {

@@ -12,6 +12,7 @@ Task-oriented recipes. They assume the setup from [Getting started](getting-star
 - [Export a block to CSV](#export-a-block-to-csv)
 - [Refresh on a timer](#refresh-on-a-timer)
 - [Hand the prerendered data to the interactive render](#hand-the-prerendered-data-to-the-interactive-render)
+- [Drill down from a block](#drill-down-from-a-block)
 - [Translate or change the built-in texts](#translate-or-change-the-built-in-texts)
 - [Test a dashboard](#test-a-dashboard)
 
@@ -414,6 +415,33 @@ A few rules:
 - A .NET MAUI Blazor Hybrid app has no prerender: `Attach` does nothing there, and `LoadAsync` is `RefreshAsync`.
 
 `IDashboardPersistentSource` (`ExportJson`, `RestoreJson`) is the contract behind it, in `Klyroo.Dashboard.Core`, so any other host can hand data between two runs the same way.
+
+## Drill down from a block
+
+Goal: let the user pick a bar, a row or a chart point and filter the rest of the page by it.
+
+`KlyDashboardBars.OnSelect`, `KlyDashboardTable.OnRowClick`, `KlyDashboardList.OnRowClick` and `KlyDashboardChart.OnSelect` hand the picked item to your code. The blocks do not change a filter themselves: you decide what a pick means, usually by setting a filter of the controller.
+
+```razor
+<KlyDashboardBars Title="Revenue by region" Items="_regions" OnSelect="PickRegion" />
+<KlyDashboardChart Title="Revenue" Categories="_months" Series="_series" OnSelect="PickPoint" />
+<KlyDashboardTable Columns="_columns" Rows="_rows" OnRowClick="PickRow" />
+
+@code {
+    private void PickRegion(DashboardBarItem bar) => _dashboard.Controls.First(c => c.Key == "region").Value = bar.Label;
+
+    private void PickPoint(DashboardChartSelection point) => _dashboard.Controls.First(c => c.Key == "month").Value = point.Category;
+
+    private void PickRow(IReadOnlyDictionary<string, object?> row) => Nav.NavigateTo($"/regions/{row["id"]}");
+}
+```
+
+Every pick control is a real `<button>`, so it takes the focus, works with Enter and Space, and has an accessible name:
+
+- A bar of `KlyDashboardBars` becomes a button as a whole, with `aria-pressed` following `DashboardBarItem.Selected`.
+- In `KlyDashboardTable`, the first cell of each row holds a button, and a click anywhere on the row does the same for the pointer. The row passed to `OnRowClick` is the dictionary from `Rows`, whatever the sort.
+- In `KlyDashboardList`, the label of a row becomes a button, and a click on the row does the same. A row with an `Href` keeps its link and raises nothing.
+- `KlyDashboardChart` shows a group of buttons under the drawing, one per category and series (one per slice for a donut, comparison series left out). `KlyChart` of Klyroo.UI has no selection event, so the bars and slices themselves are not clickable, but its tooltip and arrow keys still explore them.
 
 ## Translate or change the built-in texts
 

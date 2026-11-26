@@ -16,6 +16,7 @@ test it without a renderer. The Blazor components run in a Blazor Web App and in
 - **Staged loading**: a resource is Essential (loaded first, in parallel), Background (loaded once the essential ones settle) or Deferred (loaded only when something activates it). A new load cancels the one it supersedes, and `AutoRefresh` reloads on a timer.
 - **Per-block states**: every block shows a skeleton while loading, the error message with a retry button when its query fails, and an empty state, so one failing query leaves the rest of the page intact.
 - **Filters and views**: `DashboardFilterControl` supports single and multiple selection with a maximum, presets, default values and reset detection, drawn as option lists, text, number and date inputs or your own template, and views appear as tabs with optional badges.
+- **Drill-down**: `OnSelect` on bars and charts and `OnRowClick` on tables and lists hand the pick to your code through real buttons the keyboard reaches.
 - **Ten blocks on a grid of 12 columns by default**: stat, stats, gauge (ring or bar), bars (with a funnel variant), chart (bars, lines, areas or donut, drawn by the `KlyChart` of Klyroo.UI), list, table, details, feed and alerts, wrapped by a page, a grid and a card.
 - **Comparisons**: a stat computes its delta from a previous value, and `DashboardFormat.ResolveComparisonRange` gives the previous period or the same dates one year earlier.
 - **Number formatting**: nine presets (compact, percent, ratio, delta, points and more), relative times and currency, with an explicit culture.

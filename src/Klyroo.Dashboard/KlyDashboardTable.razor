@@ -47,15 +47,34 @@
             <tbody class="divide-y divide-(--klyroo-border)">
                 @foreach (var row in SortedAndLimitedRows)
                 {
-                    <tr data-slot="dashboard-table-row">
+                    var current = row;
+                    var clickable = OnRowClick.HasDelegate;
+                    @* The whole row takes a click of the pointer; the button in its first cell is what the keyboard and a screen reader reach. *@
+                    <tr class="@(clickable ? "cursor-pointer hover:bg-(--klyroo-bg-muted)/50" : null)"
+                        data-slot="dashboard-table-row"
+                        @onclick="RowClick(current)">
                         @if (Columns is not null)
                         {
-                            @foreach (var col in Columns)
+                            @for (var c = 0; c < Columns.Count; c++)
                             {
+                                var col = Columns[c];
                                 row.TryGetValue(col.Key, out var raw);
                                 var isNum = col.Type is "number" or "delta" or "percent" or "bar";
                                 <td class="px-3 py-2 @(isNum ? "text-end tabular-nums" : "text-start")" data-slot="dashboard-table-cell" data-type="@col.Type">
-                                    @RenderCell(col, raw)
+                                    @if (clickable && c == 0)
+                                    {
+                                        <button type="button"
+                                                class="rounded-(--klyroo-radius) text-inherit hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
+                                                data-slot="dashboard-table-row-button"
+                                                @onclick="@(() => OnRowClick.InvokeAsync(current))"
+                                                @onclick:stopPropagation="true">
+                                            @RenderCell(col, raw)
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        @RenderCell(col, raw)
+                                    }
                                 </td>
                             }
                         }
@@ -81,6 +100,8 @@
     [Parameter] public DashboardTableSort? Sort { get; set; }
     /// <summary>Raised when the sort changes, with <see langword="null"/> when the sort is cleared.</summary>
     [Parameter] public EventCallback<DashboardTableSort?> SortChanged { get; set; }
+    /// <summary>Called with the row (the dictionary from <see cref="Rows"/>) when the user picks it. The first cell of each row is then a button, so the choice works with the keyboard and with a screen reader, and a click anywhere on the row does the same for the pointer. Use it to drill down, for example by setting a filter of the <c>DashboardController</c>.</summary>
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, object?>> OnRowClick { get; set; }
     /// <summary>The maximum number of rows shown, applied after sorting. The CSV export holds the same rows.</summary>
     [Parameter] public int? Limit { get; set; }
     /// <summary>Width of the block in columns of the grid, clamped between 1 and the <c>Columns</c> of the enclosing <c>KlyDashboardGrid</c> (12 outside a grid). Defaults to 12.</summary>
@@ -91,6 +112,10 @@
     [Parameter] public bool? Menu { get; set; }
     /// <summary>Shows an <c>Updated</c> footer built from <c>Source.UpdatedAt</c>. When <see langword="null"/>, the value of the enclosing <c>KlyDashboardGrid.Freshness</c> applies, or <see langword="false"/> outside a grid.</summary>
     [Parameter] public bool? Freshness { get; set; }
+
+    // Without a handler the row gets no click binding at all.
+    private EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> RowClick(IReadOnlyDictionary<string, object?> row) =>
+        OnRowClick.HasDelegate ? EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => OnRowClick.InvokeAsync(row)) : default;
 
     private IReadOnlyList<IReadOnlyDictionary<string, object?>> SortedRows
     {
