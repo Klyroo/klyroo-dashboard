@@ -169,6 +169,16 @@ public sealed class ComponentBehaviorTests : BunitContext
     }
 
     [Fact]
+    public void A_block_in_a_grid_takes_the_full_row_on_a_narrow_screen()
+    {
+        var cut = Render<KlyDashboardGrid>(p => p
+            .AddChildContent<KlyDashboardStat>(s => s.Add(x => x.Label, "Orders").Add(x => x.Span, 4)));
+
+        Assert.Contains("max-sm:col-span-full!", cut.Find("[data-slot=dashboard-card]").ClassName);
+        Assert.Equal("grid-column: span 4 / span 4", cut.Find("[data-slot=dashboard-card]").GetAttribute("style"));
+    }
+
+    [Fact]
     public void Gauge_bar_variant_draws_a_horizontal_meter_with_a_target_marker()
     {
         var bar = Render<KlyDashboardGauge>(p => p
