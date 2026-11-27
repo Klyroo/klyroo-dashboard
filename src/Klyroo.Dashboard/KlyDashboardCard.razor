@@ -361,7 +361,8 @@
             var surface = !Card ? ""
                 : isPanel ? "bg-(--klyroo-bg)"
                 : "rounded-(--klyroo-radius-md) border border-(--klyroo-border) bg-(--klyroo-bg) shadow-2xs";
-            return $"relative flex min-w-0 flex-col overflow-hidden {surface} {Class}".Trim();
+            // Below the sm breakpoint every block takes the full row: the inline span of a block would keep three statistics side by side on a phone.
+            return $"relative flex min-w-0 flex-col overflow-hidden max-sm:col-span-full! {surface} {Class}".Trim();
         }
     }
 

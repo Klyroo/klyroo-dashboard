@@ -42,6 +42,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- The blocks of a dashboard grid take the full row below the `sm` breakpoint (640 px). Their `Span` is an inline style, so three statistics of `Span="4"` stayed in three columns on a phone and clipped their labels and values; `klyroo-dashboard.css` gets the matching rule.
+
 - French texts: the funnel base showed a literal `\u00a0`, the date range boxes and the stat comparison now follow French typography (no-break space before the colon, `par rapport à` instead of `vs`).
 - `AddKlyrooDashboard` throws `InvalidOperationException` when a `KlyrooDashboardOptions` was registered by hand: such an instance never received the texts or the limits, which live in the Klyroo.UI options. `DashboardPersistence` reads those same options.
 - URL filters: a disabled filter keeps its pair in the URL (`MergeQuery` no longer owns it) and takes its value when it is enabled while the URL still has it. `KlyDashboardPage.SyncUrl` counts its own writes per address, leaves a URL alone when only the order or encoding of the pairs differs (new `DashboardController.QueryMatches`), writes nothing into another page's address, and follows a route such as `/dash/{id}` that reuses the component, comparing addresses ignoring case and a trailing slash.
