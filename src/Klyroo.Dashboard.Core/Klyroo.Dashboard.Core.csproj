@@ -11,5 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Klyroo.Dashboard" />
+    <!-- The native views read the columns of a typed table (DashboardTableColumn) the way the Blazor ones do. -->
+    <InternalsVisibleTo Include="Klyroo.Dashboard.Maui" />
   </ItemGroup>
 </Project>
