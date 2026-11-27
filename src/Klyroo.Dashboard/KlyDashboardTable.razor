@@ -6,7 +6,9 @@
 <KlyDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
                  IsEmpty="@(Rows is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Table"
                  Menu="@Menu" Freshness="@Freshness" ViewAsTable="false" Tabulate="BuildDataTable" Class="@Class">
-    <div class="overflow-x-auto" data-slot="dashboard-table">
+    @* A table wider than its block scrolls inside it. The two edges fade where more columns wait (scroll shadows: a gradient fixed to the box under a cover that scrolls with the content), and the box takes the keyboard so the columns past the edge can be reached. *@
+    <div class="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--klyroo-primary-text) [background:linear-gradient(to_right,var(--klyroo-bg)_30%,transparent)_0_0/2rem_100%_no-repeat_local,linear-gradient(to_left,var(--klyroo-bg)_30%,transparent)_100%_0/2rem_100%_no-repeat_local,linear-gradient(to_right,color-mix(in_srgb,var(--klyroo-text)_18%,transparent),transparent)_0_0/0.75rem_100%_no-repeat_scroll,linear-gradient(to_left,color-mix(in_srgb,var(--klyroo-text)_18%,transparent),transparent)_100%_0/0.75rem_100%_no-repeat_scroll]"
+         tabindex="0" role="@(string.IsNullOrEmpty(Title) ? null : "region")" aria-label="@Title" data-slot="dashboard-table">
         <table class="min-w-full text-xs">
             <thead class="border-b border-(--klyroo-border) font-semibold text-(--klyroo-text-muted)">
                 <tr>
@@ -20,7 +22,7 @@
                                 : (col.Sortable ? "none" : null);
                             <th scope="col"
                                 aria-sort="@ariaSort"
-                                class="px-3 py-2 @(isNum ? "text-end" : "text-start")"
+                                class="whitespace-nowrap px-3 py-2 @(isNum ? "text-end" : "text-start")"
                                 data-slot="dashboard-table-header"
                                 data-key="@col.Key">
                                 @if (col.Sortable)
@@ -60,11 +62,11 @@
                             {
                                 var col = Columns[c];
                                 var isNum = col.IsNumeric;
-                                <td class="px-3 py-2 @(isNum ? "text-end tabular-nums" : "text-start")" data-slot="dashboard-table-cell" data-type="@KindName(col.Kind)">
+                                <td class="px-3 py-2 @(isNum ? "text-end tabular-nums whitespace-nowrap" : "text-start")" data-slot="dashboard-table-cell" data-type="@KindName(col.Kind)">
                                     @if (clickable && c == 0)
                                     {
                                         <button type="button"
-                                                class="rounded-(--klyroo-radius) text-inherit hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
+                                                class="rounded-(--klyroo-radius) text-start text-inherit hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
                                                 data-slot="dashboard-table-row-button"
                                                 @onclick="@(() => OnRowClick.InvokeAsync(current))"
                                                 @onclick:stopPropagation="true">

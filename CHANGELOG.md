@@ -43,6 +43,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- `KlyDashboardTable` keeps the text of the first column aligned to the start when the rows are clickable (the button of the cell centred a wrapped name), does not wrap the headers and the numbers, and scrolls in a focusable region with a fade on the edge that has more columns. The charts follow `KlyChart.Responsive`: the labels stay legible on a phone.
 - The blocks of a dashboard grid take the full row below the `sm` breakpoint (640 px). Their `Span` is an inline style, so three statistics of `Span="4"` stayed in three columns on a phone and clipped their labels and values; `klyroo-dashboard.css` gets the matching rule.
 
 - French texts: the funnel base showed a literal `\u00a0`, the date range boxes and the stat comparison now follow French typography (no-break space before the colon, `par rapport à` instead of `vs`).

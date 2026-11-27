@@ -40,6 +40,35 @@ public sealed class TypedTableTests : BunitContext
     }
 
     [Fact]
+    public void The_first_cell_button_of_a_clickable_row_aligns_its_wrapped_text_to_the_start_like_the_other_cells()
+    {
+        var customer = DashboardTableColumn.For<Order, string>("customer", "Customer", o => o.Customer);
+        var total = DashboardTableColumn.For<Order, decimal?>("total", "Total", o => o.Total);
+        var cut = Render<KlyDashboardTable<Order>>(p => p
+            .Add(x => x.Columns, [customer, total])
+            .Add(x => x.Rows, Orders)
+            .Add(x => x.OnRowClick, EventCallback.Factory.Create<Order>(this, _ => { })));
+
+        Assert.All(cut.FindAll("[data-slot=dashboard-table-row-button]"), b => Assert.Contains("text-start", b.ClassList));
+    }
+
+    [Fact]
+    public void A_table_wider_than_its_block_scrolls_in_a_focusable_region_named_by_the_title()
+    {
+        var customer = DashboardTableColumn.For<Order, string>("customer", "Customer", o => o.Customer);
+        var cut = Render<KlyDashboardTable<Order>>(p => p
+            .Add(x => x.Title, "Top customers")
+            .Add(x => x.Columns, [customer])
+            .Add(x => x.Rows, Orders));
+
+        var scroller = cut.Find("[data-slot=dashboard-table]");
+        Assert.Equal("0", scroller.GetAttribute("tabindex"));
+        Assert.Equal("region", scroller.GetAttribute("role"));
+        Assert.Equal("Top customers", scroller.GetAttribute("aria-label"));
+        Assert.Contains("overflow-x-auto", scroller.ClassList);
+    }
+
+    [Fact]
     public void A_text_column_sorts_ignoring_case_and_a_date_column_sorts_by_value()
     {
         var customer = DashboardTableColumn.For<Order, string>("customer", "Customer", o => o.Customer);
