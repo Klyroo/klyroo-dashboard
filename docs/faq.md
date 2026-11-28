@@ -1,5 +1,7 @@
 # FAQ
 
+Symptoms, causes and fixes for Klyroo.Dashboard, followed by known limitations and frequent questions.
+
 ## Troubleshooting
 
 **A block shows a skeleton and never fills**

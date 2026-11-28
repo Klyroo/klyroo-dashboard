@@ -32,6 +32,8 @@ test it without a renderer. The Blazor components run in a Blazor Web App and in
 | [`Klyroo.Dashboard.Core`](https://www.nuget.org/packages/Klyroo.Dashboard.Core) | Controller, resources, filters, views and formatting. No UI dependency. |
 | [`Klyroo.Dashboard`](https://www.nuget.org/packages/Klyroo.Dashboard) | Blazor components for Blazor Web Apps and .NET MAUI Blazor Hybrid. Depends on `Klyroo.Dashboard.Core` and `Klyroo.UI`. |
 
+For native .NET MAUI apps without a `BlazorWebView`, the repository also includes [`Klyroo.Dashboard.Maui`](src/Klyroo.Dashboard.Maui/README.md) (built from source over `Klyroo.Dashboard.Core` and `Klyroo.UI.Maui`).
+
 ## Prerequisites
 
 To use the library in an app:
@@ -170,6 +172,7 @@ Klyroo is a family of independent .NET libraries that compose. Each one has its 
 | [Klyroo.Display](https://github.com/klyroo/klyroo-display) | Code highlighting, secret and file list components, media player controls and file preview |
 | [Klyroo.Spreadsheet](https://github.com/klyroo/klyroo-spreadsheet) | Import wizard for CSV, TSV and pasted data, with column and value mapping |
 | [Klyroo.Agent](https://github.com/klyroo/klyroo-agent) | Bridge that lets AI agents read and act on Klyroo forms, dashboards and imports |
+| [Klyroo.Hotkey](https://github.com/klyroo/klyroo-hotkey) | Server-side .NET client for Hotkey cloud browsers, human handoffs and signed webhooks |
 | [Klyroo.Stack](https://github.com/klyroo/klyroo-stack) | Meta-package, MCP documentation server and `dotnet new` templates |
 
 ## Contributing
