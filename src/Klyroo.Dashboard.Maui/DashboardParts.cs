@@ -6,21 +6,6 @@ namespace Klyroo.Dashboard.Maui;
 /// <summary>Small building blocks shared by the dashboard views: themed colors and radius, labels, dividers, taps, and the few helpers the Klyroo.UI.Maui internals do not share.</summary>
 internal static class DashboardParts
 {
-    /// <summary>Binds a color property to the light and dark values: it follows the app theme without any code of the control.</summary>
-    public static void SetThemeColor(this BindableObject target, BindableProperty property, KlyThemeColor color) =>
-        target.SetAppThemeColor(property, color.Light, color.Dark);
-
-    /// <summary>Binds the border brush to the light and dark values.</summary>
-    public static void SetStroke(this Border border, KlyThemeColor color) =>
-        border.SetAppTheme<Brush>(Border.StrokeProperty, new SolidColorBrush(color.Light), new SolidColorBrush(color.Dark));
-
-    /// <summary>Rounds the corners of a border.</summary>
-    public static void SetRadius(this Border border, double radius) =>
-        border.StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(radius) };
-
-    /// <summary>The corner radius of a fraction of the base radius (<c>0.75</c> is <c>--klyroo-radius-md</c>, <c>1</c> is <c>--klyroo-radius</c>).</summary>
-    public static double RadiusOf(double fraction) => KlyTheme.Radius * fraction;
-
     /// <summary>The radius of a pill.</summary>
     public const double Pill = 9999;
 

@@ -55,7 +55,7 @@ A block reads its data from the properties you give it, not from `Source.Data`: 
 - `KlyDashboardChart.Height` is `PlotHeight`, because a native view already has a `Height`. The drawing fills the width of the card instead of being capped at 640.
 - `KlyDashboardPage` scrolls its body itself (`Scrollable`), and with `Sticky` the header and the toolbar stay at the top, where the web page lets the header scroll away. The option lists of the filters open under the filters, in the toolbar.
 - `SyncUrl` and `UrlPrefix` (filters in the URL) have no native equivalent and are not ported; `DashboardController.ToQuery` and `ApplyQuery` stay available for a deep link of your own. `Class` and `AdditionalAttributes` are web-only.
-- A child of `KlyDashboardGrid` that is not a block takes a full row, where a CSS grid gives an element one column. A block that hides itself (a disabled source) or is hidden by the app leaves no gap.
+- A child of `KlyDashboardGrid` that is not a block takes one column, as an element of a CSS grid does (a full row below 640). A block that hides itself (a disabled source) or is hidden by the app leaves no gap.
 - A refresh keeps what is on screen: a block builds its content again only when a property of the block, its phase, the table view or the dialog changed, so a scroll position, a focus or an open menu of your own views in the card survives a controller change.
 - A view added with `DashboardController.AddView` after the page was built shows when the page builds itself again (the controller raises no event for it, in Blazor as here).
 

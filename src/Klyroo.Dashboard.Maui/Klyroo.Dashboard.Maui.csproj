@@ -33,18 +33,6 @@
     <ProjectReference Include="..\..\..\klyroo-ui\src\Klyroo.UI.Maui\Klyroo.UI.Maui.csproj" />
   </ItemGroup>
 
-  <!--
-    Shared with the Blazor package, compiled in rather than copied: the built-in texts of the dashboard (DashboardTexts, one set per locale),
-    and the two small helpers of the Blazor blocks (the scale of a bar and the zero test of a delta), so a bar has the same length in both.
-    Klyroo.Dashboard cannot be referenced: it is a Razor library that needs ASP.NET Core and Klyroo.UI.
-  -->
-  <ItemGroup>
-    <Compile Include="..\Klyroo.Dashboard\DashboardTexts.cs" Link="Shared\DashboardTexts.cs" />
-    <Compile Include="..\Klyroo.Dashboard\DashboardBarGeometry.cs" Link="Shared\DashboardBarGeometry.cs" />
-    <Compile Include="..\Klyroo.Dashboard\DashboardDelta.cs" Link="Shared\DashboardDelta.cs" />
-    <Compile Include="..\Klyroo.Dashboard\Localization\*.cs" Link="Shared\Localization\%(Filename)%(Extension)" />
-  </ItemGroup>
-
   <ItemGroup>
     <Using Include="Klyroo.UI.Maui" />
   </ItemGroup>

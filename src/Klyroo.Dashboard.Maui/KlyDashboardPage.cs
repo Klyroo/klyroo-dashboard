@@ -394,7 +394,7 @@ public class KlyDashboardPage : ContentView
         {
             var active = string.Equals(dashboard.CurrentView, view.Key, StringComparison.Ordinal);
             var tab = new Border { StrokeThickness = 0, Padding = new Thickness(12, 0), VerticalOptions = LayoutOptions.Center };
-            tab.SetRadius(DashboardParts.RadiusOf(1));
+            tab.SetRadius(KlyTheme.RadiusOf(1));
             tab.SetThemeColor(BackgroundColorProperty, active ? KlyTheme.BackgroundMuted : KlyThemeColor.Transparent);
             var row = new HorizontalStackLayout { Spacing = 6, VerticalOptions = LayoutOptions.Center };
             var label = DashboardParts.NewLabel(12, active ? KlyTheme.TextHighlighted : KlyTheme.TextMuted, FontAttributes.Bold, LineBreakMode.NoWrap);

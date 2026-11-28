@@ -88,6 +88,21 @@ public class DashboardLayoutTests
     }
 
     [Fact]
+    public void A_child_that_is_not_a_block_takes_one_column_like_an_element_of_a_css_grid_and_a_full_row_when_stacked()
+    {
+        var grid = new KlyDashboardGrid();
+        var plain = new Label { Text = "note" };
+        var a = Block(4);
+        grid.Children.Add(a);
+        grid.Children.Add(plain);
+
+        Assert.Equal((0, 4, 1), At(plain));
+
+        grid.Place(500);
+        Assert.Equal(grid.EffectiveColumns, Grid.GetColumnSpan(plain));
+    }
+
+    [Fact]
     public void Nothing_moves_back_to_fill_a_gap_like_a_css_grid_with_sparse_flow()
     {
         var grid = new KlyDashboardGrid();
@@ -170,19 +185,6 @@ public class DashboardLayoutTests
         ((IView)page).Arrange(new Rect(0, 0, 1200, 800));
         grid.Place();
         Assert.Equal((0, 6, 6), At(b));
-    }
-
-    [Fact]
-    public void A_child_that_is_not_a_block_takes_a_full_row()
-    {
-        var grid = new KlyDashboardGrid();
-        var label = new Label { Text = "Note" };
-        var block = Block(6);
-        grid.Children.Add(block);
-        grid.Children.Add(label);
-
-        Assert.Equal((0, 0, 6), At(block));
-        Assert.Equal((1, 0, 12), At(label));
     }
 
     [Fact]

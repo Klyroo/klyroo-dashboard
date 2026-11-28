@@ -432,7 +432,7 @@ public class KlyDashboardCard : Border
             this.SetThemeColor(BackgroundColorProperty, KlyTheme.Background);
             this.SetStroke(KlyTheme.Border);
             StrokeThickness = 1;
-            this.SetRadius(DashboardParts.RadiusOf(0.75));
+            this.SetRadius(KlyTheme.RadiusOf(0.75));
         }
     }
 
@@ -517,7 +517,7 @@ public class KlyDashboardCard : Border
     private View BuildError(DashboardTexts texts)
     {
         var box = new Border { StrokeThickness = 1, Padding = new Thickness(12), HorizontalOptions = LayoutOptions.Fill };
-        box.SetRadius(DashboardParts.RadiusOf(1));
+        box.SetRadius(KlyTheme.RadiusOf(1));
         var error = DashboardParts.FillOf(KlyColor.Error);
         box.SetThemeColor(BackgroundColorProperty, error.WithAlpha(0.10f));
         box.SetStroke(error.WithAlpha(0.30f));

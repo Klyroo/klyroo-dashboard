@@ -3,7 +3,7 @@ namespace Klyroo.Dashboard.Maui;
 /// <summary>
 /// A grid of equal columns (12 by default, see <see cref="Columns"/>) that places blocks by their <see cref="KlyDashboardCard.Span"/> and gives them its <see cref="Menu"/> and <see cref="Freshness"/> defaults.
 /// It lays out by width: below 640 units wide every block takes the full row, so three statistics of a span of 4 stack on a phone and sit side by side on a tablet.
-/// Blocks go in <see cref="Children"/>; a child that is not a block takes a full row.
+/// Blocks go in <see cref="Children"/>; a child that is not a block takes one column, as an element of a CSS grid does (a full row below 640).
 /// </summary>
 [ContentProperty(nameof(Children))]
 public class KlyDashboardGrid : Border
@@ -83,7 +83,7 @@ public class KlyDashboardGrid : Border
         foreach (var child in _grid.Children.OfType<View>())
         {
             if (!child.IsVisible) continue;
-            var span = stacked || child is not KlyDashboardCard card ? columns : Math.Clamp(card.Span, 1, columns);
+            var span = stacked ? columns : child is KlyDashboardCard card ? Math.Clamp(card.Span, 1, columns) : 1;
             if (column + span > columns)
             {
                 row++;
@@ -128,7 +128,7 @@ public class KlyDashboardGrid : Border
             StrokeThickness = 1;
             this.SetStroke(KlyTheme.Border);
             this.SetThemeColor(BackgroundColorProperty, KlyTheme.Border);
-            this.SetRadius(DashboardParts.RadiusOf(0.75));
+            this.SetRadius(KlyTheme.RadiusOf(0.75));
         }
         else
         {

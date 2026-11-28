@@ -4,7 +4,7 @@ namespace Klyroo.Dashboard;
 /// The built-in texts of the dashboard components: toolbar and card buttons, accessible names, empty and error states, column headers of the
 /// table view and the CSV export, and relative times. There is one set per locale of Klyroo.UI (<see cref="DashboardLocales"/>), and a
 /// component shows the set of its current locale, the one its <c>Messages</c> come from. Change a set with
-/// <see cref="KlyrooDashboardOptions.Texts"/> in <c>AddKlyrooDashboard(o =&gt; ...)</c>.
+/// <c>KlyrooDashboardOptions.Texts</c> in <c>AddKlyrooDashboard(o =&gt; ...)</c>.
 /// </summary>
 /// <remarks>
 /// A text that contains a number or a name is a function, so a language can choose its own plural forms and word order.

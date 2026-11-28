@@ -103,7 +103,7 @@ public class KlyDashboardStats : KlyDashboardCard
 
         if (Variant != DashboardStatsVariant.Tiles) return stack;
         var tile = new Border { StrokeThickness = 1, Padding = new Thickness(12), Content = stack };
-        tile.SetRadius(DashboardParts.RadiusOf(1));
+        tile.SetRadius(KlyTheme.RadiusOf(1));
         tile.SetStroke(KlyTheme.Border);
         tile.SetThemeColor(BackgroundColorProperty, KlyTheme.BackgroundMuted);
         return tile;

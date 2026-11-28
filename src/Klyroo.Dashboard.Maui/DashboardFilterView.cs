@@ -243,7 +243,7 @@ internal sealed class DashboardFilterView
     private View PresetChip(DashboardFilterPreset preset)
     {
         var content = new Border { StrokeThickness = 0, Padding = new Thickness(8, 2), VerticalOptions = LayoutOptions.Center };
-        content.SetRadius(DashboardParts.RadiusOf(1));
+        content.SetRadius(KlyTheme.RadiusOf(1));
         content.SetThemeColor(VisualElement.BackgroundColorProperty, KlyTheme.BackgroundMuted);
         var row = new HorizontalStackLayout { Spacing = 4, VerticalOptions = LayoutOptions.Center };
         if (!string.IsNullOrEmpty(preset.Icon)) row.Add(new KlyIcon { Name = preset.Icon, Size = KlySize.Sm, Scale = 0.75, IconColor = KlyTheme.Text, VerticalOptions = LayoutOptions.Center });
@@ -260,7 +260,7 @@ internal sealed class DashboardFilterView
     private (Border Menu, Entry? Search, VerticalStackLayout Options) BuildMenu()
     {
         var menu = new Border { StrokeThickness = 1, Padding = new Thickness(8), WidthRequest = 240, HorizontalOptions = LayoutOptions.Start, IsVisible = false };
-        menu.SetRadius(DashboardParts.RadiusOf(0.75));
+        menu.SetRadius(KlyTheme.RadiusOf(0.75));
         menu.SetStroke(KlyTheme.Border);
         menu.SetThemeColor(VisualElement.BackgroundColorProperty, KlyTheme.BackgroundElevated);
         var stack = new VerticalStackLayout { Spacing = 6 };
@@ -320,7 +320,7 @@ internal sealed class DashboardFilterView
             if (selected) row.Add(new KlyIcon { Name = KlyIconNames.Check, Size = KlySize.Sm, IconColor = KlyTheme.TextHighlighted, VerticalOptions = LayoutOptions.Center }, 1);
 
             var frame = new Border { StrokeThickness = 0, Padding = 0, Content = row };
-            frame.SetRadius(DashboardParts.RadiusOf(1));
+            frame.SetRadius(KlyTheme.RadiusOf(1));
             frame.SetThemeColor(VisualElement.BackgroundColorProperty, selected ? KlyTheme.BackgroundMuted : KlyThemeColor.Transparent);
             var area = new DashboardTapArea(frame) { Description = option.Label, MinimumTarget = 40, IsEnabled = !(option.Disabled || maxReached) };
             area.Opacity = area.IsEnabled ? 1 : 0.4;

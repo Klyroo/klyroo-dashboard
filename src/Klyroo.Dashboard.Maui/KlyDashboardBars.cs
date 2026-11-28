@@ -110,7 +110,7 @@ public class KlyDashboardBars : KlyDashboardCard
         if (!string.IsNullOrEmpty(item.Tag))
         {
             var tag = new Border { StrokeThickness = 0, Padding = new Thickness(6, 2), VerticalOptions = LayoutOptions.Center };
-            tag.SetRadius(DashboardParts.RadiusOf(1));
+            tag.SetRadius(KlyTheme.RadiusOf(1));
             tag.SetThemeColor(BackgroundColorProperty, KlyTheme.BackgroundMuted);
             var text = DashboardParts.NewLabel(10, KlyTheme.TextMuted, lineBreak: LineBreakMode.NoWrap);
             text.Text = item.Tag;
@@ -160,7 +160,7 @@ public class KlyDashboardBars : KlyDashboardCard
     {
         // The highlight of the selected bar, which the web theme draws from data-selected.
         var frame = new Border { StrokeThickness = 0, Padding = new Thickness(6, 4), Content = content };
-        frame.SetRadius(DashboardParts.RadiusOf(1));
+        frame.SetRadius(KlyTheme.RadiusOf(1));
         frame.SetThemeColor(BackgroundColorProperty, item.Selected ? KlyTheme.BackgroundMuted.WithAlpha(0.5f) : KlyThemeColor.Transparent);
         return frame;
     }
