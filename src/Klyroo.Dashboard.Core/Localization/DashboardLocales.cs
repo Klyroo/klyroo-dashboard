@@ -1,15 +1,15 @@
 namespace Klyroo.Dashboard;
 
 /// <summary>
-/// The built-in texts of Klyroo.Dashboard, one set per locale of <see cref="KlyLocales.All"/> and keyed by the same codes. A component picks the
-/// set of its current <see cref="KlyLocale.Code"/> with <see cref="KlyLocales.ResolveCode"/>, so "pt-PT" gets "pt" and an unknown language gets
-/// English. Change a set with <see cref="KlyrooDashboardOptions.Texts"/>.
+/// The built-in texts of Klyroo.Dashboard, one set per locale of <c>KlyLocales.All</c> and keyed by the same codes. A component picks the
+/// set of its current <c>KlyLocale.Code</c> with <c>KlyLocales.ResolveCode</c>, so "pt-PT" gets "pt" and an unknown language gets
+/// English. Change a set with <c>KlyrooDashboardOptions.Texts</c>.
 /// </summary>
 public static partial class DashboardLocales
 {
     private static IReadOnlyDictionary<string, DashboardTexts>? _tables;
 
-    /// <summary>Every set by locale code: the codes of <see cref="KlyLocales.All"/>.</summary>
+    /// <summary>Every set by locale code: the codes of <c>KlyLocales.All</c>.</summary>
     public static IReadOnlyDictionary<string, DashboardTexts> Tables => _tables ??= new Dictionary<string, DashboardTexts>(StringComparer.OrdinalIgnoreCase)
     {
         ["en"] = En,

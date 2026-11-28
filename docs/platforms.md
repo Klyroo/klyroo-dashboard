@@ -58,6 +58,8 @@ Without a handler, Download CSV starts a browser download through the `_content/
 
 If a MAUI app uses XAML or C# markup instead of a `BlazorWebView`, reference only `Klyroo.Dashboard.Core`. It has no ASP.NET Core, Razor or Klyroo.UI dependency. The controller raises a `Changed` event, not `INotifyPropertyChanged`, so a view model subscribes to it and raises its own change notifications. Marshal to the UI thread yourself, since the event comes from whichever thread completed the load.
 
+The repository also holds native views over that controller, `Klyroo.Dashboard.Maui` (`src/Klyroo.Dashboard.Maui`): the page, the grid and the thirteen blocks as MAUI controls built on `Klyroo.UI.Maui`, with the same type names in the namespace `Klyroo.Dashboard.Maui`. It needs the MAUI workload and a checkout of klyroo-ui next to this repository, so it is not part of `Klyroo.Dashboard.slnx`. Its README lists the controls and what differs from the Blazor ones.
+
 ## NativeAOT and trimming
 
 `Klyroo.Dashboard.Core` sets `IsTrimmable` and `IsAotCompatible`, which enables the trim and AOT analyzers when you build it. The CI of this repository builds it with `EnableAotAnalyzer` and `EnableTrimAnalyzer`. The controller, the resources and `DashboardFormat` use no reflection and no dynamic code. The console app from [Getting started](getting-started.md) publishes with `PublishAot` on linux-x64, and the native binary runs:
